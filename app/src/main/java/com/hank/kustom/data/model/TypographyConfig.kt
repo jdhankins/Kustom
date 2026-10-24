@@ -1,14 +1,14 @@
 package com.hank.kustom.data.model
 
 /**
- * Configuration for label and value typography.
+ * Typography styling configuration for a data field component.
  *
  * @property font [KustomFont] enum choice
- * @property fontWeight Weight integer (e.g. 300 Light, 400 Regular, 500 Medium, 700 Bold, 900 Black)
- * @property fontSizeSp Size in SP (e.g., default 14f for labels, 38f for values)
+ * @property fontWeight Font weight (e.g. 300, 400, 500, 700, 900)
+ * @property fontSizeSp Base font size in SP
  */
 data class TypographyConfig(
-    val font: KustomFont = KustomFont.BARLOW,
-    val fontWeight: Int = 400,
-    val fontSizeSp: Float = 14f,
+    val font: KustomFont = KustomFont.KAROO_RBNO2,
+    val fontWeight: Int = 700,
+    val fontSizeSp: Float = 38f,
 )

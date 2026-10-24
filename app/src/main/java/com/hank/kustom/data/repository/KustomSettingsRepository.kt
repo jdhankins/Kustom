@@ -43,10 +43,10 @@ class KustomSettingsRepository(context: Context) {
         }
         .map { prefs ->
             val globalTypo = GlobalTypographyConfig(
-                fontFamily = parseEnum(prefs[Keys.GLOBAL_FONT_FAMILY], KustomFont.BARLOW),
-                labelSizeSp = prefs[Keys.GLOBAL_LABEL_SIZE_SP] ?: 14,
+                fontFamily = parseEnum(prefs[Keys.GLOBAL_FONT_FAMILY], KustomFont.KAROO_RBNO2),
+                labelSizeSp = prefs[Keys.GLOBAL_LABEL_SIZE_SP] ?: 18,
                 labelWeight = prefs[Keys.GLOBAL_LABEL_WEIGHT] ?: 700,
-                valueSizeSp = prefs[Keys.GLOBAL_VALUE_SIZE_SP] ?: 38,
+                valueSizeSp = prefs[Keys.GLOBAL_VALUE_SIZE_SP] ?: 48,
                 valueWeight = prefs[Keys.GLOBAL_VALUE_WEIGHT] ?: 700,
             )
 

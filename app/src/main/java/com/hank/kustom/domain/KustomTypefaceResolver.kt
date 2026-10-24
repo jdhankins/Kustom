@@ -7,7 +7,7 @@ import android.text.TextPaint
 import com.hank.kustom.data.model.KustomFont
 
 /**
- * Typeface loader with distinct font-family styling and native/synthetic weight rendering.
+ * Typeface loader for top 5 cycling computer fonts (Karoo, Wahoo, Garmin, Athletic Display, Clean).
  */
 object KustomTypefaceResolver {
 
@@ -22,31 +22,36 @@ object KustomTypefaceResolver {
         paint.style = Paint.Style.FILL
         paint.strokeWidth = 0f
 
-        // Character scale & letter spacing per font family
+        // Distinct character scale & letter spacing per cycling font family
         when (font) {
-            KustomFont.RBNO2_BOLD -> {
+            KustomFont.KAROO_RBNO2 -> {
                 paint.textScaleX = 0.90f
                 paint.letterSpacing = -0.01f
             }
-            KustomFont.RBNO2_MEDIUM -> {
-                paint.textScaleX = 0.94f
-                paint.letterSpacing = 0.0f
+            KustomFont.WAHOO_BARLOW -> {
+                paint.textScaleX = 0.96f
+                paint.letterSpacing = 0.01f
             }
-            KustomFont.BARLOW -> {
-                paint.textScaleX = 0.98f
-                paint.letterSpacing = 0.0f
+            KustomFont.GARMIN_DIN -> {
+                paint.textScaleX = 0.88f
+                paint.letterSpacing = -0.02f
             }
-            KustomFont.ROBOTO -> {
+            KustomFont.ATHLETIC_DISPLAY -> {
+                paint.textScaleX = 0.80f
+                paint.letterSpacing = -0.03f
+            }
+            KustomFont.ROBOTO_CLEAN -> {
                 paint.textScaleX = 1.0f
                 paint.letterSpacing = 0.0f
             }
-            KustomFont.NOTO_SANS -> {
-                paint.textScaleX = 1.02f
-                paint.letterSpacing = 0.01f
-            }
         }
 
-        val effectiveWeight = if (font == KustomFont.RBNO2_BOLD) weight.coerceAtLeast(700) else weight
+        val effectiveWeight = if (font == KustomFont.KAROO_RBNO2 || font == KustomFont.GARMIN_DIN || font == KustomFont.ATHLETIC_DISPLAY) {
+            weight.coerceAtLeast(700)
+        } else {
+            weight
+        }
+
         val baseTypeface = resolveFamilyTypeface(font, effectiveWeight)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -63,12 +68,11 @@ object KustomTypefaceResolver {
 
     private fun resolveFamilyTypeface(font: KustomFont, weight: Int): Typeface {
         val familyName = when (font) {
-            KustomFont.RBNO2_BOLD, KustomFont.RBNO2_MEDIUM, KustomFont.BARLOW -> "sans-serif-condensed"
-            KustomFont.ROBOTO -> "sans-serif"
-            KustomFont.NOTO_SANS -> "sans-serif"
+            KustomFont.KAROO_RBNO2, KustomFont.WAHOO_BARLOW, KustomFont.GARMIN_DIN, KustomFont.ATHLETIC_DISPLAY -> "sans-serif-condensed"
+            KustomFont.ROBOTO_CLEAN -> "sans-serif"
         }
 
-        val style = if (weight >= 700 || font == KustomFont.RBNO2_BOLD) Typeface.BOLD else Typeface.NORMAL
+        val style = if (weight >= 700 || font == KustomFont.KAROO_RBNO2 || font == KustomFont.GARMIN_DIN) Typeface.BOLD else Typeface.NORMAL
         return Typeface.create(familyName, style)
     }
 }
