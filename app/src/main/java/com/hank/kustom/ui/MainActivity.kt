@@ -380,13 +380,15 @@ fun KustomStickyHeaderSection(
             // 2. Sticky Live Field Preview Box Centered (GLOBAL TAB ONLY)
             if (selectedTab == 0) {
                 Box(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 2.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
                         modifier = Modifier
-                            .width(170.dp)
-                            .height(82.dp)
+                            .width(160.dp)
+                            .height(76.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(12.dp)),
                     ) {
@@ -414,9 +416,12 @@ fun GlobalFontsTab(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        item {
+            Spacer(modifier = Modifier.height(2.dp))
+        }
         // FONT FAMILY DROPDOWN
         item {
             KarooFontDropdown(

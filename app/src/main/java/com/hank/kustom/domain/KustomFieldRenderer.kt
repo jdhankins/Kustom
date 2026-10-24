@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.Rect
 import android.graphics.RectF
 import android.text.TextPaint
 import com.hank.kustom.data.model.ColorMode
@@ -13,8 +12,8 @@ import com.hank.kustom.util.KustomLogger
 import io.hammerhead.karooext.models.ViewConfig
 
 /**
- * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas.
- * Karoo OS manages the outer data field cell boundary/border.
+ * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas,
+ * adapting dynamically to Light/Dark themes, data boundaries, and Left/Center/Right alignment.
  */
 object KustomFieldRenderer {
 
@@ -113,7 +112,7 @@ object KustomFieldRenderer {
             }
 
             // 1. Prepare Label Paint
-            val labelPx = spToPx(context, labelTypography.fontSizeSp, height, maxRatio = 0.22f)
+            val labelPx = spToPx(context, labelTypography.fontSizeSp, height, maxRatio = 0.20f)
             val labelPaint = TextPaint().apply {
                 color = labelColor
                 textAlign = align
@@ -126,8 +125,8 @@ object KustomFieldRenderer {
             )
 
             // 2. Prepare Value Paint
-            val maxAvailableValuePx = (height * 0.52f).coerceAtLeast(10f)
-            val requestedValuePx = spToPx(context, valueTypography.fontSizeSp, height, maxRatio = 0.70f)
+            val maxAvailableValuePx = (height * 0.48f).coerceAtLeast(10f)
+            val requestedValuePx = spToPx(context, valueTypography.fontSizeSp, height, maxRatio = 0.65f)
             var valuePx = requestedValuePx.coerceAtMost(maxAvailableValuePx)
 
             val valuePaint = TextPaint().apply {
@@ -149,27 +148,28 @@ object KustomFieldRenderer {
                 valuePaint.textSize = valuePx
             }
 
-            // 3. Compute Exact Visual Bounds for Constant Inter-Text Spacing
-            val labelBounds = Rect()
-            val labelStr = label.uppercase()
-            labelPaint.getTextBounds(labelStr, 0, labelStr.length, labelBounds)
-            val labelVisualHeight = labelBounds.height().toFloat().coerceAtLeast(labelPx * 0.65f)
+            // 3. Compute Metrics with Zero-Overlap Baseline Equation
+            val labelMetrics = labelPaint.fontMetrics
+            val labelAscent = -labelMetrics.ascent
+            val labelDescent = labelMetrics.descent
+            val labelFullHeight = labelAscent + labelDescent
 
-            val valueBounds = Rect()
-            valuePaint.getTextBounds(valueText, 0, valueText.length, valueBounds)
-            val valueVisualHeight = valueBounds.height().toFloat().coerceAtLeast(valuePx * 0.65f)
+            val valueMetrics = valuePaint.fontMetrics
+            val valueAscent = -valueMetrics.ascent
+            val valueDescent = valueMetrics.descent
+            val valueFullHeight = valueAscent + valueDescent
 
-            val gap = height * 0.02f
-            val totalBlockHeight = labelVisualHeight + gap + valueVisualHeight
+            val gap = height * 0.06f
+            val totalBlockHeight = labelFullHeight + gap + valueFullHeight
 
             val rawBlockTop = (height - totalBlockHeight) / 2f
-            val blockTop = rawBlockTop.coerceAtLeast(height * 0.04f)
+            val blockTop = rawBlockTop.coerceAtLeast(height * 0.05f)
 
-            val labelY = blockTop + labelVisualHeight
-            val valueY = labelY + gap + valueVisualHeight
+            val labelY = blockTop + labelAscent
+            val valueY = labelY + labelDescent + gap + valueAscent
 
-            // 4. Draw Label & Value Text
-            canvas.drawText(labelStr, textX, labelY, labelPaint)
+            // 4. Draw Label & Value Text (Guaranteed Zero Overlap)
+            canvas.drawText(label.uppercase(), textX, labelY, labelPaint)
             canvas.drawText(valueText, textX, valueY, valuePaint)
 
             bitmap
