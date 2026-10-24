@@ -85,20 +85,58 @@ import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-// Dynamic Adaptive Color Scheme Model
+/**
+ * Dynamic adaptive color scheme model for Light and Dark modes.
+ *
+ * @property bg Base screen background color.
+ * @property cardBg Card surface background color.
+ * @property trackBg Input track / pill container background color.
+ * @property textPrimary Primary text color.
+ * @property textSecondary Secondary text color.
+ * @property accent Primary accent highlight color (Electric Blue).
+ * @property border Card border stroke color.
+ * @property sliderTrack Slider track background color.
+ * @property headerText Section header text color.
+ * @property isDark Whether dark theme is active.
+ */
 data class KustomColorScheme(
+    /** Base screen background color. */
     val bg: Color,
+
+    /** Card surface background color. */
     val cardBg: Color,
+
+    /** Input track / pill container background color. */
     val trackBg: Color,
+
+    /** Primary text color. */
     val textPrimary: Color,
+
+    /** Secondary text color. */
     val textSecondary: Color,
+
+    /** Primary accent highlight color. */
     val accent: Color,
+
+    /** Card border stroke color. */
     val border: Color,
+
+    /** Slider track background color. */
     val sliderTrack: Color,
+
+    /** Section header text color. */
     val headerText: Color,
+
+    /** Whether dark theme is active. */
     val isDark: Boolean,
 )
 
+/**
+ * Resolves the active [KustomColorScheme] based on system Light/Dark mode settings.
+ *
+ * @param isDark Whether dark mode is enabled on the device.
+ * @return The corresponding [KustomColorScheme].
+ */
 @Composable
 fun getKustomColors(isDark: Boolean = isSystemInDarkTheme()): KustomColorScheme {
     return if (isDark) {
@@ -130,6 +168,9 @@ fun getKustomColors(isDark: Boolean = isSystemInDarkTheme()): KustomColorScheme 
     }
 }
 
+/**
+ * Main application entry activity for user settings and typography configuration.
+ */
 class MainActivity : ComponentActivity() {
 
     private val viewModel: KustomSettingsViewModel by viewModels()
@@ -164,6 +205,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Primary Jetpack Compose screen layout for Kustom settings activity.
+ *
+ * @param viewModel Settings view model instance ([KustomSettingsViewModel]).
+ * @param colors Active adaptive color scheme ([KustomColorScheme]).
+ */
 @Composable
 fun KustomKarooNativeScreen(
     viewModel: KustomSettingsViewModel,
@@ -232,6 +279,15 @@ fun KustomKarooNativeScreen(
     }
 }
 
+/**
+ * Top sticky header section featuring pill navigation and global live field preview.
+ *
+ * @param settings Current [KustomSettings] state.
+ * @param selectedTab Active tab index (0 = Global, 1 = Fields).
+ * @param colors Active adaptive color scheme ([KustomColorScheme]).
+ * @param onTabSelected Callback invoked when a navigation tab is selected.
+ * @param onOpenLogs Callback invoked when logs dialog button is clicked.
+ */
 @Composable
 fun KustomStickyHeaderSection(
     settings: KustomSettings,
@@ -405,6 +461,13 @@ fun KustomStickyHeaderSection(
     }
 }
 
+/**
+ * Global typography settings tab containing font family dropdown and typography sliders.
+ *
+ * @param settings Current [KustomSettings] state.
+ * @param colors Active adaptive color scheme ([KustomColorScheme]).
+ * @param onUpdateGlobalTypography Callback invoked to update global typography configuration.
+ */
 @Composable
 fun GlobalFontsTab(
     settings: KustomSettings,
@@ -422,6 +485,7 @@ fun GlobalFontsTab(
         item {
             Spacer(modifier = Modifier.height(2.dp))
         }
+
         // FONT FAMILY DROPDOWN
         item {
             KarooFontDropdown(
@@ -503,6 +567,16 @@ fun GlobalFontsTab(
     }
 }
 
+/**
+ * Per-metric fields configuration accordion tab grouping configurable metrics by category.
+ *
+ * @param settings Current [KustomSettings] state.
+ * @param colors Active adaptive color scheme ([KustomColorScheme]).
+ * @param expandedCategory Currently expanded field category ([FieldCategory]).
+ * @param onFieldSelected Callback invoked when a field card is selected.
+ * @param onCategoryToggled Callback invoked to toggle category expansion.
+ * @param onUpdateFieldConfig Callback invoked to update configuration for a specific field.
+ */
 @Composable
 fun FieldsTab(
     settings: KustomSettings,
@@ -583,6 +657,16 @@ fun FieldsTab(
     }
 }
 
+/**
+ * Individual field configuration card displaying metric name, description, live preview, and controls.
+ *
+ * @param field Field definition metadata ([KustomFieldDefinition]).
+ * @param fieldConfig Field specific configuration ([KustomFieldConfig]).
+ * @param globalTypography Shared global typography configuration ([GlobalTypographyConfig]).
+ * @param colors Active adaptive color scheme ([KustomColorScheme]).
+ * @param onFieldSelected Callback invoked when card is selected.
+ * @param onUpdateFieldConfig Callback invoked to update field configuration.
+ */
 @Composable
 fun FieldCardItem(
     field: KustomFieldDefinition,
@@ -727,6 +811,14 @@ fun FieldCardItem(
     }
 }
 
+/**
+ * Dropdown menu selector for global font family choice.
+ *
+ * @param selectedFont Currently selected [KustomFont] choice.
+ * @param colors Active adaptive color scheme ([KustomColorScheme]).
+ * @param onFontSelected Callback invoked when a font is selected.
+ * @param modifier Optional Compose layout modifier.
+ */
 @Composable
 fun KarooFontDropdown(
     selectedFont: KustomFont,
@@ -801,6 +893,16 @@ fun KarooFontDropdown(
     }
 }
 
+/**
+ * High-precision interactive stepped slider component with 60fps local gesture tracking.
+ *
+ * @param label Section title label string.
+ * @param steps List of step label strings.
+ * @param selectedIndex Currently selected step index.
+ * @param colors Active adaptive color scheme ([KustomColorScheme]).
+ * @param onStepSelected Callback invoked when a step is selected.
+ * @param modifier Optional Compose layout modifier.
+ */
 @Composable
 fun KarooSteppedSlider(
     label: String,
@@ -928,6 +1030,15 @@ fun KarooSteppedSlider(
     }
 }
 
+/**
+ * Segmented pill option selector for zone color formatting choices (None, Text, Fill).
+ *
+ * @param selectedZoneFormat Currently selected [ZoneFormat].
+ * @param fieldName Metric child title string.
+ * @param colors Active adaptive color scheme ([KustomColorScheme]).
+ * @param onZoneFormatSelected Callback invoked when a zone format option is selected.
+ * @param modifier Optional Compose layout modifier.
+ */
 @Composable
 fun KarooSegmentedPill(
     selectedZoneFormat: ZoneFormat,
@@ -1007,6 +1118,13 @@ fun KarooSegmentedPill(
     }
 }
 
+/**
+ * Dialog displaying buffered system logs and crash logs.
+ *
+ * @param context Application or activity context.
+ * @param colors Active adaptive color scheme ([KustomColorScheme]).
+ * @param onDismiss Callback invoked when dialog is dismissed.
+ */
 @Composable
 fun KustomLogsDialog(
     context: Context,
@@ -1066,6 +1184,13 @@ fun KustomLogsDialog(
     )
 }
 
+/**
+ * Helper finding the list index closest in value to a target float.
+ *
+ * @param values Candidate float values list.
+ * @param target Target float value.
+ * @return Index of nearest value in list, or 0 if empty.
+ */
 fun findNearestIndex(values: List<Float>, target: Float): Int {
     return values.minByOrNull { abs(it - target) }?.let { values.indexOf(it) } ?: 0
 }

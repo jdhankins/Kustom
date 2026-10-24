@@ -11,7 +11,13 @@ import kotlin.math.pow
 object KustomColorGradeMapper {
 
     /**
-     * Maps power in watts to a high-contrast zone color.
+     * Maps power output in watts to a high-contrast zone color.
+     *
+     * @param watts Current power output in watts.
+     * @param userProfile The rider's [UserProfile] containing custom power zones or FTP.
+     * @param colorMode The active [ColorMode] (NONE, BACKGROUND_COLOR, or TEXT_COLOR).
+     * @param isDarkTheme Whether dark theme is active.
+     * @return Color Int for the zone, or null if [ColorMode.NONE].
      */
     fun getPowerZoneColor(
         watts: Double,
@@ -49,6 +55,12 @@ object KustomColorGradeMapper {
 
     /**
      * Maps heart rate in bpm to a high-contrast zone color.
+     *
+     * @param bpm Current heart rate in beats per minute.
+     * @param userProfile The rider's [UserProfile] containing custom HR zones or Max HR.
+     * @param colorMode The active [ColorMode] (NONE, BACKGROUND_COLOR, or TEXT_COLOR).
+     * @param isDarkTheme Whether dark theme is active.
+     * @return Color Int for the zone, or null if [ColorMode.NONE].
      */
     fun getHeartRateZoneColor(
         bpm: Double,
@@ -84,7 +96,12 @@ object KustomColorGradeMapper {
     }
 
     /**
-     * Maps elevation grade percentage to a color (cool blue for descents, neutral for flats, green->yellow->orange->red->magenta for climbs).
+     * Maps elevation grade percentage to a color.
+     *
+     * @param gradePercent Current road gradient in percent (e.g. 5.5%).
+     * @param colorMode The active [ColorMode] (NONE, BACKGROUND_COLOR, or TEXT_COLOR).
+     * @param isDarkTheme Whether dark theme is active.
+     * @return Color Int for the gradient steepness, or null if [ColorMode.NONE].
      */
     fun getGradeColor(
         gradePercent: Double,
@@ -107,6 +124,9 @@ object KustomColorGradeMapper {
     /**
      * Calculates relative luminance and returns charcoal (#1E2225) or white (#FFFFFF) text color
      * for maximum outdoor readability on top of [backgroundColor].
+     *
+     * @param backgroundColor Background color Int.
+     * @return High-contrast text color Int (charcoal or white).
      */
     fun getContrastingTextColor(backgroundColor: Int): Int {
         val red = (backgroundColor shr 16) and 0xFF
@@ -141,6 +161,8 @@ object KustomColorGradeMapper {
 
 /**
  * Lightweight rolling time-window smoother for metrics without SDK built-in smoothed streams.
+ *
+ * @property windowSeconds Smoothing window duration in seconds.
  */
 class RollingTimeSmoother(private val windowSeconds: Int) {
 
@@ -148,6 +170,13 @@ class RollingTimeSmoother(private val windowSeconds: Int) {
 
     private val samples = ArrayDeque<Sample>()
 
+    /**
+     * Adds a new sample and returns the smoothed rolling average over [windowSeconds].
+     *
+     * @param value Sample raw value.
+     * @param timestampMs Sample timestamp in epoch ms.
+     * @return Rolling average value over the time window.
+     */
     @Synchronized
     fun addSample(value: Double, timestampMs: Long = System.currentTimeMillis()): Double {
         if (windowSeconds <= 0) return value
@@ -161,6 +190,7 @@ class RollingTimeSmoother(private val windowSeconds: Int) {
         return if (samples.isEmpty()) value else samples.sumOf { it.value } / samples.size
     }
 
+    /** Clears all rolling samples. */
     @Synchronized
     fun clear() {
         samples.clear()

@@ -11,7 +11,7 @@ import java.util.Locale
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Thread-safe logcat wrapper, in-memory log buffer, and crash file handler for Kustom.
+ * Thread-safe logcat wrapper, in-memory log buffer, and crash log file persistence utility.
  */
 object KustomLogger {
 
@@ -24,16 +24,33 @@ object KustomLogger {
 
     private var isCrashHandlerInstalled = false
 
+    /**
+     * Logs a debug level message.
+     *
+     * @param message Debug log text.
+     */
     fun d(message: String) {
         Log.d(TAG, message)
         addBufferEntry("DEBUG", message)
     }
 
+    /**
+     * Logs a warning level message.
+     *
+     * @param message Warning log text.
+     * @param throwable Optional exception or error instance.
+     */
     fun w(message: String, throwable: Throwable? = null) {
         Log.w(TAG, message, throwable)
         addBufferEntry("WARN", if (throwable != null) "$message\n${getStackTraceString(throwable)}" else message)
     }
 
+    /**
+     * Logs an error level message.
+     *
+     * @param message Error log text.
+     * @param throwable Optional exception or error instance.
+     */
     fun e(message: String, throwable: Throwable? = null) {
         Log.e(TAG, message, throwable)
         val fullMsg = if (throwable != null) "$message\n${getStackTraceString(throwable)}" else message
@@ -51,6 +68,11 @@ object KustomLogger {
         }
     }
 
+    /**
+     * Installs an uncaught exception crash handler that persists crash stack traces to disk.
+     *
+     * @param context Application or activity context.
+     */
     fun installCrashHandler(context: Context) {
         if (isCrashHandlerInstalled) return
         isCrashHandlerInstalled = true
@@ -82,6 +104,12 @@ object KustomLogger {
         }
     }
 
+    /**
+     * Reads saved crash logs from disk.
+     *
+     * @param context Application or activity context.
+     * @return String containing saved crash log text, or a notice if empty.
+     */
     fun readCrashLog(context: Context): String {
         return runCatching {
             val crashFile = File(context.filesDir, CRASH_LOG_FILE)
@@ -89,6 +117,11 @@ object KustomLogger {
         }.getOrDefault("Error reading crash log.")
     }
 
+    /**
+     * Returns a copy of the in-memory buffered log entries.
+     *
+     * @return List of formatted log entry strings.
+     */
     fun getBufferedLogs(): List<String> = logBuffer.toList()
 
     private fun getStackTraceString(throwable: Throwable): String {

@@ -3,16 +3,40 @@ package com.hank.kustom.data.model
 import io.hammerhead.karooext.models.DataType
 
 /**
- * Supported smoothing options for data fields.
+ * Supported rolling smoothing duration options for data fields.
+ *
+ * @property seconds Duration in integer seconds.
+ * @property label User-visible label string (e.g. "0s", "3s", "5s", "10s", "30s").
  */
-enum class SmoothingOption(val seconds: Int, val label: String) {
+enum class SmoothingOption(
+    /** Duration in seconds. */
+    val seconds: Int,
+
+    /** User-visible label. */
+    val label: String,
+) {
+    /** Instantaneous raw telemetry (0 seconds smoothing). */
     NONE(0, "0s"),
+
+    /** 3-second rolling average smoothing. */
     THREE_SEC(3, "3s"),
+
+    /** 5-second rolling average smoothing. */
     FIVE_SEC(5, "5s"),
+
+    /** 10-second rolling average smoothing. */
     TEN_SEC(10, "10s"),
+
+    /** 30-second rolling average smoothing. */
     THIRTY_SEC(30, "30s");
 
     companion object {
+        /**
+         * Resolves a [SmoothingOption] by its integer [seconds] value.
+         *
+         * @param seconds Duration in seconds (e.g. 0, 3, 5, 10, 30).
+         * @return The matching [SmoothingOption], or [THREE_SEC] if unmapped.
+         */
         fun fromSeconds(seconds: Int): SmoothingOption {
             return entries.firstOrNull { it.seconds == seconds } ?: THREE_SEC
         }
@@ -21,6 +45,8 @@ enum class SmoothingOption(val seconds: Int, val label: String) {
 
 /**
  * Maps [SmoothingOption] directly to the built-in [DataType.Type] power constants.
+ *
+ * @return The corresponding Karoo SDK power [DataType.Type] string.
  */
 fun SmoothingOption.toPowerDataTypeId(): String {
     return when (this) {
@@ -34,6 +60,8 @@ fun SmoothingOption.toPowerDataTypeId(): String {
 
 /**
  * Maps [SmoothingOption] directly to the built-in [DataType.Type] speed constants.
+ *
+ * @return The corresponding Karoo SDK speed [DataType.Type] string.
  */
 fun SmoothingOption.toSpeedDataTypeId(): String {
     return when (this) {
@@ -47,6 +75,8 @@ fun SmoothingOption.toSpeedDataTypeId(): String {
 
 /**
  * Maps [SmoothingOption] directly to the built-in [DataType.Type] cadence constants.
+ *
+ * @return The corresponding Karoo SDK cadence [DataType.Type] string.
  */
 fun SmoothingOption.toCadenceDataTypeId(): String {
     return when (this) {

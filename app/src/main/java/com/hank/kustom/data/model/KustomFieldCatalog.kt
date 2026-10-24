@@ -3,41 +3,109 @@ package com.hank.kustom.data.model
 import io.hammerhead.karooext.models.DataType
 import java.util.Locale
 
-enum class FieldCategory(val displayName: String) {
+/**
+ * Parent telemetry categories for grouping cycling metrics.
+ *
+ * @property displayName User-visible category display name.
+ */
+enum class FieldCategory(
+    /** User-visible category display name. */
+    val displayName: String,
+) {
+    /** Speed metrics category. */
     SPEED("Speed"),
+
+    /** Heart rate metrics category. */
     HEART_RATE("Heart Rate"),
+
+    /** Power metrics category. */
     POWER("Power"),
+
+    /** Cadence metrics category. */
     CADENCE("Cadence"),
+
+    /** Distance metrics category. */
     DISTANCE("Distance"),
+
+    /** Elevation and climb metrics category. */
     ELEVATION("Elevation"),
+
+    /** Duration and time metrics category. */
     TIME("Time"),
+
+    /** Battery status category. */
     BATTERY("Battery"),
+
+    /** Drivetrain and gear ratio category. */
     GEAR_RATIO("Gear Ratio"),
+
+    /** Environmental temperature and wind category. */
     ENVIRONMENT("Environment"),
+
+    /** Radar threat and vehicle count category. */
     RADAR("Radar"),
+
+    /** Lap statistics category. */
     LAP("Lap"),
+
+    /** Target workout metrics category. */
     WORKOUT("Workout"),
+
+    /** Navigation and ETA category. */
     NAVIGATION("Navigation"),
 }
 
+/**
+ * Complete metadata definition for a Kustom cycling data field.
+ *
+ * @property typeId Unique identifier for this data field (e.g. "power", "speed", "hr").
+ * @property childTitle Child title string (e.g. "Power", "Avg", "Max", "Grade").
+ * @property category Parent telemetry category ([FieldCategory]).
+ * @property description Short concise 2-4 word description.
+ * @property supportsSmoothing Whether this field supports rolling average smoothing sliders.
+ * @property supportsZones Whether this field supports zone color formatting options.
+ * @property mockValues List of representative double mock values for design animations.
+ */
 data class KustomFieldDefinition(
+    /** Unique type identifier. */
     val typeId: String,
+
+    /** Child title string. */
     val childTitle: String,
+
+    /** Parent telemetry category. */
     val category: FieldCategory,
+
+    /** Short concise 2-4 word description. */
     val description: String,
+
+    /** Whether field supports smoothing sliders. */
     val supportsSmoothing: Boolean,
+
+    /** Whether field supports zone color formatting. */
     val supportsZones: Boolean,
+
+    /** Representative mock values. */
     val mockValues: List<Double>,
 ) {
+    /** Upper-case child title string. */
     val title: String
         get() = childTitle.uppercase()
 
+    /** Full display name string. */
     val displayName: String
         get() = pageSetupTitle
 
+    /** Formatted page setup title string ("CATEGORY: CHILD"). */
     val pageSetupTitle: String
         get() = "${category.displayName.uppercase()}: ${childTitle.uppercase()}"
 
+    /**
+     * Resolves the dynamic top label text based on active smoothing selection.
+     *
+     * @param smoothing Active [SmoothingOption] choice.
+     * @return Dynamic label string (e.g. "3s Power" or "Power").
+     */
     fun resolveDynamicLabel(smoothing: SmoothingOption): String {
         return if (supportsSmoothing && smoothing != SmoothingOption.NONE) {
             "${smoothing.label} $childTitle"
@@ -46,6 +114,13 @@ data class KustomFieldDefinition(
         }
     }
 
+    /**
+     * Formats raw numeric value into a clean string with zero verbiage or unit text.
+     *
+     * @param rawValue Raw double value from sensor or mock ticker.
+     * @param isImperial Whether imperial unit conversion is active.
+     * @return Formatted numeric string (e.g. "228", "32.4", "1049").
+     */
     fun formatNumericValueOnly(rawValue: Double, isImperial: Boolean = false): String {
         return when (typeId) {
             "speed", "avg-speed", "max-speed", "last-lap-speed" -> {
@@ -89,6 +164,12 @@ data class KustomFieldDefinition(
         }
     }
 
+    /**
+     * Resolves the corresponding Karoo SDK data type ID for telemetry streaming.
+     *
+     * @param smoothing Active [SmoothingOption] choice.
+     * @return Karoo SDK [DataType.Type] constant string.
+     */
     fun resolveSdkDataTypeId(smoothing: SmoothingOption): String {
         return when (typeId) {
             "speed" -> smoothing.toSpeedDataTypeId()
@@ -140,6 +221,9 @@ data class KustomFieldDefinition(
     }
 }
 
+/**
+ * Singleton repository holding all available [KustomFieldDefinition] catalog instances.
+ */
 object KustomFieldCatalog {
 
     // SPEED
@@ -225,6 +309,7 @@ object KustomFieldCatalog {
     val NAV_DISTANCE_TO_NEXT_TURN = KustomFieldDefinition("nav-distance-to-next-turn", "Distance To Next Turn", FieldCategory.NAVIGATION, "Distance until next maneuver", supportsSmoothing = false, supportsZones = false, listOf(450.0, 400.0, 350.0, 300.0, 250.0))
     val NAV_HEADING = KustomFieldDefinition("nav-heading", "Heading", FieldCategory.NAVIGATION, "Compass heading direction", supportsSmoothing = false, supportsZones = false, listOf(90.0, 95.0, 100.0, 105.0, 98.0))
 
+    /** Complete list of all 54 registered data fields. */
     val allFields: List<KustomFieldDefinition> = listOf(
         SPEED, AVG_SPEED, MAX_SPEED,
         HR, AVG_HR, MAX_HR, HR_ZONE,
@@ -242,10 +327,17 @@ object KustomFieldCatalog {
         NAV_ETA, NAV_DISTANCE_TO_NEXT_TURN, NAV_HEADING,
     )
 
+    /** Configurable data fields with smoothing or zone capabilities. */
     val configurableFields: List<KustomFieldDefinition> = allFields.filter {
         it.supportsSmoothing || it.supportsZones
     }
 
+    /**
+     * Resolves a [KustomFieldDefinition] by its unique [typeId].
+     *
+     * @param typeId Field identifier string.
+     * @return Matching [KustomFieldDefinition], or null if unmapped.
+     */
     fun findByTypeId(typeId: String): KustomFieldDefinition? {
         return allFields.firstOrNull { it.typeId == typeId }
     }

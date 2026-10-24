@@ -25,13 +25,15 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 /**
  * DataStore repository managing [KustomSettings] persistent user preferences.
+ *
+ * @param context Application or activity context.
  */
 class KustomSettingsRepository(context: Context) {
 
     private val dataStore = context.applicationContext.dataStore
 
     /**
-     * [Flow] emitting updated [KustomSettings] whenever preferences are modified.
+     * Reactive [Flow] emitting updated [KustomSettings] whenever user preferences are modified.
      */
     val settingsFlow: Flow<KustomSettings> = dataStore.data
         .catch { exception ->
@@ -72,7 +74,9 @@ class KustomSettingsRepository(context: Context) {
         }
 
     /**
-     * Updates global typography.
+     * Updates and persists global typography preferences to DataStore.
+     *
+     * @param typography Updated [GlobalTypographyConfig].
      */
     suspend fun updateGlobalTypography(typography: GlobalTypographyConfig) {
         dataStore.edit { prefs ->
@@ -85,7 +89,10 @@ class KustomSettingsRepository(context: Context) {
     }
 
     /**
-     * Updates configuration for a specific field by [typeId].
+     * Updates and persists field configuration for a specific [typeId] to DataStore.
+     *
+     * @param typeId Unique field data type identifier (e.g. "power", "hr", "speed").
+     * @param config Updated [KustomFieldConfig].
      */
     suspend fun updateFieldConfig(typeId: String, config: KustomFieldConfig) {
         dataStore.edit { prefs ->

@@ -9,7 +9,7 @@ import io.hammerhead.karooext.extension.DataTypeImpl
 import io.hammerhead.karooext.extension.KarooExtension
 
 /**
- * Primary Karoo Extension entry point for Kustom.
+ * Primary Karoo Extension service entry point bound to extension ID "kustom".
  */
 class KustomExtension : KarooExtension("kustom", "1") {
 
@@ -19,6 +19,11 @@ class KustomExtension : KarooExtension("kustom", "1") {
         KustomLogger.d("KustomExtension created")
     }
 
+    /**
+     * Exposes all supported [DataTypeImpl] instances corresponding to fields in [KustomFieldCatalog.allFields].
+     *
+     * @return List of [DataTypeImpl] implementations.
+     */
     override val types: List<DataTypeImpl> by lazy {
         val karooRepo = KarooSystemRepository.getInstance(applicationContext)
         val settingsRepo = KustomSettingsRepository(applicationContext)

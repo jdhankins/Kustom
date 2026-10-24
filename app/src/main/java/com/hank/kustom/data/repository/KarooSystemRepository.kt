@@ -13,12 +13,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 
 /**
- * Repository wrapper for [KarooSystemService] that manages connection lifecycle
- * and provides reactive [Flow]s for data streaming, user profile, ride state, and system configuration.
+ * Repository wrapper for [KarooSystemService] managing connection lifecycle
+ * and providing reactive [Flow]s for data streaming, user profile, ride state, and hardware configuration.
  */
 class KarooSystemRepository private constructor(context: Context) {
 
     private val appContext = context.applicationContext
+
+    /** Underlying Karoo OS system service connection instance. */
     val karooSystem: KarooSystemService = KarooSystemService(appContext)
 
     init {
@@ -44,7 +46,10 @@ class KarooSystemRepository private constructor(context: Context) {
     }
 
     /**
-     * Exposes a reactive [Flow] of [StreamState] updates for a given [dataTypeId].
+     * Exposes a reactive [Flow] of [StreamState] updates for a specified [dataTypeId].
+     *
+     * @param dataTypeId The SDK data type identifier string (e.g. "TYPE_POWER_ID", "TYPE_HEART_RATE_ID").
+     * @return Reactive [Flow] emitting [StreamState] updates (Streaming, Searching, NotAvailable, Idle).
      */
     fun streamDataFlow(dataTypeId: String): Flow<StreamState> = callbackFlow {
         connect()
@@ -64,7 +69,9 @@ class KarooSystemRepository private constructor(context: Context) {
     }
 
     /**
-     * Exposes a reactive [Flow] of [UserProfile] updates (FTP, zones, preferences).
+     * Exposes a reactive [Flow] of [UserProfile] updates (FTP, max HR, target zones, unit preferences).
+     *
+     * @return Reactive [Flow] emitting the latest [UserProfile], or null if uninitialized.
      */
     fun userProfileFlow(): Flow<UserProfile?> = callbackFlow {
         connect()
@@ -84,6 +91,8 @@ class KarooSystemRepository private constructor(context: Context) {
 
     /**
      * Exposes a reactive [Flow] of [RideState] updates (Idle, Recording, Paused).
+     *
+     * @return Reactive [Flow] emitting current [RideState].
      */
     fun rideStateFlow(): Flow<RideState> = callbackFlow {
         connect()
@@ -103,6 +112,8 @@ class KarooSystemRepository private constructor(context: Context) {
 
     /**
      * Exposes a reactive [Flow] emitting the connected Karoo [HardwareType] (e.g. K2 vs KAROO).
+     *
+     * @return Reactive [Flow] emitting connected [HardwareType].
      */
     fun systemConfigFlow(): Flow<HardwareType> = callbackFlow {
         connect()
@@ -126,6 +137,12 @@ class KarooSystemRepository private constructor(context: Context) {
         @Volatile
         private var INSTANCE: KarooSystemRepository? = null
 
+        /**
+         * Returns singleton instance of [KarooSystemRepository].
+         *
+         * @param context Application or activity context.
+         * @return Singleton [KarooSystemRepository] instance.
+         */
         fun getInstance(context: Context): KarooSystemRepository {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: KarooSystemRepository(context.applicationContext).also { INSTANCE = it }
