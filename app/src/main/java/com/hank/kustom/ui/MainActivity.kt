@@ -852,14 +852,10 @@ fun KarooSteppedSlider(
                 }
             }
 
-            // Inactive Background Track
+            // Touch & Drag Gesture Container (36dp Height Target)
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
-                    .height(4.dp)
-                    .clip(CircleShape)
-                    .background(colors.sliderTrack)
+                    .fillMaxSize()
                     .pointerInput(stepCount) {
                         detectTapGestures { offset ->
                             updateFromPx(offset.x)
@@ -871,34 +867,39 @@ fun KarooSteppedSlider(
                             updateFromPx(change.position.x)
                         }
                     },
-            )
-
-            // Active Progress Track (Accent)
-            if (activeTrackWidthDp > 0.dp) {
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                // Inactive Background Track
                 Box(
                     modifier = Modifier
-                        .offset(x = 12.dp)
-                        .width(activeTrackWidthDp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
                         .height(4.dp)
+                        .clip(CircleShape)
+                        .background(colors.sliderTrack),
+                )
+
+                // Active Progress Track (Accent)
+                if (activeTrackWidthDp > 0.dp) {
+                    Box(
+                        modifier = Modifier
+                            .offset(x = 12.dp)
+                            .width(activeTrackWidthDp)
+                            .height(4.dp)
+                            .clip(CircleShape)
+                            .background(colors.accent),
+                    )
+                }
+
+                // Thumb Target (Accent Circle)
+                Box(
+                    modifier = Modifier
+                        .offset(x = thumbOffsetDp)
+                        .size(20.dp)
                         .clip(CircleShape)
                         .background(colors.accent),
                 )
             }
-
-            // Thumb Target (Accent Circle)
-            Box(
-                modifier = Modifier
-                    .offset(x = thumbOffsetDp)
-                    .size(20.dp)
-                    .clip(CircleShape)
-                    .background(colors.accent)
-                    .pointerInput(stepCount) {
-                        detectHorizontalDragGestures { change, _ ->
-                            change.consume()
-                            updateFromPx(change.position.x + (thumbCenterXPx - thumbRadiusPx))
-                        }
-                    },
-            )
         }
 
         // Aligned Step Labels
