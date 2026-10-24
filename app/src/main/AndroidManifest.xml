@@ -29,7 +29,7 @@
                 <action android:name="io.hammerhead.karooext.KAROO_EXTENSION" />
             </intent-filter>
             <meta-data
-                android:name="io.hammerhead.karooext.extension"
+                android:name="io.hammerhead.karooext.EXTENSION_INFO"
                 android:resource="@xml/extension_info" />
         </service>
 
