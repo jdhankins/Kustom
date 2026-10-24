@@ -135,7 +135,8 @@ object KustomFieldRenderer {
             }
 
             val labelMetrics = labelPaint.fontMetrics
-            val labelCenterY = labelZoneHeight / 2f
+            val topPadding = height * 0.04f
+            val labelCenterY = (labelZoneHeight / 2f) + topPadding
             val labelY = labelCenterY - ((labelMetrics.ascent + labelMetrics.descent) / 2f)
 
             // --- ZONE 2: BOTTOM 75% ZONE FOR VALUE (0.25 * height .. height) ---
