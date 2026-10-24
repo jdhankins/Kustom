@@ -114,7 +114,7 @@ object KustomFieldRenderer {
 
             // --- ZONE 1: TOP 25% ZONE FOR LABEL (0 .. 0.25 * height) ---
             val labelZoneHeight = height * 0.25f
-            val labelPx = spToPx(context, labelTypography.fontSizeSp, labelZoneHeight.toInt(), maxRatio = 0.92f)
+            val labelPx = spToPx(context, labelTypography.fontSizeSp, labelZoneHeight.toInt(), maxRatio = 0.98f)
             val labelPaint = TextPaint().apply {
                 color = labelColor
                 textAlign = align
@@ -126,8 +126,8 @@ object KustomFieldRenderer {
                 textSizePx = labelPx,
             )
 
-            // Auto-scale label font size if text width exceeds canvas width
-            val maxLabelWidth = width * 0.90f
+            // Auto-scale label font size only if text width exceeds canvas width
+            val maxLabelWidth = width * 0.92f
             val measuredLabelWidth = labelPaint.measureText(label.uppercase())
             if (measuredLabelWidth > maxLabelWidth && measuredLabelWidth > 0f) {
                 val scaledLabelPx = labelPx * (maxLabelWidth / measuredLabelWidth)
