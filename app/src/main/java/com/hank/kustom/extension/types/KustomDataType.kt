@@ -278,10 +278,10 @@ class KustomDataType(
         if (rawVal == null || !definition.supportsZones) return null
 
         return when (definition.typeId) {
-            "power", "np", "avg-power", "max-power", "lap-power", "last-lap-power", "percent-ftp", "power-to-weight", "workout-target-power" -> {
+            "power", "np", "avg-power", "max-power", "lap-power", "last-lap-power", "percent-ftp", "power-balance", "power-zone", "power-to-weight", "workout-target-power", "workout-primary-target" -> {
                 KustomColorGradeMapper.getPowerZoneColor(rawVal, userProfile, fieldConfig.colorMode)
             }
-            "hr", "avg-hr", "max-hr", "lap-hr", "percent-max-hr" -> {
+            "hr", "avg-hr", "max-hr", "lap-hr", "percent-max-hr", "hr-zone" -> {
                 KustomColorGradeMapper.getHeartRateZoneColor(rawVal, userProfile, fieldConfig.colorMode)
             }
             "grade" -> {

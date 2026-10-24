@@ -646,8 +646,8 @@ fun FieldCardItem(
 
     val mappedColor = if (field.supportsZones) {
         when (field.typeId) {
-            "power", "np", "avg-power", "max-power", "lap-power", "last-lap-power" -> KustomColorGradeMapper.getPowerZoneColor(currentMockVal, null, fieldConfig.colorMode)
-            "hr", "avg-hr", "max-hr", "lap-hr" -> KustomColorGradeMapper.getHeartRateZoneColor(currentMockVal, null, fieldConfig.colorMode)
+            "power", "np", "avg-power", "max-power", "lap-power", "last-lap-power", "percent-ftp", "power-balance", "power-zone", "power-to-weight", "workout-target-power", "workout-primary-target" -> KustomColorGradeMapper.getPowerZoneColor(currentMockVal, null, fieldConfig.colorMode)
+            "hr", "avg-hr", "max-hr", "lap-hr", "percent-max-hr", "hr-zone" -> KustomColorGradeMapper.getHeartRateZoneColor(currentMockVal, null, fieldConfig.colorMode)
             "grade" -> KustomColorGradeMapper.getGradeColor(currentMockVal, fieldConfig.colorMode)
             else -> null
         }
