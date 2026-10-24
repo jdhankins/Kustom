@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ExtensionInfo
+    id="kustom"
+    displayName="@string/extension_name"
+    icon="@drawable/ic_kustom_field"
+    scansDevices="false">
+
+    <DataType
+        typeId="power"
+        displayName="@string/field_power_name"
+        description="@string/field_power_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="np"
+        displayName="@string/field_np_name"
+        description="@string/field_np_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="avg-power"
+        displayName="@string/field_avg_power_name"
+        description="@string/field_avg_power_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="max-power"
+        displayName="@string/field_max_power_name"
+        description="@string/field_max_power_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="lap-power"
+        displayName="@string/field_lap_power_name"
+        description="@string/field_lap_power_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="last-lap-power"
+        displayName="@string/field_last_lap_power_name"
+        description="@string/field_last_lap_power_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="hr"
+        displayName="@string/field_hr_name"
+        description="@string/field_hr_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="avg-hr"
+        displayName="@string/field_avg_hr_name"
+        description="@string/field_avg_hr_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="max-hr"
+        displayName="@string/field_max_hr_name"
+        description="@string/field_max_hr_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="lap-hr"
+        displayName="@string/field_lap_hr_name"
+        description="@string/field_lap_hr_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="speed"
+        displayName="@string/field_speed_name"
+        description="@string/field_speed_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="avg-speed"
+        displayName="@string/field_avg_speed_name"
+        description="@string/field_avg_speed_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="lap-speed"
+        displayName="@string/field_lap_speed_name"
+        description="@string/field_lap_speed_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="distance"
+        displayName="@string/field_distance_name"
+        description="@string/field_distance_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="cadence"
+        displayName="@string/field_cadence_name"
+        description="@string/field_cadence_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="avg-cadence"
+        displayName="@string/field_avg_cadence_name"
+        description="@string/field_avg_cadence_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="grade"
+        displayName="@string/field_grade_name"
+        description="@string/field_grade_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="vam"
+        displayName="@string/field_vam_name"
+        description="@string/field_vam_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="elevation"
+        displayName="@string/field_elevation_name"
+        description="@string/field_elevation_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="ascent"
+        displayName="@string/field_ascent_name"
+        description="@string/field_ascent_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="ride-time"
+        displayName="@string/field_ride_time_name"
+        description="@string/field_ride_time_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+</ExtensionInfo>

@@ -1,0 +1,168 @@
+package com.hank.kustom.domain
+
+import com.hank.kustom.data.model.ColorMode
+import io.hammerhead.karooext.models.UserProfile
+import java.util.ArrayDeque
+import kotlin.math.pow
+
+/**
+ * Pure Kotlin color mappers for Power zones, Heart Rate zones, and Elevation Grade % with WCAG contrast helper.
+ */
+object KustomColorGradeMapper {
+
+    /**
+     * Maps power in watts to a high-contrast zone color.
+     */
+    fun getPowerZoneColor(
+        watts: Double,
+        userProfile: UserProfile?,
+        colorMode: ColorMode,
+        isDarkTheme: Boolean = false,
+    ): Int? {
+        if (colorMode == ColorMode.NONE) return null
+
+        val powerZones = userProfile?.powerZones
+        val zoneIndex = if (!powerZones.isNullOrEmpty()) {
+            val idx = powerZones.indexOfFirst { (min, max) -> watts in min.toDouble()..max.toDouble() }
+            if (idx != -1) {
+                idx
+            } else if (watts < (powerZones.firstOrNull()?.min ?: 0)) {
+                0
+            } else {
+                powerZones.lastIndex
+            }
+        } else {
+            val ftp = userProfile?.ftp ?: 250
+            when {
+                watts < 0.55 * ftp -> 0
+                watts < 0.75 * ftp -> 1
+                watts < 0.90 * ftp -> 2
+                watts < 1.05 * ftp -> 3
+                watts < 1.20 * ftp -> 4
+                watts < 1.50 * ftp -> 5
+                else -> 6
+            }
+        }
+
+        return getZoneColorByIndex(zoneIndex, isFill = colorMode == ColorMode.BACKGROUND_COLOR)
+    }
+
+    /**
+     * Maps heart rate in bpm to a high-contrast zone color.
+     */
+    fun getHeartRateZoneColor(
+        bpm: Double,
+        userProfile: UserProfile?,
+        colorMode: ColorMode,
+        isDarkTheme: Boolean = false,
+    ): Int? {
+        if (colorMode == ColorMode.NONE) return null
+
+        val hrZones = userProfile?.heartRateZones
+        val zoneIndex = if (!hrZones.isNullOrEmpty()) {
+            val idx = hrZones.indexOfFirst { (min, max) -> bpm in min.toDouble()..max.toDouble() }
+            if (idx != -1) {
+                idx
+            } else if (bpm < (hrZones.firstOrNull()?.min ?: 0)) {
+                0
+            } else {
+                hrZones.lastIndex
+            }
+        } else {
+            val maxHr = userProfile?.maxHr ?: 185
+            when {
+                bpm < 0.60 * maxHr -> 0
+                bpm < 0.70 * maxHr -> 1
+                bpm < 0.80 * maxHr -> 2
+                bpm < 0.90 * maxHr -> 3
+                bpm < 0.95 * maxHr -> 4
+                else -> 5
+            }
+        }
+
+        return getZoneColorByIndex(zoneIndex, isFill = colorMode == ColorMode.BACKGROUND_COLOR)
+    }
+
+    /**
+     * Maps elevation grade percentage to a color (cool blue for descents, neutral for flats, green->yellow->orange->red->magenta for climbs).
+     */
+    fun getGradeColor(
+        gradePercent: Double,
+        colorMode: ColorMode,
+        isDarkTheme: Boolean = false,
+    ): Int? {
+        if (colorMode == ColorMode.NONE) return null
+
+        return when {
+            gradePercent < -2.0 -> 0xFF29B6F6.toInt() // Cool Sky Blue (descent)
+            gradePercent in -2.0..2.0 -> null // Neutral / Default
+            gradePercent in 2.0..4.0 -> if (colorMode == ColorMode.BACKGROUND_COLOR) 0xFF5AE0A0.toInt() else 0xFF66BB6A.toInt() // Mint Green (2-4%)
+            gradePercent in 4.0..7.0 -> 0xFFFBC02D.toInt() // Gold/Amber (4-7%)
+            gradePercent in 7.0..10.0 -> 0xFFFFA726.toInt() // Deep Orange (7-10%)
+            gradePercent in 10.0..14.0 -> 0xFFEF5350.toInt() // Coral Red (10-14%)
+            else -> 0xFFAB47BC.toInt() // Purple (>14%)
+        }
+    }
+
+    /**
+     * Calculates relative luminance and returns charcoal (#1E2225) or white (#FFFFFF) text color
+     * for maximum outdoor readability on top of [backgroundColor].
+     */
+    fun getContrastingTextColor(backgroundColor: Int): Int {
+        val red = (backgroundColor shr 16) and 0xFF
+        val green = (backgroundColor shr 8) and 0xFF
+        val blue = backgroundColor and 0xFF
+
+        val r = red / 255.0
+        val g = green / 255.0
+        val b = blue / 255.0
+
+        val rL = if (r <= 0.04045) r / 12.92 else ((r + 0.055) / 1.055).pow(2.4)
+        val gL = if (g <= 0.04045) g / 12.92 else ((g + 0.055) / 1.055).pow(2.4)
+        val bL = if (b <= 0.04045) b / 12.92 else ((b + 0.055) / 1.055).pow(2.4)
+
+        val luminance = 0.2126 * rL + 0.7152 * gL + 0.0722 * bL
+
+        return if (luminance > 0.30) 0xFF1E2225.toInt() else 0xFFFFFFFF.toInt()
+    }
+
+    private fun getZoneColorByIndex(index: Int, isFill: Boolean): Int {
+        return when (index) {
+            0 -> 0xFF78909C.toInt() // Zone 1 Slate
+            1 -> 0xFF29B6F6.toInt() // Zone 2 Sky Blue
+            2 -> if (isFill) 0xFF5AE0A0.toInt() else 0xFF66BB6A.toInt() // Zone 3 Mint Green
+            3 -> 0xFFFBC02D.toInt() // Zone 4 Amber/Gold
+            4 -> 0xFFFFA726.toInt() // Zone 5 Deep Orange
+            5 -> 0xFFEF5350.toInt() // Zone 6 Coral Red
+            else -> 0xFFAB47BC.toInt() // Zone 7 Purple
+        }
+    }
+}
+
+/**
+ * Lightweight rolling time-window smoother for metrics without SDK built-in smoothed streams.
+ */
+class RollingTimeSmoother(private val windowSeconds: Int) {
+
+    private data class Sample(val timestampMs: Long, val value: Double)
+
+    private val samples = ArrayDeque<Sample>()
+
+    @Synchronized
+    fun addSample(value: Double, timestampMs: Long = System.currentTimeMillis()): Double {
+        if (windowSeconds <= 0) return value
+
+        samples.addLast(Sample(timestampMs, value))
+        val cutoff = timestampMs - (windowSeconds * 1000L)
+        while (samples.isNotEmpty() && samples.first.timestampMs < cutoff) {
+            samples.removeFirst()
+        }
+
+        return if (samples.isEmpty()) value else samples.sumOf { it.value } / samples.size
+    }
+
+    @Synchronized
+    fun clear() {
+        samples.clear()
+    }
+}

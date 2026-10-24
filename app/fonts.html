@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extended Bike Computer Font Preview Matrix</title>
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://googleapis.com/css2?family=Oswald:wght@600;700&family=Fira+Sans+Condensed:wght@600;700&family=Saira+Semi+Condensed:wght@600;700&family=Share+Tech+Mono&family=Chivo+Mono:wght@600;800&family=Overpass+Mono:wght@700&family=Archivo+Narrow:wght@600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            padding: 40px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #ffffff;
+        }
+        p.subtitle {
+            color: #888888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        th {
+            background-color: #222222;
+            color: #aaa;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+        .font-name {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 15px;
+        }
+        .font-meta {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        .preview-box {
+            background-color: #000000;
+            border: 1px solid #333;
+            border-radius: 6px;
+            width: 180px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 65px;
+        }
+        .label {
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            color: #888888;
+            line-height: 1;
+        }
+        .value {
+            font-size: 36px;
+            line-height: 1;
+            color: #ffffff;
+            text-align: right;
+            margin-top: auto;
+        }
+
+        /* Unique Typography Profiles */
+        .oswald-font .label { font-family: 'Oswald', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .oswald-font .value { font-family: 'Oswald', sans-serif; font-weight: 700; }
+
+        .fira-font .label { font-family: 'Fira Sans Condensed', sans-serif; font-weight: 600; text-transform: uppercase; }
+        .fira-font .value { font-family: 'Fira Sans Condensed', sans-serif; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+        .saira-font .label { font-family: 'Saira Semi Condensed', sans-serif; font-weight: 600; text-transform: uppercase; }
+        .saira-font .value { font-family: 'Saira Semi Condensed', sans-serif; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+        .share-font .label { font-family: 'Share Tech Mono', monospace; font-weight: 400; text-transform: uppercase; letter-spacing: 0.5px; }
+        .share-font .value { font-family: 'Share Tech Mono', monospace; font-weight: 400; }
+
+        .chivo-font .label { font-family: 'Chivo Mono', monospace; font-weight: 600; text-transform: uppercase; }
+        .chivo-font .value { font-family: 'Chivo Mono', monospace; font-weight: 800; }
+
+        .overpass-font .label { font-family: 'Overpass Mono', monospace; font-weight: 700; text-transform: uppercase; letter-spacing: -0.5px; }
+        .overpass-font .value { font-family: 'Overpass Mono', monospace; font-weight: 700; }
+
+        .archivo-font .label { font-family: 'Archivo Narrow', sans-serif; font-weight: 600; text-transform: uppercase; }
+        .archivo-font .value { font-family: 'Archivo Narrow', sans-serif; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+        .rajdhani-font .label { font-family: 'Rajdhani', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .rajdhani-font .value { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 38px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Expanded Font Recommendations Matrix</h1>
+    <p class="subtitle">An additional selection of high-visibility, technical Google Fonts curated specifically for bike computer interfaces and layouts.</p>
+
+    <table>
+        <thead>
+        <tr>
+            <th style="width: 30%;">Font Family</th>
+            <th style="width: 30%;">Target System Behavior</th>
+            <th style="width: 40%;">Live Field Preview (SPEED: 12.5)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr class="oswald-font">
+            <td>
+                <div class="font-name">Oswald</div>
+                <div class="font-meta">Google Fonts (Industrial)</div>
+            </td>
+            <td>Classic alternate to Impact, dense alignment</td>
+            <td>
+                <div class="preview-box">
+                    <div class="label">SPEED</div>
+                    <div class="value">12.5</div>
+                </div>
+            </td>
+        </tr>
+        <tr class="fira-font">
+            <td>
+                <div class="font-name">Fira Sans Condensed</div>
+                <div class="font-meta">Google Fonts (High Legibility)</div>
+            </td>
+            <td>Extremely clean at tiny scale with distinct numbers</td>
+            <td>
+                <div class="preview-box">
+                    <div class="label">SPEED</div>
+                    <div class="value">12.5</div>
+                </div>
+            </td>
+        </tr>
+        <tr class="saira-font">
+            <td>
+                <div class="font-name">Saira Semi Condensed</div>
+                <div class="font-meta">Google Fonts (Squarish Block)</div>
+            </td>
+            <td>Flat tops and straight sides maximize screen area</td>
+            <td>
+                <div class="preview-box">
+                    <div class="label">SPEED</div>
+                    <div class="value">12.5</div>
+                </div>
+            </td>
+        </tr>
+        <tr class="share-font">
+            <td>
+                <div class="font-name">Share Tech Mono</div>
+                <div class="font-meta">Google Fonts (Retro Arcade)</div>
+            </td>
+            <td>Pure monospace look with a distinct sci-fi aesthetic</td>
+            <td>
+                <div class="preview-box">
+                    <div class="label">SPEED</div>
+                    <div class="value">12.5</div>
+                </div>
+            </td>
+        </tr>
+        <tr class="chivo-font">
+            <td>
+                <div class="font-name">Chivo Mono</div>
+                <div class="font-meta">Google Fonts (Modern Terminal)</div>
+            </td>
+            <td>Heavy uniform widths keep numbers strictly anchored</td>
+            <td>
+                <div class="preview-box">
+                    <div class="label">SPEED</div>
+                    <div class="value">12.5</div>
+                </div>
+            </td>
+        </tr>
+        <tr class="overpass-font">
+            <td>
+                <div class="font-name">Overpass Mono</div>
+                <div class="font-meta">Google Fonts (Signage Monospace)</div>
+            </td>
+            <td>Inspired by highway fonts but mapped on a strict grid</td>
+            <td>
+                <div class="preview-box">
+                    <div class="label">SPEED</div>
+                    <div class="value">12.5</div>
+                </div>
+            </td>
+        </tr>
+        <tr class="archivo-font">
+            <td>
+                <div class="font-name">Archivo Narrow</div>
+                <div class="font-meta">Google Fonts (Balanced)</div>
+            </td>
+            <td>Slightly more geometric breathability than Barlow</td>
+            <td>
+                <div class="preview-box">
+                    <div class="label">SPEED</div>
+                    <div class="value">12.5</div>
+                </div>
+            </td>
+        </tr>
+        <tr class="rajdhani-font">
+            <td>
+                <div class="font-name">Rajdhani</div>
+                <div class="font-meta">Google Fonts (Technical Squared)</div>
+            </td>
+            <td>Square architecture creates a crisp telemetry layout</td>
+            <td>
+                <div class="preview-box">
+                    <div class="label">SPEED</div>
+                    <div class="value">12.5</div>
+                </div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>
