@@ -826,13 +826,13 @@ fun KarooSteppedSlider(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(36.dp),
+                .height(40.dp),
             contentAlignment = Alignment.CenterStart,
         ) {
             val totalWidthPx = constraints.maxWidth.toFloat()
             val density = LocalDensity.current
-            val paddingPx = with(density) { 12.dp.toPx() }
-            val thumbRadiusPx = with(density) { 10.dp.toPx() }
+            val paddingPx = with(density) { 16.dp.toPx() }
+            val thumbRadiusPx = with(density) { 11.dp.toPx() }
             val travelPx = (totalWidthPx - (paddingPx * 2f)).coerceAtLeast(1f)
 
             val stepCount = steps.size
@@ -847,12 +847,10 @@ fun KarooSteppedSlider(
                 val clampedX = (xPx - paddingPx).coerceIn(0f, travelPx)
                 val targetFraction = clampedX / travelPx
                 val nearestIdx = (targetFraction * (stepCount - 1)).roundToInt().coerceIn(0, stepCount - 1)
-                if (nearestIdx != safeIndex) {
-                    onStepSelected(nearestIdx)
-                }
+                onStepSelected(nearestIdx)
             }
 
-            // Touch & Drag Gesture Container (36dp Height Target)
+            // Touch & Drag Gesture Container (40dp Height Target)
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -873,8 +871,8 @@ fun KarooSteppedSlider(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp)
-                        .height(4.dp)
+                        .padding(horizontal = 16.dp)
+                        .height(5.dp)
                         .clip(CircleShape)
                         .background(colors.sliderTrack),
                 )
@@ -883,46 +881,48 @@ fun KarooSteppedSlider(
                 if (activeTrackWidthDp > 0.dp) {
                     Box(
                         modifier = Modifier
-                            .offset(x = 12.dp)
+                            .offset(x = 16.dp)
                             .width(activeTrackWidthDp)
-                            .height(4.dp)
+                            .height(5.dp)
                             .clip(CircleShape)
                             .background(colors.accent),
                     )
                 }
 
-                // Thumb Target (Accent Circle)
+                // Thumb Circle (22dp Accent Target)
                 Box(
                     modifier = Modifier
                         .offset(x = thumbOffsetDp)
-                        .size(20.dp)
+                        .size(22.dp)
                         .clip(CircleShape)
                         .background(colors.accent),
                 )
             }
         }
 
-        // Aligned Step Labels
+        // Aligned Step Labels Row with Individual Click Targets
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 2.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             steps.forEachIndexed { i, stepLabel ->
                 val isSelected = i == safeIndex
-                Text(
-                    text = stepLabel,
-                    fontSize = 13.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) colors.accent else colors.textSecondary,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    softWrap = false,
+                Box(
                     modifier = Modifier
-                        .width(36.dp)
+                        .width(42.dp)
                         .clickable { onStepSelected(i) },
-                )
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stepLabel,
+                        fontSize = 13.5.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isSelected) colors.accent else colors.textSecondary,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                }
             }
         }
     }

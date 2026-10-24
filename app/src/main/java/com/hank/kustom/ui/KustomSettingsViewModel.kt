@@ -31,15 +31,7 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
     init {
         viewModelScope.launch {
             repository.settingsFlow.collect { diskSettings ->
-                // Initial load or background disk sync
-                if (_settingsState.value == KustomSettings()) {
-                    _settingsState.value = diskSettings
-                } else {
-                    // Update field configs from disk without overwriting active dragging
-                    _settingsState.value = _settingsState.value.copy(
-                        fieldConfigs = diskSettings.fieldConfigs
-                    )
-                }
+                _settingsState.value = diskSettings
             }
         }
     }
