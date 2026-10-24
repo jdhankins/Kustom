@@ -3,7 +3,7 @@
     id="kustom"
     displayName="@string/extension_name"
     icon="@drawable/ic_kustom_field"
-    scansDevices="false">
+    scansDevices="true">
 
     <DataType
         typeId="power"

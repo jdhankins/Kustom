@@ -24,8 +24,7 @@
         <service
             android:name=".extension.KustomExtension"
             android:exported="true"
-            android:label="@string/app_name"
-            android:permission="io.hammerhead.karooext.permission.KAROO_EXTENSION">
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="io.hammerhead.karooext.KAROO_EXTENSION" />
             </intent-filter>
