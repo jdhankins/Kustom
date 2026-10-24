@@ -267,7 +267,7 @@ fun KustomStickyHeaderSection(
     val previewViewConfig = remember {
         ViewConfig(
             gridSize = Pair(60, 20),
-            viewSize = Pair(360, 180),
+            viewSize = Pair(360, 200),
             textSize = 38,
             alignment = ViewConfig.Alignment.CENTER,
             boundariesEnabled = true,
@@ -619,7 +619,7 @@ fun FieldCardItem(
     val previewViewConfig = remember {
         ViewConfig(
             gridSize = Pair(60, 20),
-            viewSize = Pair(300, 144),
+            viewSize = Pair(320, 180),
             textSize = 38,
             alignment = ViewConfig.Alignment.CENTER,
             boundariesEnabled = true,

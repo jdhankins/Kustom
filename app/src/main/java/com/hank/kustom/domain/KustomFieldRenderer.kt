@@ -136,7 +136,7 @@ object KustomFieldRenderer {
             // --- ZONE 2: BOTTOM 75% ZONE FOR VALUE ---
             val valueZoneTop = height * 0.25f
             val valueZoneHeight = height * 0.75f
-            val requestedValuePx = spToPx(context, valueTypography.fontSizeSp, valueZoneHeight.toInt(), maxRatio = 0.85f)
+            val requestedValuePx = spToPx(context, valueTypography.fontSizeSp, valueZoneHeight.toInt(), maxRatio = 0.95f)
             var valuePx = requestedValuePx
 
             val valuePaint = TextPaint().apply {
