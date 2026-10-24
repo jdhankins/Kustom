@@ -8,32 +8,31 @@
     <!-- Electric Blue 'K' Logo -->
     <path
         android:fillColor="#00A3FF"
-        android:pathData="M34,22 L46,22 L40,54 L58,22 L72,22 L50,58 L72,90 L58,90 L42,66 L38,90 L28,90 Z" />
+        android:pathData="M34,20 L45,20 L39,52 L57,20 L71,20 L49,56 L71,88 L57,88 L41,64 L37,88 L27,88 Z" />
 
-    <!-- Mountain Range (White Peaks & Dark Navy Facets) -->
     <!-- Left Small Peak -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M8,72 L26,48 L44,72 Z" />
+        android:pathData="M6,70 L25,48 L44,70 Z" />
     <path
-        android:fillColor="#102038"
-        android:pathData="M26,48 L44,72 L26,72 Z" />
+        android:fillColor="#0C1B30"
+        android:pathData="M25,48 L44,70 L25,70 Z" />
 
     <!-- Center Main Peak -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M22,78 L52,38 L82,78 Z" />
+        android:pathData="M20,76 L52,38 L84,76 Z" />
     <path
-        android:fillColor="#102038"
-        android:pathData="M52,38 L82,78 L52,78 Z" />
+        android:fillColor="#0C1B30"
+        android:pathData="M52,38 L84,76 L52,76 Z" />
 
-    <!-- Right Small Peak -->
+    <!-- Right Medium Peak -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M60,74 L78,52 L98,74 Z" />
+        android:pathData="M60,74 L78,50 L102,74 Z" />
     <path
-        android:fillColor="#102038"
-        android:pathData="M78,52 L98,74 L78,74 Z" />
+        android:fillColor="#0C1B30"
+        android:pathData="M78,50 L102,74 L78,74 Z" />
 
     <!-- Winding S-Curve Road -->
     <path
