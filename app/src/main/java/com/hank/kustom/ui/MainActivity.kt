@@ -16,6 +16,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -84,13 +85,50 @@ import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-// Kustom Deep Navy & Electric Blue UI Theme Palette
-val KarooBg = Color(0xFF0F1A2A)               // Deep Navy Base Background
-val KarooHeaderCardBg = Color(0xFF17283C)     // Royal Navy Card Surface
-val KarooTrackBg = Color(0xFF1F354E)          // Cool Navy Track / Input Background
-val KarooTextPrimary = Color(0xFFFFFFFF)      // Pure White Primary Text
-val KarooTextSecondary = Color(0xFF94A3B8)    // Soft Cool Slate Secondary Text
-val KarooSlateAccent = Color(0xFF00A3FF)      // Electric Blue Highlight (from "K" logo)
+// Dynamic Adaptive Color Scheme Model
+data class KustomColorScheme(
+    val bg: Color,
+    val cardBg: Color,
+    val trackBg: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val accent: Color,
+    val border: Color,
+    val sliderTrack: Color,
+    val headerText: Color,
+    val isDark: Boolean,
+)
+
+@Composable
+fun getKustomColors(isDark: Boolean = isSystemInDarkTheme()): KustomColorScheme {
+    return if (isDark) {
+        KustomColorScheme(
+            bg = Color(0xFF0F1A2A),
+            cardBg = Color(0xFF17283C),
+            trackBg = Color(0xFF1F354E),
+            textPrimary = Color(0xFFFFFFFF),
+            textSecondary = Color(0xFF94A3B8),
+            accent = Color(0xFF00A3FF),
+            border = Color(0xFF2A4363),
+            sliderTrack = Color(0xFF2A4363),
+            headerText = Color(0xFFE2E8F0),
+            isDark = true,
+        )
+    } else {
+        KustomColorScheme(
+            bg = Color(0xFFDCE1E3),
+            cardBg = Color(0xFFF4F6F7),
+            trackBg = Color(0xFFEEF1F2),
+            textPrimary = Color(0xFF1E2225),
+            textSecondary = Color(0xFF4A5258),
+            accent = Color(0xFF00A3FF),
+            border = Color(0xFFCFD8DC),
+            sliderTrack = Color(0xFFDCDFE2),
+            headerText = Color(0xFF334155),
+            isDark = false,
+        )
+    }
+}
 
 class MainActivity : ComponentActivity() {
 
@@ -99,26 +137,38 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         KustomLogger.installCrashHandler(this)
         super.onCreate(savedInstanceState)
-        KustomLogger.d("MainActivity created with Deep Navy UI theme")
+        KustomLogger.d("MainActivity created")
 
         WindowCompat.setDecorFitsSystemWindows(window, true)
-        window.statusBarColor = KarooBg.toArgb()
-        val controller = WindowCompat.getInsetsController(window, window.decorView)
-        controller.isAppearanceLightStatusBars = false
 
         setContent {
+            val colors = getKustomColors()
+            val context = LocalContext.current
+
+            val window = (context as? ComponentActivity)?.window
+            LaunchedEffect(colors.isDark) {
+                window?.let { w ->
+                    w.statusBarColor = colors.bg.toArgb()
+                    val controller = WindowCompat.getInsetsController(w, w.decorView)
+                    controller.isAppearanceLightStatusBars = !colors.isDark
+                }
+            }
+
             Surface(
                 modifier = Modifier.fillMaxSize(),
-                color = KarooBg,
+                color = colors.bg,
             ) {
-                KustomKarooNativeScreen(viewModel = viewModel)
+                KustomKarooNativeScreen(viewModel = viewModel, colors = colors)
             }
         }
     }
 }
 
 @Composable
-fun KustomKarooNativeScreen(viewModel: KustomSettingsViewModel) {
+fun KustomKarooNativeScreen(
+    viewModel: KustomSettingsViewModel,
+    colors: KustomColorScheme,
+) {
     val settings by viewModel.settingsState.collectAsState()
     var selectedTopNavTab by remember { mutableIntStateOf(0) } // 0 = Global, 1 = Fields
     var selectedField by remember { mutableStateOf(KustomFieldCatalog.POWER) }
@@ -130,6 +180,7 @@ fun KustomKarooNativeScreen(viewModel: KustomSettingsViewModel) {
     if (showLogsDialog) {
         KustomLogsDialog(
             context = context,
+            colors = colors,
             onDismiss = { showLogsDialog = false },
         )
     }
@@ -137,17 +188,18 @@ fun KustomKarooNativeScreen(viewModel: KustomSettingsViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(KarooBg),
+            .background(colors.bg),
     ) {
-        // Sticky Header Section (#17283C Card): Pill Navigation + Live Field Preview (Global Only)
+        // Sticky Header Section: Pill Navigation + Live Field Preview (Global Only)
         KustomStickyHeaderSection(
             settings = settings,
             selectedTab = selectedTopNavTab,
+            colors = colors,
             onTabSelected = { selectedTopNavTab = it },
-            onOpenLogs = { showLogsDialog = false },
+            onOpenLogs = { showLogsDialog = true },
         )
 
-        // Scrollable Menu Body (#0F1A2A)
+        // Scrollable Menu Body
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -156,11 +208,13 @@ fun KustomKarooNativeScreen(viewModel: KustomSettingsViewModel) {
             if (selectedTopNavTab == 0) {
                 GlobalFontsTab(
                     settings = settings,
+                    colors = colors,
                     onUpdateGlobalTypography = { viewModel.updateGlobalTypography(it) },
                 )
             } else {
                 FieldsTab(
                     settings = settings,
+                    colors = colors,
                     expandedCategory = expandedCategory,
                     onFieldSelected = { field ->
                         selectedField = field
@@ -182,6 +236,7 @@ fun KustomKarooNativeScreen(viewModel: KustomSettingsViewModel) {
 fun KustomStickyHeaderSection(
     settings: KustomSettings,
     selectedTab: Int,
+    colors: KustomColorScheme,
     onTabSelected: (Int) -> Unit,
     onOpenLogs: () -> Unit,
 ) {
@@ -236,12 +291,12 @@ fun KustomStickyHeaderSection(
         ),
         colorMode = fieldConfig.colorMode,
         mappedColor = mappedColor,
-        isDarkTheme = true,
+        isDarkTheme = colors.isDark,
     )
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = KarooHeaderCardBg),
+        colors = CardDefaults.cardColors(containerColor = colors.cardBg),
         shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
     ) {
         Column(
@@ -261,7 +316,7 @@ fun KustomStickyHeaderSection(
                         .weight(1f)
                         .height(44.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(KarooTrackBg)
+                        .background(colors.trackBg)
                         .padding(3.dp),
                 ) {
                     Row(modifier = Modifier.fillMaxSize()) {
@@ -270,7 +325,7 @@ fun KustomStickyHeaderSection(
                                 .weight(1f)
                                 .fillMaxHeight()
                                 .clip(RoundedCornerShape(50))
-                                .background(if (selectedTab == 0) KarooSlateAccent else Color.Transparent)
+                                .background(if (selectedTab == 0) colors.accent else Color.Transparent)
                                 .clickable { onTabSelected(0) },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -278,7 +333,7 @@ fun KustomStickyHeaderSection(
                                 text = "Global",
                                 fontSize = 14.sp,
                                 fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium,
-                                color = KarooTextPrimary,
+                                color = colors.textPrimary,
                             )
                         }
 
@@ -287,7 +342,7 @@ fun KustomStickyHeaderSection(
                                 .weight(1f)
                                 .fillMaxHeight()
                                 .clip(RoundedCornerShape(50))
-                                .background(if (selectedTab == 1) KarooSlateAccent else Color.Transparent)
+                                .background(if (selectedTab == 1) colors.accent else Color.Transparent)
                                 .clickable { onTabSelected(1) },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -295,7 +350,7 @@ fun KustomStickyHeaderSection(
                                 text = "Fields",
                                 fontSize = 14.sp,
                                 fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium,
-                                color = KarooTextPrimary,
+                                color = colors.textPrimary,
                             )
                         }
                     }
@@ -307,7 +362,7 @@ fun KustomStickyHeaderSection(
                     modifier = Modifier
                         .height(44.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(KarooTrackBg)
+                        .background(colors.trackBg)
                         .clickable { onOpenLogs() }
                         .padding(horizontal = 12.dp),
                     contentAlignment = Alignment.Center,
@@ -316,7 +371,7 @@ fun KustomStickyHeaderSection(
                         text = "Logs 📋",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color = KarooTextPrimary,
+                        color = colors.textPrimary,
                     )
                 }
             }
@@ -332,7 +387,7 @@ fun KustomStickyHeaderSection(
                             .width(170.dp)
                             .height(82.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .border(BorderStroke(1.dp, Color(0xFF2A4363)), RoundedCornerShape(12.dp)),
+                            .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(12.dp)),
                     ) {
                         Image(
                             bitmap = bitmap.asImageBitmap(),
@@ -350,6 +405,7 @@ fun KustomStickyHeaderSection(
 @Composable
 fun GlobalFontsTab(
     settings: KustomSettings,
+    colors: KustomColorScheme,
     onUpdateGlobalTypography: (GlobalTypographyConfig) -> Unit,
 ) {
     val global = settings.globalTypography
@@ -364,6 +420,7 @@ fun GlobalFontsTab(
         item {
             KarooFontDropdown(
                 selectedFont = global.fontFamily,
+                colors = colors,
                 onFontSelected = { font ->
                     onUpdateGlobalTypography(global.copy(fontFamily = font))
                 },
@@ -379,6 +436,7 @@ fun GlobalFontsTab(
                 label = "Value Font Size",
                 steps = valueSizeSteps,
                 selectedIndex = currentIdx,
+                colors = colors,
                 onStepSelected = { idx ->
                     val newSize = valueSizes.getOrElse(idx) { 48f }.toInt()
                     onUpdateGlobalTypography(global.copy(valueSizeSp = newSize))
@@ -395,6 +453,7 @@ fun GlobalFontsTab(
                 label = "Value Font Weight",
                 steps = weightSteps,
                 selectedIndex = currentIdx,
+                colors = colors,
                 onStepSelected = { idx ->
                     val newWeight = weights.getOrElse(idx) { 700 }
                     onUpdateGlobalTypography(global.copy(valueWeight = newWeight))
@@ -411,6 +470,7 @@ fun GlobalFontsTab(
                 label = "Label Font Size",
                 steps = labelSizeSteps,
                 selectedIndex = currentIdx,
+                colors = colors,
                 onStepSelected = { idx ->
                     val newSize = labelSizes.getOrElse(idx) { 14f }.toInt()
                     onUpdateGlobalTypography(global.copy(labelSizeSp = newSize))
@@ -427,6 +487,7 @@ fun GlobalFontsTab(
                 label = "Label Font Weight",
                 steps = weightSteps,
                 selectedIndex = currentIdx,
+                colors = colors,
                 onStepSelected = { idx ->
                     val newWeight = weights.getOrElse(idx) { 700 }
                     onUpdateGlobalTypography(global.copy(labelWeight = newWeight))
@@ -439,6 +500,7 @@ fun GlobalFontsTab(
 @Composable
 fun FieldsTab(
     settings: KustomSettings,
+    colors: KustomColorScheme,
     expandedCategory: FieldCategory?,
     onFieldSelected: (KustomFieldDefinition) -> Unit,
     onCategoryToggled: (FieldCategory) -> Unit,
@@ -460,7 +522,7 @@ fun FieldsTab(
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = KarooHeaderCardBg),
+                    colors = CardDefaults.cardColors(containerColor = colors.cardBg),
                     shape = RoundedCornerShape(12.dp),
                 ) {
                     Column(
@@ -481,12 +543,12 @@ fun FieldsTab(
                                 text = "${category.displayName.uppercase()} FIELDS",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = KarooTextPrimary,
+                                color = colors.textPrimary,
                             )
                             Text(
                                 text = if (isExpanded) "▲" else "▼",
                                 fontSize = 14.sp,
-                                color = KarooTextSecondary,
+                                color = colors.textSecondary,
                             )
                         }
 
@@ -501,6 +563,7 @@ fun FieldsTab(
                                         field = field,
                                         fieldConfig = fieldConfig,
                                         globalTypography = settings.globalTypography,
+                                        colors = colors,
                                         onFieldSelected = onFieldSelected,
                                         onUpdateFieldConfig = onUpdateFieldConfig,
                                     )
@@ -519,6 +582,7 @@ fun FieldCardItem(
     field: KustomFieldDefinition,
     fieldConfig: KustomFieldConfig,
     globalTypography: GlobalTypographyConfig,
+    colors: KustomColorScheme,
     onFieldSelected: (KustomFieldDefinition) -> Unit,
     onUpdateFieldConfig: (String, KustomFieldConfig) -> Unit,
 ) {
@@ -573,16 +637,16 @@ fun FieldCardItem(
         ),
         colorMode = fieldConfig.colorMode,
         mappedColor = mappedColor,
-        isDarkTheme = true,
+        isDarkTheme = colors.isDark,
     )
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onFieldSelected(field) },
-        colors = CardDefaults.cardColors(containerColor = KarooHeaderCardBg),
+        colors = CardDefaults.cardColors(containerColor = colors.cardBg),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, Color(0xFF2A4363)),
+        border = BorderStroke(1.dp, colors.border),
     ) {
         Column(
             modifier = Modifier
@@ -595,14 +659,14 @@ fun FieldCardItem(
                 text = field.childTitle,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = KarooTextPrimary,
+                color = colors.textPrimary,
             )
 
             // Description on Next Line
             Text(
                 text = field.description,
                 fontSize = 13.sp,
-                color = KarooTextSecondary,
+                color = colors.textSecondary,
             )
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -614,7 +678,7 @@ fun FieldCardItem(
                     .height(72.dp)
                     .align(Alignment.CenterHorizontally)
                     .clip(RoundedCornerShape(12.dp))
-                    .border(BorderStroke(1.dp, Color(0xFF2A4363)), RoundedCornerShape(12.dp)),
+                    .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(12.dp)),
             ) {
                 Image(
                     bitmap = bitmap.asImageBitmap(),
@@ -634,6 +698,7 @@ fun FieldCardItem(
                     label = "Smoothing",
                     steps = smoothingSteps,
                     selectedIndex = currentSmoothIdx,
+                    colors = colors,
                     onStepSelected = { idx ->
                         val option = SmoothingOption.entries.getOrElse(idx) { SmoothingOption.THREE_SEC }
                         onUpdateFieldConfig(field.typeId, fieldConfig.copy(smoothingOption = option))
@@ -645,6 +710,7 @@ fun FieldCardItem(
                 KarooSegmentedPill(
                     selectedZoneFormat = fieldConfig.zoneFormat,
                     fieldName = field.childTitle,
+                    colors = colors,
                     onZoneFormatSelected = { format ->
                         onUpdateFieldConfig(field.typeId, fieldConfig.copy(zoneFormat = format))
                     },
@@ -657,6 +723,7 @@ fun FieldCardItem(
 @Composable
 fun KarooFontDropdown(
     selectedFont: KustomFont,
+    colors: KustomColorScheme,
     onFontSelected: (KustomFont) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -670,14 +737,14 @@ fun KarooFontDropdown(
             text = "FONT FAMILY",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFFE2E8F0),
+            color = colors.headerText,
         )
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(50))
-                .background(KarooTrackBg)
+                .background(colors.trackBg)
                 .clickable { expanded = true }
                 .padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
@@ -690,12 +757,12 @@ fun KarooFontDropdown(
                     text = selectedFont.displayName,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = KarooTextPrimary,
+                    color = colors.textPrimary,
                 )
                 Text(
                     text = if (expanded) "▲" else "▼",
                     fontSize = 14.sp,
-                    color = KarooTextSecondary,
+                    color = colors.textSecondary,
                 )
             }
 
@@ -704,7 +771,7 @@ fun KarooFontDropdown(
                 onDismissRequest = { expanded = false },
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
-                    .background(KarooHeaderCardBg),
+                    .background(colors.cardBg),
             ) {
                 KustomFont.entries.forEach { font ->
                     DropdownMenuItem(
@@ -713,7 +780,7 @@ fun KarooFontDropdown(
                                 text = font.displayName,
                                 fontSize = 14.sp,
                                 fontWeight = if (font == selectedFont) FontWeight.Bold else FontWeight.Normal,
-                                color = KarooTextPrimary,
+                                color = colors.textPrimary,
                             )
                         },
                         onClick = {
@@ -732,6 +799,7 @@ fun KarooSteppedSlider(
     label: String,
     steps: List<String>,
     selectedIndex: Int,
+    colors: KustomColorScheme,
     onStepSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -743,7 +811,7 @@ fun KarooSteppedSlider(
             text = label.uppercase(),
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFFE2E8F0),
+            color = colors.headerText,
         )
 
         val safeIndex = selectedIndex.coerceIn(0, (steps.size - 1).coerceAtLeast(0))
@@ -777,14 +845,14 @@ fun KarooSteppedSlider(
                 }
             }
 
-            // Inactive Background Track (Cool Navy Gray)
+            // Inactive Background Track
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp)
                     .height(4.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF2A4363))
+                    .background(colors.sliderTrack)
                     .pointerInput(stepCount) {
                         detectTapGestures { offset ->
                             updateFromPx(offset.x)
@@ -798,7 +866,7 @@ fun KarooSteppedSlider(
                     },
             )
 
-            // Active Progress Track (Electric Blue)
+            // Active Progress Track (Accent)
             if (activeTrackWidthDp > 0.dp) {
                 Box(
                     modifier = Modifier
@@ -806,17 +874,17 @@ fun KarooSteppedSlider(
                         .width(activeTrackWidthDp)
                         .height(4.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF00A3FF)),
+                        .background(colors.accent),
                 )
             }
 
-            // Thumb Target (Electric Blue Circle)
+            // Thumb Target (Accent Circle)
             Box(
                 modifier = Modifier
                     .offset(x = thumbOffsetDp)
                     .size(20.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF00A3FF))
+                    .background(colors.accent)
                     .pointerInput(stepCount) {
                         detectHorizontalDragGestures { change, _ ->
                             change.consume()
@@ -837,7 +905,7 @@ fun KarooSteppedSlider(
                     text = stepLabel,
                     fontSize = 14.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) Color(0xFF00A3FF) else Color(0xFF94A3B8),
+                    color = if (isSelected) colors.accent else colors.textSecondary,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     softWrap = false,
@@ -854,6 +922,7 @@ fun KarooSteppedSlider(
 fun KarooSegmentedPill(
     selectedZoneFormat: ZoneFormat,
     fieldName: String,
+    colors: KustomColorScheme,
     onZoneFormatSelected: (ZoneFormat) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -865,7 +934,7 @@ fun KarooSegmentedPill(
             text = "ZONE COLOR",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFFE2E8F0),
+            color = colors.headerText,
         )
 
         val descriptionText = when (selectedZoneFormat) {
@@ -877,7 +946,7 @@ fun KarooSegmentedPill(
         Text(
             text = descriptionText,
             fontSize = 13.sp,
-            color = KarooTextSecondary,
+            color = colors.textSecondary,
         )
 
         Box(
@@ -885,8 +954,8 @@ fun KarooSegmentedPill(
                 .fillMaxWidth()
                 .height(52.dp)
                 .clip(RoundedCornerShape(50))
-                .background(Color(0xFF1F354E))
-                .border(BorderStroke(1.dp, Color(0xFF2A4363)), RoundedCornerShape(50))
+                .background(colors.trackBg)
+                .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(50))
                 .padding(4.dp),
         ) {
             Row(
@@ -907,7 +976,7 @@ fun KarooSegmentedPill(
                             .weight(weight)
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(50))
-                            .background(if (isSelected) KarooSlateAccent else Color.Transparent)
+                            .background(if (isSelected) colors.accent else Color.Transparent)
                             .clickable { onZoneFormatSelected(format) }
                             .padding(horizontal = 8.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center,
@@ -916,7 +985,7 @@ fun KarooSegmentedPill(
                             text = labelText,
                             fontSize = 14.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) KarooTextPrimary else KarooTextSecondary,
+                            color = if (isSelected) Color.White else colors.textSecondary,
                             textAlign = TextAlign.Center,
                             maxLines = 1,
                             softWrap = false,
@@ -931,6 +1000,7 @@ fun KarooSegmentedPill(
 @Composable
 fun KustomLogsDialog(
     context: Context,
+    colors: KustomColorScheme,
     onDismiss: () -> Unit,
 ) {
     val logsText = remember {
@@ -946,7 +1016,7 @@ fun KustomLogsDialog(
                 text = "Kustom System & Crash Logs",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = KarooTextPrimary,
+                color = colors.textPrimary,
             )
         },
         text = {
@@ -954,14 +1024,14 @@ fun KustomLogsDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(260.dp)
-                    .background(KarooTrackBg, RoundedCornerShape(8.dp))
+                    .background(colors.trackBg, RoundedCornerShape(8.dp))
                     .padding(8.dp)
                     .verticalScroll(rememberScrollState()),
             ) {
                 Text(
                     text = logsText,
                     fontSize = 11.sp,
-                    color = KarooTextPrimary,
+                    color = colors.textPrimary,
                 )
             }
         },
@@ -974,15 +1044,15 @@ fun KustomLogsDialog(
                     Toast.makeText(context, "Logs copied to clipboard", Toast.LENGTH_SHORT).show()
                 },
             ) {
-                Text("Copy", color = KarooSlateAccent, fontWeight = FontWeight.Bold)
+                Text("Copy", color = colors.accent, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = KarooTextSecondary)
+                Text("Close", color = colors.textSecondary)
             }
         },
-        containerColor = KarooHeaderCardBg,
+        containerColor = colors.cardBg,
     )
 }
 
