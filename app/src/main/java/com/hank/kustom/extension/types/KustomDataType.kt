@@ -17,7 +17,6 @@ import io.hammerhead.karooext.internal.Emitter
 import io.hammerhead.karooext.internal.ViewEmitter
 import io.hammerhead.karooext.models.DataPoint
 import io.hammerhead.karooext.models.DataType
-import io.hammerhead.karooext.models.RideState
 import io.hammerhead.karooext.models.StreamState
 import io.hammerhead.karooext.models.UpdateGraphicConfig
 import io.hammerhead.karooext.models.UserProfile
@@ -78,21 +77,38 @@ class KustomDataType(
                         var i = 0
                         while (true) {
                             val mockVal = definition.mockValues[i % definition.mockValues.size]
-                            emit(RenderPayload(mockVal, userProfile, settings, fieldConfig, isMock = true))
+                            val mockState = StreamState.Streaming(
+                                DataPoint(definition.typeId, mapOf(DataType.Field.SINGLE to mockVal))
+                            )
+                            emit(
+                                RenderPayload(
+                                    streamState = mockState,
+                                    userProfile = userProfile,
+                                    settings = settings,
+                                    fieldConfig = fieldConfig,
+                                    isMock = true,
+                                    mockValue = mockVal,
+                                )
+                            )
                             i++
                             delay(1200L)
                         }
                     }
                 } else {
-                    // Active Ride Page Mode: Stream live sensor telemetry
+                    // Active Ride Page Mode: Stream live sensor telemetry states
                     val sdkTypeId = definition.resolveSdkDataTypeId(fieldConfig.smoothingOption)
                     karooSystemRepository.streamDataFlow(sdkTypeId).map { streamState ->
-                        val rawVal = (streamState as? StreamState.Streaming)?.dataPoint?.singleValue
-                        RenderPayload(rawVal, userProfile, settings, fieldConfig, isMock = false)
+                        RenderPayload(
+                            streamState = streamState,
+                            userProfile = userProfile,
+                            settings = settings,
+                            fieldConfig = fieldConfig,
+                            isMock = false,
+                        )
                     }
                 }
             }.collect { payload ->
-                val (rawVal, userProfile, settings, fieldConfig, isMock) = payload
+                val (streamState, userProfile, settings, fieldConfig, isMock, mockValue) = payload
 
                 if (fieldConfig.smoothingOption.seconds != lastSmoothingSec) {
                     lastSmoothingSec = fieldConfig.smoothingOption.seconds
@@ -101,8 +117,11 @@ class KustomDataType(
 
                 val isImperial = userProfile?.preferredUnit?.distance == UserProfile.PreferredUnit.UnitType.IMPERIAL
 
-                val dynamicValue = if (rawVal != null) {
-                    if (definition.typeId == "grade" && !isMock) {
+                val dynamicValue: Double? = if (isMock) {
+                    mockValue
+                } else if (streamState is StreamState.Streaming) {
+                    val rawVal = streamState.dataPoint.singleValue
+                    if (rawVal != null && definition.typeId == "grade") {
                         gradeSmoother.addSample(rawVal)
                     } else {
                         rawVal
@@ -112,10 +131,19 @@ class KustomDataType(
                 }
 
                 val dynamicLabel = definition.resolveDynamicLabel(fieldConfig.smoothingOption)
-                val valueText = if (dynamicValue != null) {
-                    definition.formatNumericValueOnly(dynamicValue, isImperial)
-                } else {
-                    "--"
+
+                val valueText = when {
+                    isMock -> {
+                        val v = dynamicValue ?: 228.0
+                        definition.formatNumericValueOnly(v, isImperial)
+                    }
+                    streamState is StreamState.Streaming -> {
+                        val v = dynamicValue
+                        if (v != null) definition.formatNumericValueOnly(v, isImperial) else "--"
+                    }
+                    streamState is StreamState.Searching -> "Searching..."
+                    streamState is StreamState.NotAvailable -> "No Sensor"
+                    else -> "--"
                 }
 
                 val mappedColor = computeMappedColor(
@@ -158,11 +186,12 @@ class KustomDataType(
     }
 
     private data class RenderPayload(
-        val rawValue: Double?,
+        val streamState: StreamState?,
         val userProfile: UserProfile?,
         val settings: KustomSettings,
         val fieldConfig: KustomFieldConfig,
         val isMock: Boolean,
+        val mockValue: Double? = null,
     )
 
     private fun computeMappedColor(

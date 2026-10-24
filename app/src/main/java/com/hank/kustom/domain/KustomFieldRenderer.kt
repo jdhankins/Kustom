@@ -12,8 +12,8 @@ import com.hank.kustom.util.KustomLogger
 import io.hammerhead.karooext.models.ViewConfig
 
 /**
- * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas.
- * Karoo OS manages the outer data field cell boundary/border.
+ * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas,
+ * adapting dynamically to Light/Dark themes, data boundaries, and Left/Center/Right alignment.
  */
 object KustomFieldRenderer {
 
@@ -83,7 +83,7 @@ object KustomFieldRenderer {
                 }
             }
 
-            // Draw Background (Karoo OS draws the outer bounding box/border)
+            // Draw Background & Boundaries (Consistent across all fields & color modes)
             if (boundaries) {
                 val rect = RectF(0f, 0f, width.toFloat(), height.toFloat())
                 val cornerRadius = height * 0.12f
@@ -127,7 +127,7 @@ object KustomFieldRenderer {
             // 2. Prepare Value Paint
             val maxAvailableValuePx = (height * 0.52f).coerceAtLeast(10f)
             val requestedValuePx = spToPx(context, valueTypography.fontSizeSp, height, maxRatio = 0.70f)
-            val valuePx = requestedValuePx.coerceAtMost(maxAvailableValuePx)
+            var valuePx = requestedValuePx.coerceAtMost(maxAvailableValuePx)
 
             val valuePaint = TextPaint().apply {
                 color = valueColor
@@ -139,6 +139,14 @@ object KustomFieldRenderer {
                 weight = valueTypography.fontWeight,
                 textSizePx = valuePx,
             )
+
+            // Auto-scale font size if text width exceeds canvas width
+            val maxTextWidth = width * 0.88f
+            val measuredWidth = valuePaint.measureText(valueText)
+            if (measuredWidth > maxTextWidth && measuredWidth > 0f) {
+                valuePx *= (maxTextWidth / measuredWidth)
+                valuePaint.textSize = valuePx
+            }
 
             // 3. Compute Metrics with Zero-Overlap Baseline Equation
             val labelMetrics = labelPaint.fontMetrics
