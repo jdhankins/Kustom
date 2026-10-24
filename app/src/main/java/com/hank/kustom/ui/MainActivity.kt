@@ -84,13 +84,13 @@ import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-// Karoo OS Native Color Palette Constants
-val KarooBg = Color(0xFFDCE1E3)
-val KarooHeaderCardBg = Color(0xFFF4F6F7)
-val KarooTextPrimary = Color(0xFF1E2225)
-val KarooTextSecondary = Color(0xFF4A5258)
-val KarooSlateAccent = Color(0xFF91A6B0)
-val KarooTrackBg = Color(0xFFEEF1F2)
+// Kustom Deep Navy & Electric Blue UI Theme Palette
+val KarooBg = Color(0xFF0F1A2A)               // Deep Navy Base Background
+val KarooHeaderCardBg = Color(0xFF17283C)     // Royal Navy Card Surface
+val KarooTrackBg = Color(0xFF1F354E)          // Cool Navy Track / Input Background
+val KarooTextPrimary = Color(0xFFFFFFFF)      // Pure White Primary Text
+val KarooTextSecondary = Color(0xFF94A3B8)    // Soft Cool Slate Secondary Text
+val KarooSlateAccent = Color(0xFF00A3FF)      // Electric Blue Highlight (from "K" logo)
 
 class MainActivity : ComponentActivity() {
 
@@ -99,12 +99,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         KustomLogger.installCrashHandler(this)
         super.onCreate(savedInstanceState)
-        KustomLogger.d("MainActivity created with Karoo Native UI theme")
+        KustomLogger.d("MainActivity created with Deep Navy UI theme")
 
         WindowCompat.setDecorFitsSystemWindows(window, true)
         window.statusBarColor = KarooBg.toArgb()
         val controller = WindowCompat.getInsetsController(window, window.decorView)
-        controller.isAppearanceLightStatusBars = true
+        controller.isAppearanceLightStatusBars = false
 
         setContent {
             Surface(
@@ -139,15 +139,15 @@ fun KustomKarooNativeScreen(viewModel: KustomSettingsViewModel) {
             .fillMaxSize()
             .background(KarooBg),
     ) {
-        // Sticky Header Section (#F4F6F7 Card): Pill Navigation + Live Field Preview (Global Only)
+        // Sticky Header Section (#17283C Card): Pill Navigation + Live Field Preview (Global Only)
         KustomStickyHeaderSection(
             settings = settings,
             selectedTab = selectedTopNavTab,
             onTabSelected = { selectedTopNavTab = it },
-            onOpenLogs = { showLogsDialog = true },
+            onOpenLogs = { showLogsDialog = false },
         )
 
-        // Scrollable Menu Body (#DCE1E3)
+        // Scrollable Menu Body (#0F1A2A)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -236,6 +236,7 @@ fun KustomStickyHeaderSection(
         ),
         colorMode = fieldConfig.colorMode,
         mappedColor = mappedColor,
+        isDarkTheme = true,
     )
 
     Card(
@@ -331,7 +332,7 @@ fun KustomStickyHeaderSection(
                             .width(170.dp)
                             .height(82.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .border(BorderStroke(1.dp, Color(0xFF5A6268)), RoundedCornerShape(12.dp)),
+                            .border(BorderStroke(1.dp, Color(0xFF2A4363)), RoundedCornerShape(12.dp)),
                     ) {
                         Image(
                             bitmap = bitmap.asImageBitmap(),
@@ -572,6 +573,7 @@ fun FieldCardItem(
         ),
         colorMode = fieldConfig.colorMode,
         mappedColor = mappedColor,
+        isDarkTheme = true,
     )
 
     Card(
@@ -580,7 +582,7 @@ fun FieldCardItem(
             .clickable { onFieldSelected(field) },
         colors = CardDefaults.cardColors(containerColor = KarooHeaderCardBg),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, Color(0xFFCFD8DC)),
+        border = BorderStroke(1.dp, Color(0xFF2A4363)),
     ) {
         Column(
             modifier = Modifier
@@ -612,7 +614,7 @@ fun FieldCardItem(
                     .height(72.dp)
                     .align(Alignment.CenterHorizontally)
                     .clip(RoundedCornerShape(12.dp))
-                    .border(BorderStroke(1.dp, Color(0xFF5A6268)), RoundedCornerShape(12.dp)),
+                    .border(BorderStroke(1.dp, Color(0xFF2A4363)), RoundedCornerShape(12.dp)),
             ) {
                 Image(
                     bitmap = bitmap.asImageBitmap(),
@@ -668,7 +670,7 @@ fun KarooFontDropdown(
             text = "FONT FAMILY",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF334155),
+            color = Color(0xFFE2E8F0),
         )
 
         Box(
@@ -741,7 +743,7 @@ fun KarooSteppedSlider(
             text = label.uppercase(),
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF334155),
+            color = Color(0xFFE2E8F0),
         )
 
         val safeIndex = selectedIndex.coerceIn(0, (steps.size - 1).coerceAtLeast(0))
@@ -775,14 +777,14 @@ fun KarooSteppedSlider(
                 }
             }
 
-            // Inactive Background Track (Gray)
+            // Inactive Background Track (Cool Navy Gray)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp)
                     .height(4.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFDCDFE2))
+                    .background(Color(0xFF2A4363))
                     .pointerInput(stepCount) {
                         detectTapGestures { offset ->
                             updateFromPx(offset.x)
@@ -796,7 +798,7 @@ fun KarooSteppedSlider(
                     },
             )
 
-            // Active Progress Track (Teal)
+            // Active Progress Track (Electric Blue)
             if (activeTrackWidthDp > 0.dp) {
                 Box(
                     modifier = Modifier
@@ -804,17 +806,17 @@ fun KarooSteppedSlider(
                         .width(activeTrackWidthDp)
                         .height(4.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF00D2B5)),
+                        .background(Color(0xFF00A3FF)),
                 )
             }
 
-            // Thumb Target (Teal Circle)
+            // Thumb Target (Electric Blue Circle)
             Box(
                 modifier = Modifier
                     .offset(x = thumbOffsetDp)
                     .size(20.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF00D2B5))
+                    .background(Color(0xFF00A3FF))
                     .pointerInput(stepCount) {
                         detectHorizontalDragGestures { change, _ ->
                             change.consume()
@@ -835,7 +837,7 @@ fun KarooSteppedSlider(
                     text = stepLabel,
                     fontSize = 14.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) Color(0xFF009CB4) else Color(0xFF5A6570),
+                    color = if (isSelected) Color(0xFF00A3FF) else Color(0xFF94A3B8),
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     softWrap = false,
@@ -863,7 +865,7 @@ fun KarooSegmentedPill(
             text = "ZONE COLOR",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF334155),
+            color = Color(0xFFE2E8F0),
         )
 
         val descriptionText = when (selectedZoneFormat) {
@@ -883,8 +885,8 @@ fun KarooSegmentedPill(
                 .fillMaxWidth()
                 .height(52.dp)
                 .clip(RoundedCornerShape(50))
-                .background(Color(0xFFFFFFFF))
-                .border(BorderStroke(1.dp, Color(0xFFE2E8F0)), RoundedCornerShape(50))
+                .background(Color(0xFF1F354E))
+                .border(BorderStroke(1.dp, Color(0xFF2A4363)), RoundedCornerShape(50))
                 .padding(4.dp),
         ) {
             Row(
@@ -914,7 +916,7 @@ fun KarooSegmentedPill(
                             text = labelText,
                             fontSize = 14.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) Color(0xFF1E2225) else Color(0xFF4A5258),
+                            color = if (isSelected) Color(0xFF0F1A2A) else Color(0xFF94A3B8),
                             textAlign = TextAlign.Center,
                             maxLines = 1,
                             softWrap = false,

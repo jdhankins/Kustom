@@ -33,9 +33,9 @@ object KustomFieldRenderer {
             val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
 
-            val defaultBgColor = if (isDarkTheme) 0xFF14171A.toInt() else 0xFFFFFFFF.toInt()
-            val defaultTextColor = if (isDarkTheme) 0xFFF4F6F7.toInt() else 0xFF1E2225.toInt()
-            val mutedLabelColor = if (isDarkTheme) 0xFF8A96A0.toInt() else 0xFF4A5258.toInt()
+            val defaultBgColor = if (isDarkTheme) 0xFF0F1A2A.toInt() else 0xFFFFFFFF.toInt()
+            val defaultTextColor = if (isDarkTheme) 0xFFFFFFFF.toInt() else 0xFF1E2225.toInt()
+            val mutedLabelColor = if (isDarkTheme) 0xFF94A3B8.toInt() else 0xFF4A5258.toInt()
 
             val backgroundColor: Int
             val labelColor: Int
