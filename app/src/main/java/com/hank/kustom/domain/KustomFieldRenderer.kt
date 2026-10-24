@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.Rect
 import android.graphics.RectF
 import android.text.TextPaint
 import com.hank.kustom.data.model.ColorMode
@@ -113,9 +112,9 @@ object KustomFieldRenderer {
                 ViewConfig.Alignment.RIGHT -> width - marginX
             }
 
-            // --- ZONE 1: TOP 25% ZONE FOR LABEL (Vertically Centered in 0 .. 0.25 * height) ---
+            // --- ZONE 1: TOP 25% ZONE FOR LABEL (0 .. 0.25 * height) ---
             val labelZoneHeight = height * 0.25f
-            val labelPx = spToPx(context, labelTypography.fontSizeSp, labelZoneHeight.toInt(), maxRatio = 0.85f)
+            val labelPx = spToPx(context, labelTypography.fontSizeSp, labelZoneHeight.toInt(), maxRatio = 0.65f)
             val labelPaint = TextPaint().apply {
                 color = labelColor
                 textAlign = align
@@ -127,16 +126,14 @@ object KustomFieldRenderer {
                 textSizePx = labelPx,
             )
 
-            val labelBounds = Rect()
-            val labelStr = label.uppercase()
-            labelPaint.getTextBounds(labelStr, 0, labelStr.length, labelBounds)
+            val labelMetrics = labelPaint.fontMetrics
             val labelCenterY = labelZoneHeight / 2f
-            val labelY = labelCenterY + (labelBounds.height() / 2f) + labelBounds.top
+            val labelY = labelCenterY - ((labelMetrics.ascent + labelMetrics.descent) / 2f)
 
-            // --- ZONE 2: BOTTOM 75% ZONE FOR VALUE (Vertically Centered in 0.25 * height .. height) ---
+            // --- ZONE 2: BOTTOM 75% ZONE FOR VALUE (0.25 * height .. height) ---
             val valueZoneTop = height * 0.25f
             val valueZoneHeight = height * 0.75f
-            val requestedValuePx = spToPx(context, valueTypography.fontSizeSp, valueZoneHeight.toInt(), maxRatio = 0.95f)
+            val requestedValuePx = spToPx(context, valueTypography.fontSizeSp, valueZoneHeight.toInt(), maxRatio = 0.65f)
             var valuePx = requestedValuePx
 
             val valuePaint = TextPaint().apply {
@@ -151,20 +148,19 @@ object KustomFieldRenderer {
             )
 
             // Auto-scale font size if text width exceeds canvas width
-            val maxTextWidth = width * 0.90f
+            val maxTextWidth = width * 0.88f
             val measuredWidth = valuePaint.measureText(valueText)
             if (measuredWidth > maxTextWidth && measuredWidth > 0f) {
                 valuePx *= (maxTextWidth / measuredWidth)
                 valuePaint.textSize = valuePx
             }
 
-            val valueBounds = Rect()
-            valuePaint.getTextBounds(valueText, 0, valueText.length, valueBounds)
+            val valueMetrics = valuePaint.fontMetrics
             val valueCenterY = valueZoneTop + (valueZoneHeight / 2f)
-            val valueY = valueCenterY + (valueBounds.height() / 2f) + valueBounds.top
+            val valueY = valueCenterY - ((valueMetrics.ascent + valueMetrics.descent) / 2f)
 
-            // Draw Label & Value Text (Always Centered Vertically in 25% / 75% Spaces)
-            canvas.drawText(labelStr, textX, labelY, labelPaint)
+            // Draw Label & Value Text (Mathematically Centered in 25% / 75% Zones)
+            canvas.drawText(label.uppercase(), textX, labelY, labelPaint)
             canvas.drawText(valueText, textX, valueY, valuePaint)
 
             bitmap
