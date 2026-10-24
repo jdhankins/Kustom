@@ -270,6 +270,7 @@ fun KustomStickyHeaderSection(
             viewSize = Pair(360, 180),
             textSize = 38,
             alignment = ViewConfig.Alignment.CENTER,
+            boundariesEnabled = true,
             preview = true,
         )
     }
@@ -616,6 +617,7 @@ fun FieldCardItem(
             viewSize = Pair(300, 144),
             textSize = 38,
             alignment = ViewConfig.Alignment.CENTER,
+            boundariesEnabled = true,
             preview = true,
         )
     }

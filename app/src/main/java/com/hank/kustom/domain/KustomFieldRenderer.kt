@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.RectF
 import android.text.TextPaint
 import com.hank.kustom.data.model.ColorMode
 import com.hank.kustom.data.model.TypographyConfig
@@ -11,7 +12,8 @@ import com.hank.kustom.util.KustomLogger
 import io.hammerhead.karooext.models.ViewConfig
 
 /**
- * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas.
+ * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas,
+ * adapting dynamically to Light/Dark themes, data boundaries, and Left/Center/Right alignment.
  */
 object KustomFieldRenderer {
 
@@ -33,9 +35,26 @@ object KustomFieldRenderer {
             val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
 
-            val defaultBgColor = if (isDarkTheme) 0xFF0F1A2A.toInt() else 0xFFFFFFFF.toInt()
-            val defaultTextColor = if (isDarkTheme) 0xFFFFFFFF.toInt() else 0xFF1E2225.toInt()
-            val mutedLabelColor = if (isDarkTheme) 0xFF94A3B8.toInt() else 0xFF4A5258.toInt()
+            val boundaries = config.boundariesEnabled
+
+            // Default colors based on theme and boundaries
+            val defaultBgColor = if (boundaries) {
+                0xFFFFFFFF.toInt() // Bounded cells have pure white surface
+            } else {
+                0x00000000 // Transparent when boundaries OFF
+            }
+
+            val defaultTextColor = if (!boundaries && isDarkTheme) {
+                0xFFFFFFFF.toInt() // White text on dark page background when no boundary
+            } else {
+                0xFF1E2225.toInt() // Charcoal text on white boundary card
+            }
+
+            val mutedLabelColor = if (!boundaries && isDarkTheme) {
+                0xFF94A3B8.toInt()
+            } else {
+                0xFF4A5258.toInt()
+            }
 
             val backgroundColor: Int
             val labelColor: Int
@@ -64,9 +83,31 @@ object KustomFieldRenderer {
                 }
             }
 
-            canvas.drawColor(backgroundColor)
+            // Draw Background & Boundaries
+            if (boundaries && backgroundColor != 0x00000000) {
+                val rect = RectF(2f, 2f, width - 2f, height - 2f)
+                val cornerRadius = height * 0.12f
 
-            val marginX = width * 0.06f
+                val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = backgroundColor
+                    style = Paint.Style.FILL
+                }
+                canvas.drawRoundRect(rect, cornerRadius, cornerRadius, bgPaint)
+
+                // Outer border line
+                val strokeColor = if (isDarkTheme) 0xFF888888.toInt() else 0xFFCFD8DC.toInt()
+                val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = strokeColor
+                    style = Paint.Style.STROKE
+                    strokeWidth = 3f
+                }
+                canvas.drawRoundRect(rect, cornerRadius, cornerRadius, borderPaint)
+            } else if (backgroundColor != 0x00000000) {
+                canvas.drawColor(backgroundColor)
+            }
+
+            // Text Alignment & Horizontal Position
+            val marginX = width * 0.08f
             val align = when (config.alignment) {
                 ViewConfig.Alignment.LEFT -> Paint.Align.LEFT
                 ViewConfig.Alignment.CENTER -> Paint.Align.CENTER
@@ -128,7 +169,7 @@ object KustomFieldRenderer {
             val labelY = blockTop + labelAscent
             val valueY = labelY + labelDescent + gap + valueAscent
 
-            // 4. Draw Label & Value
+            // 4. Draw Label & Value Text
             canvas.drawText(label.uppercase(), textX, labelY, labelPaint)
             canvas.drawText(valueText, textX, valueY, valuePaint)
 
