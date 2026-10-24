@@ -92,11 +92,29 @@ class KustomDataType(
                                     fieldConfig = fieldConfig,
                                     isMock = true,
                                     mockValue = mockVal,
+                                    targetPowerVal = 250.0,
                                 )
                             )
                             i++
                             delay(1200L)
                         }
+                    }
+                } else if (definition.typeId == "workout-target-power") {
+                    // Workout Power: Stream live current power AND live target power
+                    val sdkTypeId = definition.resolveSdkDataTypeId(fieldConfig.smoothingOption)
+                    combine(
+                        karooSystemRepository.streamDataFlow(sdkTypeId),
+                        karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET),
+                    ) { powerState, targetState ->
+                        val targetVal = (targetState as? StreamState.Streaming)?.dataPoint?.singleValue
+                        RenderPayload(
+                            streamState = powerState,
+                            userProfile = userProfile,
+                            settings = settings,
+                            fieldConfig = fieldConfig,
+                            isMock = false,
+                            targetPowerVal = targetVal,
+                        )
                     }
                 } else {
                     // Active Ride Page Mode: Stream live sensor telemetry states from Karoo OS
@@ -112,7 +130,7 @@ class KustomDataType(
                     }
                 }
             }.collect { payload ->
-                val (streamState, userProfile, settings, fieldConfig, isMock, mockValue) = payload
+                val (streamState, userProfile, settings, fieldConfig, isMock, mockValue, targetPowerVal) = payload
 
                 if (fieldConfig.smoothingOption.seconds != lastSmoothingSec) {
                     lastSmoothingSec = fieldConfig.smoothingOption.seconds
@@ -134,7 +152,16 @@ class KustomDataType(
                     null
                 }
 
-                val dynamicLabel = definition.resolveDynamicLabel(fieldConfig.smoothingOption)
+                val dynamicLabel = if (definition.typeId == "workout-target-power") {
+                    val targetVal = if (isMock) 250.0 else targetPowerVal
+                    if (targetVal != null && targetVal > 0) {
+                        "${targetVal.toInt()}W"
+                    } else {
+                        "Target Power"
+                    }
+                } else {
+                    definition.resolveDynamicLabel(fieldConfig.smoothingOption)
+                }
 
                 val valueText = when {
                     isMock -> {
@@ -196,6 +223,7 @@ class KustomDataType(
         val fieldConfig: KustomFieldConfig,
         val isMock: Boolean,
         val mockValue: Double? = null,
+        val targetPowerVal: Double? = null,
     )
 
     private fun computeMappedColor(
@@ -207,7 +235,7 @@ class KustomDataType(
         if (rawVal == null || !definition.supportsZones) return null
 
         return when (definition.typeId) {
-            "power", "np", "avg-power", "max-power", "lap-power", "last-lap-power", "percent-ftp", "power-to-weight" -> {
+            "power", "np", "avg-power", "max-power", "lap-power", "last-lap-power", "percent-ftp", "power-to-weight", "workout-target-power" -> {
                 KustomColorGradeMapper.getPowerZoneColor(rawVal, userProfile, fieldConfig.colorMode)
             }
             "hr", "avg-hr", "max-hr", "lap-hr", "percent-max-hr" -> {

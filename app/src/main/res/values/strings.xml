@@ -162,6 +162,9 @@
     <string name="field_last_lap_speed_desc">Average speed of previous lap</string>
 
     <!-- WORKOUT -->
+    <string name="field_workout_target_power_name">WORKOUT: WORKOUT POWER</string>
+    <string name="field_workout_target_power_desc">Target power label with current power value</string>
+
     <string name="field_workout_primary_target_name">WORKOUT: WORKOUT PRIMARY TARGET</string>
     <string name="field_workout_primary_target_desc">Target power or heart rate</string>
 
