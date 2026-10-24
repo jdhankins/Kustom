@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
 import android.text.TextPaint
 import com.hank.kustom.data.model.ColorMode
@@ -12,8 +13,8 @@ import com.hank.kustom.util.KustomLogger
 import io.hammerhead.karooext.models.ViewConfig
 
 /**
- * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas,
- * adapting dynamically to Light/Dark themes, data boundaries, and Left/Center/Right alignment.
+ * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas.
+ * Karoo OS manages the outer data field cell boundary/border.
  */
 object KustomFieldRenderer {
 
@@ -83,7 +84,7 @@ object KustomFieldRenderer {
                 }
             }
 
-            // Draw Background & Boundaries (Consistent across all fields & color modes)
+            // Draw Background (Karoo OS draws the outer bounding box/border)
             if (boundaries) {
                 val rect = RectF(0f, 0f, width.toFloat(), height.toFloat())
                 val cornerRadius = height * 0.12f
@@ -148,28 +149,27 @@ object KustomFieldRenderer {
                 valuePaint.textSize = valuePx
             }
 
-            // 3. Compute Metrics with Zero-Overlap Baseline Equation
-            val labelMetrics = labelPaint.fontMetrics
-            val labelAscent = -labelMetrics.ascent
-            val labelDescent = labelMetrics.descent
-            val labelHeight = labelAscent + labelDescent
+            // 3. Compute Exact Visual Bounds for Constant Inter-Text Spacing
+            val labelBounds = Rect()
+            val labelStr = label.uppercase()
+            labelPaint.getTextBounds(labelStr, 0, labelStr.length, labelBounds)
+            val labelVisualHeight = labelBounds.height().toFloat().coerceAtLeast(labelPx * 0.65f)
 
-            val valueMetrics = valuePaint.fontMetrics
-            val valueAscent = -valueMetrics.ascent
-            val valueDescent = valueMetrics.descent
-            val valueHeight = valueAscent + valueDescent
+            val valueBounds = Rect()
+            valuePaint.getTextBounds(valueText, 0, valueText.length, valueBounds)
+            val valueVisualHeight = valueBounds.height().toFloat().coerceAtLeast(valuePx * 0.65f)
 
-            val gap = height * 0.04f
-            val totalBlockHeight = labelHeight + gap + valueHeight
+            val gap = height * 0.02f
+            val totalBlockHeight = labelVisualHeight + gap + valueVisualHeight
 
             val rawBlockTop = (height - totalBlockHeight) / 2f
             val blockTop = rawBlockTop.coerceAtLeast(height * 0.04f)
 
-            val labelY = blockTop + labelAscent
-            val valueY = labelY + labelDescent + gap + valueAscent
+            val labelY = blockTop + labelVisualHeight
+            val valueY = labelY + gap + valueVisualHeight
 
             // 4. Draw Label & Value Text
-            canvas.drawText(label.uppercase(), textX, labelY, labelPaint)
+            canvas.drawText(labelStr, textX, labelY, labelPaint)
             canvas.drawText(valueText, textX, valueY, valuePaint)
 
             bitmap

@@ -428,10 +428,10 @@ fun GlobalFontsTab(
             )
         }
 
-        // VALUE FONT SIZE (36sp .. 72sp)
+        // VALUE FONT SIZE (36 .. 72)
         item {
             val valueSizes = listOf(36f, 42f, 48f, 56f, 64f, 72f)
-            val valueSizeSteps = listOf("36sp", "42sp", "48sp", "56sp", "64sp", "72sp")
+            val valueSizeSteps = listOf("36", "42", "48", "56", "64", "72")
             val currentIdx = findNearestIndex(valueSizes, global.valueSizeSp.toFloat())
             KarooSteppedSlider(
                 label = "Value Font Size",
@@ -465,7 +465,7 @@ fun GlobalFontsTab(
         // LABEL FONT SIZE
         item {
             val labelSizes = listOf(10f, 12f, 14f, 16f, 18f)
-            val labelSizeSteps = listOf("10sp", "12sp", "14sp", "16sp", "18sp")
+            val labelSizeSteps = listOf("10", "12", "14", "16", "18")
             val currentIdx = findNearestIndex(labelSizes, global.labelSizeSp.toFloat())
             KarooSteppedSlider(
                 label = "Label Font Size",
@@ -898,21 +898,23 @@ fun KarooSteppedSlider(
 
         // Aligned Step Labels
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             steps.forEachIndexed { i, stepLabel ->
                 val isSelected = i == safeIndex
                 Text(
                     text = stepLabel,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     color = if (isSelected) colors.accent else colors.textSecondary,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     softWrap = false,
                     modifier = Modifier
-                        .width(42.dp)
+                        .width(36.dp)
                         .clickable { onStepSelected(i) },
                 )
             }
