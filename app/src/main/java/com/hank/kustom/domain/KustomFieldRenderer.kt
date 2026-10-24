@@ -12,8 +12,9 @@ import com.hank.kustom.util.KustomLogger
 import io.hammerhead.karooext.models.ViewConfig
 
 /**
- * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas,
- * adapting dynamically to Light/Dark themes, data boundaries, and Left/Center/Right alignment.
+ * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas.
+ * The top 25% zone is reserved for the label and the bottom 75% zone for the value,
+ * ensuring resizing one element never shifts the other.
  */
 object KustomFieldRenderer {
 
@@ -111,8 +112,9 @@ object KustomFieldRenderer {
                 ViewConfig.Alignment.RIGHT -> width - marginX
             }
 
-            // 1. Prepare Label Paint
-            val labelPx = spToPx(context, labelTypography.fontSizeSp, height, maxRatio = 0.20f)
+            // --- ZONE 1: TOP 25% ZONE FOR LABEL ---
+            val labelZoneHeight = height * 0.25f
+            val labelPx = spToPx(context, labelTypography.fontSizeSp, labelZoneHeight.toInt(), maxRatio = 0.85f)
             val labelPaint = TextPaint().apply {
                 color = labelColor
                 textAlign = align
@@ -124,10 +126,18 @@ object KustomFieldRenderer {
                 textSizePx = labelPx,
             )
 
-            // 2. Prepare Value Paint
-            val maxAvailableValuePx = (height * 0.48f).coerceAtLeast(10f)
-            val requestedValuePx = spToPx(context, valueTypography.fontSizeSp, height, maxRatio = 0.65f)
-            var valuePx = requestedValuePx.coerceAtMost(maxAvailableValuePx)
+            val labelMetrics = labelPaint.fontMetrics
+            val labelAscent = -labelMetrics.ascent
+            val labelDescent = labelMetrics.descent
+            val labelFontHeight = labelAscent + labelDescent
+            val labelTop = ((labelZoneHeight - labelFontHeight) / 2f).coerceAtLeast(0f)
+            val labelY = labelTop + labelAscent
+
+            // --- ZONE 2: BOTTOM 75% ZONE FOR VALUE ---
+            val valueZoneTop = height * 0.25f
+            val valueZoneHeight = height * 0.75f
+            val requestedValuePx = spToPx(context, valueTypography.fontSizeSp, valueZoneHeight.toInt(), maxRatio = 0.85f)
+            var valuePx = requestedValuePx
 
             val valuePaint = TextPaint().apply {
                 color = valueColor
@@ -141,34 +151,22 @@ object KustomFieldRenderer {
             )
 
             // Auto-scale font size if text width exceeds canvas width
-            val maxTextWidth = width * 0.88f
+            val maxTextWidth = width * 0.90f
             val measuredWidth = valuePaint.measureText(valueText)
             if (measuredWidth > maxTextWidth && measuredWidth > 0f) {
                 valuePx *= (maxTextWidth / measuredWidth)
                 valuePaint.textSize = valuePx
             }
 
-            // 3. Compute Metrics with Zero-Overlap Baseline Equation
-            val labelMetrics = labelPaint.fontMetrics
-            val labelAscent = -labelMetrics.ascent
-            val labelDescent = labelMetrics.descent
-            val labelFullHeight = labelAscent + labelDescent
-
             val valueMetrics = valuePaint.fontMetrics
             val valueAscent = -valueMetrics.ascent
             val valueDescent = valueMetrics.descent
-            val valueFullHeight = valueAscent + valueDescent
+            val valueFontHeight = valueAscent + valueDescent
 
-            val gap = height * 0.06f
-            val totalBlockHeight = labelFullHeight + gap + valueFullHeight
+            val valueTop = valueZoneTop + ((valueZoneHeight - valueFontHeight) / 2f).coerceAtLeast(0f)
+            val valueY = valueTop + valueAscent
 
-            val rawBlockTop = (height - totalBlockHeight) / 2f
-            val blockTop = rawBlockTop.coerceAtLeast(height * 0.05f)
-
-            val labelY = blockTop + labelAscent
-            val valueY = labelY + labelDescent + gap + valueAscent
-
-            // 4. Draw Label & Value Text (Guaranteed Zero Overlap)
+            // Draw Label & Value Text (Completely Decoupled 25% / 75% Zones)
             canvas.drawText(label.uppercase(), textX, labelY, labelPaint)
             canvas.drawText(valueText, textX, valueY, valuePaint)
 
