@@ -31,3 +31,4 @@
     - **Exclude non-configurable fields** from the `Fields` configuration accordion. Never show `"No additional parameters required."`
     - **Working Stepped Smoothing Slider**: Build `KarooSteppedSlider` using an explicit `Row` of 5 clickable/draggable `44.dp` step targets over a visible `#CFD8DC` track so tapping or dragging `0s`, `3s`, `5s`, `10s`, `30s` always updates the smoothing state and the dynamic label (`"3s Power"`) immediately.
     - **Zone Formatting Pill (`None` | `Text` | `Background`)**: Use exact labels **`None`**, **`Text`**, and **`Background`** with proportional weights (`0.85f`, `0.85f`, `1.35f`) and `softWrap = false` so **`Background`** is never truncated to `"Back"`.
+```

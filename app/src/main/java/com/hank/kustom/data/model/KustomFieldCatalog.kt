@@ -28,7 +28,7 @@ data class KustomFieldDefinition(
         get() = pageSetupTitle
 
     val pageSetupTitle: String
-        get() = "Kustom - $childTitle"
+        get() = "${category.displayName} - $childTitle"
 
     fun resolveDynamicLabel(smoothing: SmoothingOption): String {
         return if (supportsSmoothing && smoothing != SmoothingOption.NONE) {

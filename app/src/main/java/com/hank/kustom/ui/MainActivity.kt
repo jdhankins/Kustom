@@ -1,10 +1,7 @@
 package com.hank.kustom.ui
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -30,18 +27,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -119,33 +112,60 @@ class MainActivity : ComponentActivity() {
 fun KustomKarooNativeScreen(viewModel: KustomSettingsViewModel) {
     val settings by viewModel.settingsState.collectAsState()
     var selectedTopNavTab by remember { mutableIntStateOf(0) } // 0 = Global, 1 = Fields
-    var selectedField by remember { mutableStateOf(KustomFieldCatalog.POWER) }
-    var expandedCategory by remember { mutableStateOf<FieldCategory?>(FieldCategory.POWER) }
-    var showLogsDialog by remember { mutableStateOf(false) }
-
-    val context = LocalContext.current
-
-    if (showLogsDialog) {
-        KustomLogsDialog(
-            context = context,
-            onDismiss = { showLogsDialog = false },
-        )
-    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(KarooBg),
     ) {
-        // Sticky Header Section (#F4F6F7 Card): Pill Navigation + Live Field Preview (Global Only)
-        KustomStickyHeaderSection(
-            settings = settings,
-            selectedTab = selectedTopNavTab,
-            onTabSelected = { selectedTopNavTab = it },
-            onOpenLogs = { showLogsDialog = true },
-        )
+        // Top 2-Segment Navigation Bar (Strictly Global and Fields Only)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .height(44.dp)
+                .clip(RoundedCornerShape(50))
+                .background(KarooTrackBg)
+                .padding(3.dp),
+        ) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(50))
+                        .background(if (selectedTopNavTab == 0) KarooSlateAccent else Color.Transparent)
+                        .clickable { selectedTopNavTab = 0 },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "Global",
+                        fontSize = 14.sp,
+                        fontWeight = if (selectedTopNavTab == 0) FontWeight.Bold else FontWeight.Medium,
+                        color = KarooTextPrimary,
+                    )
+                }
 
-        // Scrollable Menu Body (#DCE1E3)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(50))
+                        .background(if (selectedTopNavTab == 1) KarooSlateAccent else Color.Transparent)
+                        .clickable { selectedTopNavTab = 1 },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "Fields",
+                        fontSize = 14.sp,
+                        fontWeight = if (selectedTopNavTab == 1) FontWeight.Bold else FontWeight.Medium,
+                        color = KarooTextPrimary,
+                    )
+                }
+            }
+        }
+
+        // Screen Body
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -159,14 +179,6 @@ fun KustomKarooNativeScreen(viewModel: KustomSettingsViewModel) {
             } else {
                 FieldsTab(
                     settings = settings,
-                    expandedCategory = expandedCategory,
-                    onFieldSelected = { field ->
-                        selectedField = field
-                        expandedCategory = field.category
-                    },
-                    onCategoryToggled = { category ->
-                        expandedCategory = if (expandedCategory == category) null else category
-                    },
                     onUpdateFieldConfig = { typeId, config ->
                         viewModel.updateFieldConfig(typeId, config)
                     },
@@ -177,40 +189,33 @@ fun KustomKarooNativeScreen(viewModel: KustomSettingsViewModel) {
 }
 
 @Composable
-fun KustomStickyHeaderSection(
+fun GlobalFontsTab(
     settings: KustomSettings,
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit,
-    onOpenLogs: () -> Unit,
+    onUpdateGlobalTypography: (GlobalTypographyConfig) -> Unit,
 ) {
     val context = LocalContext.current
+    val global = settings.globalTypography
 
-    val currentField = KustomFieldCatalog.POWER
-
-    var mockStepIndex by remember(selectedTab) { mutableIntStateOf(0) }
-    LaunchedEffect(selectedTab) {
+    // Live Mock Ticker every 1200ms for Global Preview
+    val powerField = KustomFieldCatalog.POWER
+    var mockStepIndex by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
         while (true) {
             delay(1200L)
-            mockStepIndex = (mockStepIndex + 1) % currentField.mockValues.size
+            mockStepIndex = (mockStepIndex + 1) % powerField.mockValues.size
         }
     }
 
-    val currentMockVal = currentField.mockValues.getOrElse(mockStepIndex) { currentField.mockValues.first() }
-    val fieldConfig = settings.getFieldConfig(currentField.typeId)
-
-    val sampleValueText = currentField.formatNumericValueOnly(currentMockVal)
-    val dynamicLabel = currentField.resolveDynamicLabel(fieldConfig.smoothingOption)
-
-    val mappedColor = if (currentField.supportsZones) {
-        KustomColorGradeMapper.getPowerZoneColor(currentMockVal, null, fieldConfig.colorMode)
-    } else null
-
-    val globalTypo = settings.globalTypography
+    val currentMockVal = powerField.mockValues.getOrElse(mockStepIndex) { powerField.mockValues.first() }
+    val powerConfig = settings.getFieldConfig(powerField.typeId)
+    val sampleValueText = powerField.formatNumericValueOnly(currentMockVal)
+    val dynamicLabel = powerField.resolveDynamicLabel(powerConfig.smoothingOption)
+    val mappedColor = KustomColorGradeMapper.getPowerZoneColor(currentMockVal, null, powerConfig.colorMode)
 
     val previewViewConfig = remember {
         ViewConfig(
             gridSize = Pair(60, 20),
-            viewSize = Pair(360, 180),
+            viewSize = Pair(264, 136),
             textSize = 38,
             alignment = ViewConfig.Alignment.CENTER,
             preview = true,
@@ -223,111 +228,63 @@ fun KustomStickyHeaderSection(
         label = dynamicLabel,
         valueText = sampleValueText,
         labelTypography = TypographyConfig(
-            font = globalTypo.fontFamily,
-            fontWeight = globalTypo.labelWeight,
-            fontSizeSp = globalTypo.labelSizeSp.toFloat(),
+            font = global.fontFamily,
+            fontWeight = global.labelWeight,
+            fontSizeSp = global.labelSizeSp.toFloat(),
         ),
         valueTypography = TypographyConfig(
-            font = globalTypo.fontFamily,
-            fontWeight = globalTypo.valueWeight,
-            fontSizeSp = globalTypo.valueSizeSp.toFloat(),
+            font = global.fontFamily,
+            fontWeight = global.valueWeight,
+            fontSizeSp = global.valueSizeSp.toFloat(),
         ),
-        colorMode = fieldConfig.colorMode,
+        colorMode = powerConfig.colorMode,
         mappedColor = mappedColor,
     )
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = KarooHeaderCardBg),
-        shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            // 1. Navigation Pill Bar (Global | Fields) + Logs Link
-            Row(
+        // Top Global Live Preview Card (#F4F6F7)
+        item {
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                colors = CardDefaults.cardColors(containerColor = KarooHeaderCardBg),
+                shape = RoundedCornerShape(14.dp),
             ) {
-                Box(
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(KarooTrackBg)
-                        .padding(3.dp),
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(modifier = Modifier.fillMaxSize()) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clip(RoundedCornerShape(50))
-                                .background(if (selectedTab == 0) KarooSlateAccent else Color.Transparent)
-                                .clickable { onTabSelected(0) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = "Global",
-                                fontSize = 14.sp,
-                                fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium,
-                                color = KarooTextPrimary,
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clip(RoundedCornerShape(50))
-                                .background(if (selectedTab == 1) KarooSlateAccent else Color.Transparent)
-                                .clickable { onTabSelected(1) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = "Fields",
-                                fontSize = 14.sp,
-                                fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium,
-                                color = KarooTextPrimary,
-                            )
-                        }
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 12.dp),
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            text = "Power",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = KarooTextPrimary,
+                            maxLines = 1,
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Current power output",
+                            fontSize = 13.sp,
+                            color = KarooTextSecondary,
+                            maxLines = 2,
+                        )
                     }
-                }
 
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Box(
-                    modifier = Modifier
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(KarooTrackBg)
-                        .clickable { onOpenLogs() }
-                        .padding(horizontal = 12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "Logs 📋",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = KarooTextPrimary,
-                    )
-                }
-            }
-
-            // 2. Sticky Live Field Preview Box Centered (GLOBAL TAB ONLY)
-            if (selectedTab == 0) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
-                ) {
                     Box(
                         modifier = Modifier
-                            .width(170.dp)
-                            .height(82.dp)
+                            .size(width = 132.dp, height = 68.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .border(BorderStroke(1.dp, Color(0xFF5A6268)), RoundedCornerShape(12.dp)),
                     ) {
@@ -341,22 +298,7 @@ fun KustomStickyHeaderSection(
                 }
             }
         }
-    }
-}
 
-@Composable
-fun GlobalFontsTab(
-    settings: KustomSettings,
-    onUpdateGlobalTypography: (GlobalTypographyConfig) -> Unit,
-) {
-    val global = settings.globalTypography
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
         // FONT FAMILY DROPDOWN
         item {
             KarooFontDropdown(
@@ -436,14 +378,13 @@ fun GlobalFontsTab(
 @Composable
 fun FieldsTab(
     settings: KustomSettings,
-    expandedCategory: FieldCategory?,
-    onFieldSelected: (KustomFieldDefinition) -> Unit,
-    onCategoryToggled: (FieldCategory) -> Unit,
     onUpdateFieldConfig: (String, KustomFieldConfig) -> Unit,
 ) {
     val configurableGrouped = remember {
         KustomFieldCatalog.configurableFields.groupBy { it.category }
     }
+
+    var expandedCategory by remember { mutableStateOf<FieldCategory?>(FieldCategory.POWER) }
 
     LazyColumn(
         modifier = Modifier
@@ -469,7 +410,9 @@ fun FieldsTab(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onCategoryToggled(category) }
+                                .clickable {
+                                    expandedCategory = if (isExpanded) null else category
+                                }
                                 .padding(horizontal = 4.dp, vertical = 2.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
@@ -498,7 +441,6 @@ fun FieldsTab(
                                         field = field,
                                         fieldConfig = fieldConfig,
                                         globalTypography = settings.globalTypography,
-                                        onFieldSelected = onFieldSelected,
                                         onUpdateFieldConfig = onUpdateFieldConfig,
                                     )
                                 }
@@ -516,7 +458,6 @@ fun FieldCardItem(
     field: KustomFieldDefinition,
     fieldConfig: KustomFieldConfig,
     globalTypography: GlobalTypographyConfig,
-    onFieldSelected: (KustomFieldDefinition) -> Unit,
     onUpdateFieldConfig: (String, KustomFieldConfig) -> Unit,
 ) {
     val context = LocalContext.current
@@ -546,7 +487,7 @@ fun FieldCardItem(
     val previewViewConfig = remember {
         ViewConfig(
             gridSize = Pair(60, 20),
-            viewSize = Pair(300, 144),
+            viewSize = Pair(264, 136),
             textSize = 38,
             alignment = ViewConfig.Alignment.CENTER,
             preview = true,
@@ -573,9 +514,7 @@ fun FieldCardItem(
     )
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onFieldSelected(field) },
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = KarooHeaderCardBg),
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, Color(0xFFCFD8DC)),
@@ -584,45 +523,49 @@ fun FieldCardItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            // Bold Metric Name
-            Text(
-                text = field.childTitle,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = KarooTextPrimary,
-            )
-
-            // Description on Next Line
-            Text(
-                text = field.description,
-                fontSize = 13.sp,
-                color = KarooTextSecondary,
-            )
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            // Per-Metric Live Preview Box (Centered, Narrower Width)
-            Box(
-                modifier = Modifier
-                    .width(150.dp)
-                    .height(72.dp)
-                    .align(Alignment.CenterHorizontally)
-                    .clip(RoundedCornerShape(12.dp))
-                    .border(BorderStroke(1.dp, Color(0xFF5A6268)), RoundedCornerShape(12.dp)),
+            // Top Row: Title + Description on Left, 132.dp x 68.dp Preview Box on Right
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "Metric Preview",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.FillBounds,
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 12.dp),
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = field.childTitle,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = KarooTextPrimary,
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = field.description,
+                        fontSize = 13.sp,
+                        color = KarooTextSecondary,
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(width = 132.dp, height = 68.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(BorderStroke(1.dp, Color(0xFF5A6268)), RoundedCornerShape(12.dp)),
+                ) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Metric Preview",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.FillBounds,
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(2.dp))
-
-            // Controls Below
+            // Controls Below Top Row
             if (field.supportsSmoothing) {
                 val smoothingSteps = listOf("0s", "3s", "5s", "10s", "30s")
                 val currentSmoothIdx = SmoothingOption.entries.indexOf(fieldConfig.smoothingOption).coerceAtLeast(0)
@@ -640,6 +583,7 @@ fun FieldCardItem(
             if (field.supportsZones) {
                 KarooSegmentedPill(
                     selectedZoneFormat = fieldConfig.zoneFormat,
+                    fieldName = field.childTitle,
                     onZoneFormatSelected = { format ->
                         onUpdateFieldConfig(field.typeId, fieldConfig.copy(zoneFormat = format))
                     },
@@ -845,6 +789,7 @@ fun KarooSteppedSlider(
 @Composable
 fun KarooSegmentedPill(
     selectedZoneFormat: ZoneFormat,
+    fieldName: String,
     onZoneFormatSelected: (ZoneFormat) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -856,6 +801,18 @@ fun KarooSegmentedPill(
             text = "ZONE FORMATTING",
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
+            color = KarooTextSecondary,
+        )
+
+        val descriptionText = when (selectedZoneFormat) {
+            ZoneFormat.NONE -> "Your ${fieldName.lowercase()} will display in numbers only."
+            ZoneFormat.TEXT -> "Your ${fieldName.lowercase()} will display in numbers with the corresponding zone as the text color."
+            ZoneFormat.BACKGROUND -> "Your ${fieldName.lowercase()} will display in numbers with the corresponding zone as the background color."
+        }
+
+        Text(
+            text = descriptionText,
+            fontSize = 13.sp,
             color = KarooTextSecondary,
         )
 
@@ -872,9 +829,9 @@ fun KarooSegmentedPill(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 val options = listOf(
-                    Triple(ZoneFormat.NONE, "None", 0.75f),
-                    Triple(ZoneFormat.TEXT, "Text", 0.75f),
-                    Triple(ZoneFormat.BACKGROUND, "Background", 1.5f),
+                    Triple(ZoneFormat.NONE, "None", 0.85f),
+                    Triple(ZoneFormat.TEXT, "Text", 0.85f),
+                    Triple(ZoneFormat.BACKGROUND, "Background", 1.3f),
                 )
 
                 options.forEach { (format, labelText, weight) ->
@@ -892,7 +849,7 @@ fun KarooSegmentedPill(
                     ) {
                         Text(
                             text = labelText,
-                            fontSize = 11.5.sp,
+                            fontSize = 13.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             color = KarooTextPrimary,
                             textAlign = TextAlign.Center,
@@ -904,64 +861,6 @@ fun KarooSegmentedPill(
             }
         }
     }
-}
-
-@Composable
-fun KustomLogsDialog(
-    context: Context,
-    onDismiss: () -> Unit,
-) {
-    val logsText = remember {
-        val buffered = KustomLogger.getBufferedLogs().joinToString("\n")
-        val crash = KustomLogger.readCrashLog(context)
-        "$buffered\n\n--- CRASH LOG ---\n$crash"
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Kustom System & Crash Logs",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = KarooTextPrimary,
-            )
-        },
-        text = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(260.dp)
-                    .background(KarooTrackBg, RoundedCornerShape(8.dp))
-                    .padding(8.dp)
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                Text(
-                    text = logsText,
-                    fontSize = 11.sp,
-                    color = KarooTextPrimary,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    val clip = ClipData.newPlainText("Kustom Logs", logsText)
-                    clipboard.setPrimaryClip(clip)
-                    Toast.makeText(context, "Logs copied to clipboard", Toast.LENGTH_SHORT).show()
-                },
-            ) {
-                Text("Copy", color = KarooSlateAccent, fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close", color = KarooTextSecondary)
-            }
-        },
-        containerColor = KarooHeaderCardBg,
-    )
 }
 
 fun findNearestIndex(values: List<Float>, target: Float): Int {
