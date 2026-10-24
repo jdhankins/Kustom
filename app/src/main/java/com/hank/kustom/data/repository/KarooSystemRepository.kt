@@ -11,6 +11,7 @@ import io.hammerhead.karooext.models.UserProfile
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.onStart
 
 /**
  * Repository wrapper for [KarooSystemService] managing connection lifecycle
@@ -57,6 +58,7 @@ class KarooSystemRepository private constructor(context: Context) {
             params = OnStreamState.StartStreaming(dataTypeId),
             onError = { error ->
                 Log.e(TAG, "Error in streamDataFlow for $dataTypeId: $error")
+                trySend(StreamState.NotAvailable)
             },
             onEvent = { (state) ->
                 trySend(state)
@@ -66,14 +68,14 @@ class KarooSystemRepository private constructor(context: Context) {
             Log.d(TAG, "Closing streamDataFlow for $dataTypeId, removing consumer: $consumerId")
             karooSystem.removeConsumer(consumerId)
         }
-    }
+    }.onStart { emit(StreamState.Idle) }
 
     /**
      * Exposes a reactive [Flow] of [UserProfile] updates (FTP, max HR, target zones, unit preferences).
      *
      * @return Reactive [Flow] emitting the latest [UserProfile], or null if uninitialized.
      */
-    fun userProfileFlow(): Flow<UserProfile?> = callbackFlow {
+    fun userProfileFlow(): Flow<UserProfile?> = callbackFlow<UserProfile?> {
         connect()
         val consumerId = karooSystem.addConsumer<UserProfile>(
             onError = { error ->
@@ -87,7 +89,7 @@ class KarooSystemRepository private constructor(context: Context) {
             Log.d(TAG, "Closing userProfileFlow, removing consumer: $consumerId")
             karooSystem.removeConsumer(consumerId)
         }
-    }
+    }.onStart { emit(null) }
 
     /**
      * Exposes a reactive [Flow] of [RideState] updates (Idle, Recording, Paused).
@@ -108,7 +110,7 @@ class KarooSystemRepository private constructor(context: Context) {
             Log.d(TAG, "Closing rideStateFlow, removing consumer: $consumerId")
             karooSystem.removeConsumer(consumerId)
         }
-    }
+    }.onStart { emit(RideState.Idle) }
 
     /**
      * Exposes a reactive [Flow] emitting the connected Karoo [HardwareType] (e.g. K2 vs KAROO).
@@ -129,7 +131,7 @@ class KarooSystemRepository private constructor(context: Context) {
         awaitClose {
             Log.d(TAG, "Closing systemConfigFlow")
         }
-    }
+    }.onStart { emit(karooSystem.hardwareType ?: HardwareType.UNKNOWN) }
 
     companion object {
         private const val TAG = "KarooSystemRepository"
