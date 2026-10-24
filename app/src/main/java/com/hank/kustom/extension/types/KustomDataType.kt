@@ -92,7 +92,10 @@ class KustomDataType(
                                     fieldConfig = fieldConfig,
                                     isMock = true,
                                     mockValue = mockVal,
-                                    targetPowerVal = 250.0,
+                                    targetDataPoint = DataPoint(
+                                        dataTypeId = DataType.Type.WORKOUT_PRIMARY_TARGET,
+                                        values = mapOf(DataType.Field.WORKOUT_TARGET_VALUE to 250.0),
+                                    ),
                                 )
                             )
                             i++
@@ -104,16 +107,16 @@ class KustomDataType(
                     val sdkTypeId = definition.resolveSdkDataTypeId(fieldConfig.smoothingOption)
                     combine(
                         karooSystemRepository.streamDataFlow(sdkTypeId),
-                        karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET),
+                        karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_PRIMARY_TARGET),
                     ) { powerState, targetState ->
-                        val targetVal = (targetState as? StreamState.Streaming)?.dataPoint?.singleValue
+                        val targetDp = (targetState as? StreamState.Streaming)?.dataPoint
                         RenderPayload(
                             streamState = powerState,
                             userProfile = userProfile,
                             settings = settings,
                             fieldConfig = fieldConfig,
                             isMock = false,
-                            targetPowerVal = targetVal,
+                            targetDataPoint = targetDp,
                         )
                     }
                 } else {
@@ -130,7 +133,7 @@ class KustomDataType(
                     }
                 }
             }.collect { payload ->
-                val (streamState, userProfile, settings, fieldConfig, isMock, mockValue, targetPowerVal) = payload
+                val (streamState, userProfile, settings, fieldConfig, isMock, mockValue, targetDataPoint) = payload
 
                 if (fieldConfig.smoothingOption.seconds != lastSmoothingSec) {
                     lastSmoothingSec = fieldConfig.smoothingOption.seconds
@@ -153,12 +156,8 @@ class KustomDataType(
                 }
 
                 val dynamicLabel = if (definition.typeId == "workout-target-power") {
-                    val targetVal = if (isMock) 250.0 else targetPowerVal
-                    if (targetVal != null && targetVal > 0) {
-                        "${targetVal.toInt()}W"
-                    } else {
-                        "Target Power"
-                    }
+                    val targetText = extractTargetPowerString(targetDataPoint)
+                    targetText ?: "Target Power"
                 } else {
                     definition.resolveDynamicLabel(fieldConfig.smoothingOption)
                 }
@@ -223,8 +222,28 @@ class KustomDataType(
         val fieldConfig: KustomFieldConfig,
         val isMock: Boolean,
         val mockValue: Double? = null,
-        val targetPowerVal: Double? = null,
+        val targetDataPoint: DataPoint? = null,
     )
+
+    private fun extractTargetPowerString(dataPoint: DataPoint?): String? {
+        if (dataPoint == null) return null
+        val targetVal = dataPoint.values[DataType.Field.WORKOUT_TARGET_VALUE]
+        val minVal = dataPoint.values[DataType.Field.WORKOUT_TARGET_MIN_VALUE]
+        val maxVal = dataPoint.values[DataType.Field.WORKOUT_TARGET_MAX_VALUE]
+
+        return when {
+            minVal != null && maxVal != null && minVal > 0 && maxVal > 0 && minVal != maxVal -> {
+                "${minVal.toInt()}-${maxVal.toInt()}W"
+            }
+            targetVal != null && targetVal > 0 -> {
+                "${targetVal.toInt()}W"
+            }
+            minVal != null && minVal > 0 -> {
+                "${minVal.toInt()}W"
+            }
+            else -> null
+        }
+    }
 
     private fun computeMappedColor(
         definition: KustomFieldDefinition,
