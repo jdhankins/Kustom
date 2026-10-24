@@ -17,6 +17,7 @@ import io.hammerhead.karooext.internal.Emitter
 import io.hammerhead.karooext.internal.ViewEmitter
 import io.hammerhead.karooext.models.DataPoint
 import io.hammerhead.karooext.models.DataType
+import io.hammerhead.karooext.models.RideState
 import io.hammerhead.karooext.models.StreamState
 import io.hammerhead.karooext.models.UpdateGraphicConfig
 import io.hammerhead.karooext.models.UserProfile
@@ -64,14 +65,17 @@ class KustomDataType(
             var lastSmoothingSec = -1
 
             combine(
+                karooSystemRepository.rideStateFlow().onStart { emit(RideState.Idle) },
                 karooSystemRepository.userProfileFlow().onStart { emit(null) },
                 settingsRepository.settingsFlow,
-            ) { userProfile, settings ->
-                Pair(userProfile, settings)
-            }.flatMapLatest { (userProfile, settings) ->
+            ) { rideState, userProfile, settings ->
+                Triple(rideState, userProfile, settings)
+            }.flatMapLatest { (rideState, userProfile, settings) ->
                 val fieldConfig = settings.getFieldConfig(definition.typeId)
+                val isInRide = rideState is RideState.Recording || rideState is RideState.Paused
+                val isMockMode = config.preview && !isInRide
 
-                if (config.preview) {
+                if (isMockMode) {
                     // Page Setup / Profile Design Mode: Loop animated mock values
                     flow {
                         var i = 0
@@ -95,7 +99,7 @@ class KustomDataType(
                         }
                     }
                 } else {
-                    // Active Ride Page Mode: Stream live sensor telemetry states
+                    // Active Ride Page Mode: Stream live sensor telemetry states from Karoo OS
                     val sdkTypeId = definition.resolveSdkDataTypeId(fieldConfig.smoothingOption)
                     karooSystemRepository.streamDataFlow(sdkTypeId).map { streamState ->
                         RenderPayload(
