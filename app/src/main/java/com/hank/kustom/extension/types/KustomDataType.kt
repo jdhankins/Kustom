@@ -147,6 +147,8 @@ class KustomDataType(
                     userProfile = userProfile,
                 )
 
+                val isDarkTheme = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+
                 val bitmap = KustomFieldRenderer.render(
                     context = context,
                     config = config,
@@ -164,6 +166,7 @@ class KustomDataType(
                     ),
                     colorMode = fieldConfig.colorMode,
                     mappedColor = mappedColor,
+                    isDarkTheme = isDarkTheme,
                 )
 
                 val remoteViews = RemoteViews(context.packageName, R.layout.kustom_remote_field_canvas).apply {

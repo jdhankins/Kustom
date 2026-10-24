@@ -12,8 +12,8 @@ import com.hank.kustom.util.KustomLogger
 import io.hammerhead.karooext.models.ViewConfig
 
 /**
- * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas,
- * adapting dynamically to Light/Dark themes, data boundaries, and Left/Center/Right alignment.
+ * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas.
+ * Karoo OS manages the outer data field cell boundary/border.
  */
 object KustomFieldRenderer {
 
@@ -39,21 +39,21 @@ object KustomFieldRenderer {
 
             // Default colors based on theme and boundaries
             val defaultBgColor = if (boundaries) {
-                0xFFFFFFFF.toInt() // Bounded cells have pure white surface
+                if (isDarkTheme) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
             } else {
                 0x00000000 // Transparent when boundaries OFF
             }
 
-            val defaultTextColor = if (!boundaries && isDarkTheme) {
-                0xFFFFFFFF.toInt() // White text on dark page background when no boundary
+            val defaultTextColor = if (isDarkTheme) {
+                0xFFFFFFFF.toInt() // White text in Dark Mode
             } else {
-                0xFF1E2225.toInt() // Charcoal text on white boundary card
+                0xFF1E2225.toInt() // Charcoal text in Light Mode
             }
 
-            val mutedLabelColor = if (!boundaries && isDarkTheme) {
-                0xFF94A3B8.toInt()
+            val mutedLabelColor = if (isDarkTheme) {
+                0xFFFFFFFF.toInt() // White label in Dark Mode
             } else {
-                0xFF4A5258.toInt()
+                0xFF4A5258.toInt() // Muted slate label in Light Mode
             }
 
             val backgroundColor: Int
@@ -83,25 +83,16 @@ object KustomFieldRenderer {
                 }
             }
 
-            // Draw Background & Boundaries
-            if (boundaries && backgroundColor != 0x00000000) {
-                val rect = RectF(2f, 2f, width - 2f, height - 2f)
+            // Draw Background (Karoo OS draws the outer bounding box/border)
+            if (boundaries) {
+                val rect = RectF(0f, 0f, width.toFloat(), height.toFloat())
                 val cornerRadius = height * 0.12f
 
                 val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = backgroundColor
+                    color = if (backgroundColor != 0x00000000) backgroundColor else defaultBgColor
                     style = Paint.Style.FILL
                 }
                 canvas.drawRoundRect(rect, cornerRadius, cornerRadius, bgPaint)
-
-                // Outer border line
-                val strokeColor = if (isDarkTheme) 0xFF888888.toInt() else 0xFFCFD8DC.toInt()
-                val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = strokeColor
-                    style = Paint.Style.STROKE
-                    strokeWidth = 3f
-                }
-                canvas.drawRoundRect(rect, cornerRadius, cornerRadius, borderPaint)
             } else if (backgroundColor != 0x00000000) {
                 canvas.drawColor(backgroundColor)
             }
