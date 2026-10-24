@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
 import android.text.TextPaint
 import com.hank.kustom.data.model.ColorMode
@@ -14,7 +15,7 @@ import io.hammerhead.karooext.models.ViewConfig
 /**
  * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas.
  * The top 25% zone is reserved for the label and the bottom 75% zone for the value,
- * ensuring resizing one element never shifts the other.
+ * with label and value always centered vertically in their respective spaces.
  */
 object KustomFieldRenderer {
 
@@ -112,7 +113,7 @@ object KustomFieldRenderer {
                 ViewConfig.Alignment.RIGHT -> width - marginX
             }
 
-            // --- ZONE 1: TOP 25% ZONE FOR LABEL ---
+            // --- ZONE 1: TOP 25% ZONE FOR LABEL (Vertically Centered in 0 .. 0.25 * height) ---
             val labelZoneHeight = height * 0.25f
             val labelPx = spToPx(context, labelTypography.fontSizeSp, labelZoneHeight.toInt(), maxRatio = 0.85f)
             val labelPaint = TextPaint().apply {
@@ -126,14 +127,13 @@ object KustomFieldRenderer {
                 textSizePx = labelPx,
             )
 
-            val labelMetrics = labelPaint.fontMetrics
-            val labelAscent = -labelMetrics.ascent
-            val labelDescent = labelMetrics.descent
-            val labelFontHeight = labelAscent + labelDescent
-            val labelTop = ((labelZoneHeight - labelFontHeight) / 2f).coerceAtLeast(0f)
-            val labelY = labelTop + labelAscent
+            val labelBounds = Rect()
+            val labelStr = label.uppercase()
+            labelPaint.getTextBounds(labelStr, 0, labelStr.length, labelBounds)
+            val labelCenterY = labelZoneHeight / 2f
+            val labelY = labelCenterY + (labelBounds.height() / 2f) + labelBounds.top
 
-            // --- ZONE 2: BOTTOM 75% ZONE FOR VALUE ---
+            // --- ZONE 2: BOTTOM 75% ZONE FOR VALUE (Vertically Centered in 0.25 * height .. height) ---
             val valueZoneTop = height * 0.25f
             val valueZoneHeight = height * 0.75f
             val requestedValuePx = spToPx(context, valueTypography.fontSizeSp, valueZoneHeight.toInt(), maxRatio = 0.95f)
@@ -158,16 +158,13 @@ object KustomFieldRenderer {
                 valuePaint.textSize = valuePx
             }
 
-            val valueMetrics = valuePaint.fontMetrics
-            val valueAscent = -valueMetrics.ascent
-            val valueDescent = valueMetrics.descent
-            val valueFontHeight = valueAscent + valueDescent
+            val valueBounds = Rect()
+            valuePaint.getTextBounds(valueText, 0, valueText.length, valueBounds)
+            val valueCenterY = valueZoneTop + (valueZoneHeight / 2f)
+            val valueY = valueCenterY + (valueBounds.height() / 2f) + valueBounds.top
 
-            val valueTop = valueZoneTop + ((valueZoneHeight - valueFontHeight) / 2f).coerceAtLeast(0f)
-            val valueY = valueTop + valueAscent
-
-            // Draw Label & Value Text (Completely Decoupled 25% / 75% Zones)
-            canvas.drawText(label.uppercase(), textX, labelY, labelPaint)
+            // Draw Label & Value Text (Always Centered Vertically in 25% / 75% Spaces)
+            canvas.drawText(labelStr, textX, labelY, labelPaint)
             canvas.drawText(valueText, textX, valueY, valuePaint)
 
             bitmap

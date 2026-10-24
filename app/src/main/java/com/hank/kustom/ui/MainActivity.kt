@@ -467,10 +467,10 @@ fun GlobalFontsTab(
             )
         }
 
-        // LABEL FONT SIZE
+        // LABEL FONT SIZE (14 .. 30)
         item {
-            val labelSizes = listOf(10f, 12f, 14f, 16f, 18f)
-            val labelSizeSteps = listOf("10", "12", "14", "16", "18")
+            val labelSizes = listOf(14f, 18f, 22f, 26f, 30f)
+            val labelSizeSteps = listOf("14", "18", "22", "26", "30")
             val currentIdx = findNearestIndex(labelSizes, global.labelSizeSp.toFloat())
             KarooSteppedSlider(
                 label = "Label Font Size",
@@ -478,7 +478,7 @@ fun GlobalFontsTab(
                 selectedIndex = currentIdx,
                 colors = colors,
                 onStepSelected = { idx ->
-                    val newSize = labelSizes.getOrElse(idx) { 14f }.toInt()
+                    val newSize = labelSizes.getOrElse(idx) { 18f }.toInt()
                     onUpdateGlobalTypography(global.copy(labelSizeSp = newSize))
                 },
             )
