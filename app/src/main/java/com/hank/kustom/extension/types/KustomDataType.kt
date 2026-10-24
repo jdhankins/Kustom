@@ -45,32 +45,10 @@ class KustomDataType(
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun startStream(emitter: Emitter<StreamState>) {
         val job = CoroutineScope(Dispatchers.Default).launch {
-            combine(
-                karooSystemRepository.rideStateFlow().onStart { emit(RideState.Idle) },
-                settingsRepository.settingsFlow,
-            ) { rideState, settings ->
-                Pair(rideState, settings)
-            }.flatMapLatest { (rideState, settings) ->
+            settingsRepository.settingsFlow.flatMapLatest { settings ->
                 val fieldConfig = settings.getFieldConfig(definition.typeId)
                 val sdkTypeId = definition.resolveSdkDataTypeId(fieldConfig.smoothingOption)
-
-                if (rideState is RideState.Recording) {
-                    karooSystemRepository.streamDataFlow(sdkTypeId)
-                } else {
-                    flow {
-                        var i = 0
-                        while (true) {
-                            val mockVal = definition.mockValues[i % definition.mockValues.size]
-                            val dp = DataPoint(
-                                dataTypeId = sdkTypeId,
-                                values = mapOf(DataType.Field.SINGLE to mockVal),
-                            )
-                            emit(StreamState.Streaming(dp))
-                            i++
-                            delay(1200L)
-                        }
-                    }
-                }
+                karooSystemRepository.streamDataFlow(sdkTypeId)
             }.collect { streamState ->
                 emitter.onNext(streamState)
             }
@@ -87,16 +65,15 @@ class KustomDataType(
             var lastSmoothingSec = -1
 
             combine(
-                karooSystemRepository.rideStateFlow().onStart { emit(RideState.Idle) },
                 karooSystemRepository.userProfileFlow().onStart { emit(null) },
                 settingsRepository.settingsFlow,
-            ) { rideState, userProfile, settings ->
-                Triple(rideState, userProfile, settings)
-            }.flatMapLatest { (rideState, userProfile, settings) ->
+            ) { userProfile, settings ->
+                Pair(userProfile, settings)
+            }.flatMapLatest { (userProfile, settings) ->
                 val fieldConfig = settings.getFieldConfig(definition.typeId)
-                val isPageDesign = config.preview || rideState !is RideState.Recording
 
-                if (isPageDesign) {
+                if (config.preview) {
+                    // Page Setup / Profile Design Mode: Loop animated mock values
                     flow {
                         var i = 0
                         while (true) {
@@ -107,6 +84,7 @@ class KustomDataType(
                         }
                     }
                 } else {
+                    // Active Ride Page Mode: Stream live sensor telemetry
                     val sdkTypeId = definition.resolveSdkDataTypeId(fieldConfig.smoothingOption)
                     karooSystemRepository.streamDataFlow(sdkTypeId).map { streamState ->
                         val rawVal = (streamState as? StreamState.Streaming)?.dataPoint?.singleValue
