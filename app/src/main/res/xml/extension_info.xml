@@ -48,6 +48,34 @@
         icon="@drawable/ic_kustom_field" />
 
     <DataType
+        typeId="percent-ftp"
+        displayName="@string/field_percent_ftp_name"
+        description="@string/field_percent_ftp_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="intensity-factor"
+        displayName="@string/field_intensity_factor_name"
+        description="@string/field_intensity_factor_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="tss"
+        displayName="@string/field_tss_name"
+        description="@string/field_tss_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="power-to-weight"
+        displayName="@string/field_power_to_weight_name"
+        description="@string/field_power_to_weight_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
         typeId="hr"
         displayName="@string/field_hr_name"
         description="@string/field_hr_desc"
@@ -76,6 +104,13 @@
         icon="@drawable/ic_kustom_field" />
 
     <DataType
+        typeId="percent-max-hr"
+        displayName="@string/field_percent_max_hr_name"
+        description="@string/field_percent_max_hr_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
         typeId="speed"
         displayName="@string/field_speed_name"
         description="@string/field_speed_desc"
@@ -86,6 +121,13 @@
         typeId="avg-speed"
         displayName="@string/field_avg_speed_name"
         description="@string/field_avg_speed_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="max-speed"
+        displayName="@string/field_max_speed_name"
+        description="@string/field_max_speed_desc"
         graphical="true"
         icon="@drawable/ic_kustom_field" />
 
@@ -118,6 +160,13 @@
         icon="@drawable/ic_kustom_field" />
 
     <DataType
+        typeId="max-cadence"
+        displayName="@string/field_max_cadence_name"
+        description="@string/field_max_cadence_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
         typeId="grade"
         displayName="@string/field_grade_name"
         description="@string/field_grade_desc"
@@ -146,9 +195,23 @@
         icon="@drawable/ic_kustom_field" />
 
     <DataType
+        typeId="descent"
+        displayName="@string/field_descent_name"
+        description="@string/field_descent_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
         typeId="ride-time"
         displayName="@string/field_ride_time_name"
         description="@string/field_ride_time_desc"
+        graphical="true"
+        icon="@drawable/ic_kustom_field" />
+
+    <DataType
+        typeId="clock-time"
+        displayName="@string/field_clock_time_name"
+        description="@string/field_clock_time_desc"
         graphical="true"
         icon="@drawable/ic_kustom_field" />
 

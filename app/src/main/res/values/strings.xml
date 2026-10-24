@@ -2,66 +2,93 @@
     <string name="app_name">Kustom</string>
     <string name="extension_name">Kustom</string>
 
-    <string name="field_power_name">Power - Power</string>
+    <string name="field_power_name">Kustom - Power</string>
     <string name="field_power_desc">Current power output</string>
 
-    <string name="field_np_name">Power - Norm Power</string>
+    <string name="field_np_name">Kustom - Norm Power</string>
     <string name="field_np_desc">Normalized power output</string>
 
-    <string name="field_avg_power_name">Power - Avg Power</string>
+    <string name="field_avg_power_name">Kustom - Avg Power</string>
     <string name="field_avg_power_desc">Average ride power</string>
 
-    <string name="field_max_power_name">Power - Max Power</string>
+    <string name="field_max_power_name">Kustom - Max Power</string>
     <string name="field_max_power_desc">Maximum ride power</string>
 
-    <string name="field_lap_power_name">Power - Lap Power</string>
+    <string name="field_lap_power_name">Kustom - Lap Power</string>
     <string name="field_lap_power_desc">Average power this lap</string>
 
-    <string name="field_last_lap_power_name">Power - Last Lap Power</string>
+    <string name="field_last_lap_power_name">Kustom - Last Lap Power</string>
     <string name="field_last_lap_power_desc">Average power previous lap</string>
 
-    <string name="field_hr_name">Heart Rate - Heart Rate</string>
+    <string name="field_percent_ftp_name">Kustom - % FTP</string>
+    <string name="field_percent_ftp_desc">Percentage of threshold power</string>
+
+    <string name="field_intensity_factor_name">Kustom - Intensity Factor</string>
+    <string name="field_intensity_factor_desc">Ride intensity factor</string>
+
+    <string name="field_tss_name">Kustom - TSS</string>
+    <string name="field_tss_desc">Training stress score</string>
+
+    <string name="field_power_to_weight_name">Kustom - Power/Weight</string>
+    <string name="field_power_to_weight_desc">Power output in W/kg</string>
+
+    <string name="field_hr_name">Kustom - Heart Rate</string>
     <string name="field_hr_desc">Current heart rate</string>
 
-    <string name="field_avg_hr_name">Heart Rate - Avg HR</string>
+    <string name="field_avg_hr_name">Kustom - Avg HR</string>
     <string name="field_avg_hr_desc">Average ride heart rate</string>
 
-    <string name="field_max_hr_name">Heart Rate - Max HR</string>
+    <string name="field_max_hr_name">Kustom - Max HR</string>
     <string name="field_max_hr_desc">Maximum ride heart rate</string>
 
-    <string name="field_lap_hr_name">Heart Rate - Lap HR</string>
+    <string name="field_lap_hr_name">Kustom - Lap HR</string>
     <string name="field_lap_hr_desc">Average heart rate this lap</string>
 
-    <string name="field_speed_name">Speed - Speed</string>
+    <string name="field_percent_max_hr_name">Kustom - % Max HR</string>
+    <string name="field_percent_max_hr_desc">Percentage of max heart rate</string>
+
+    <string name="field_speed_name">Kustom - Speed</string>
     <string name="field_speed_desc">Current riding speed</string>
 
-    <string name="field_avg_speed_name">Speed - Avg Speed</string>
+    <string name="field_avg_speed_name">Kustom - Avg Speed</string>
     <string name="field_avg_speed_desc">Average ride speed</string>
 
-    <string name="field_lap_speed_name">Speed - Lap Speed</string>
+    <string name="field_max_speed_name">Kustom - Max Speed</string>
+    <string name="field_max_speed_desc">Maximum ride speed</string>
+
+    <string name="field_lap_speed_name">Kustom - Lap Speed</string>
     <string name="field_lap_speed_desc">Average speed this lap</string>
 
-    <string name="field_distance_name">Speed - Distance</string>
+    <string name="field_distance_name">Kustom - Distance</string>
     <string name="field_distance_desc">Distance traveled</string>
 
-    <string name="field_cadence_name">Cadence - Cadence</string>
+    <string name="field_cadence_name">Kustom - Cadence</string>
     <string name="field_cadence_desc">Current pedaling cadence</string>
 
-    <string name="field_avg_cadence_name">Cadence - Avg Cadence</string>
+    <string name="field_avg_cadence_name">Kustom - Avg Cadence</string>
     <string name="field_avg_cadence_desc">Average ride cadence</string>
 
-    <string name="field_grade_name">Climb - Grade</string>
+    <string name="field_max_cadence_name">Kustom - Max Cadence</string>
+    <string name="field_max_cadence_desc">Maximum ride cadence</string>
+
+    <string name="field_grade_name">Kustom - Grade</string>
     <string name="field_grade_desc">Current road gradient</string>
 
-    <string name="field_vam_name">Climb - VAM</string>
+    <string name="field_vam_name">Kustom - VAM</string>
     <string name="field_vam_desc">Vertical ascent speed</string>
 
-    <string name="field_elevation_name">Climb - Elevation</string>
+    <string name="field_elevation_name">Kustom - Elevation</string>
     <string name="field_elevation_desc">Current altitude</string>
 
-    <string name="field_ascent_name">Climb - Ascent</string>
+    <string name="field_ascent_name">Kustom - Ascent</string>
     <string name="field_ascent_desc">Total elevation gained</string>
 
-    <string name="field_ride_time_name">Time - Ride Time</string>
+    <string name="field_descent_name">Kustom - Descent</string>
+    <string name="field_descent_desc">Total elevation descended</string>
+
+    <string name="field_ride_time_name">Kustom - Ride Time</string>
     <string name="field_ride_time_desc">Elapsed ride time</string>
+
+    <string name="field_clock_time_name">Kustom - Clock</string>
+    <string name="field_clock_time_desc">Current time of day</string>
 </resources>
