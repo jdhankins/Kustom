@@ -433,10 +433,10 @@ fun GlobalFontsTab(
             )
         }
 
-        // VALUE FONT SIZE (36 .. 72)
+        // VALUE FONT SIZE (36 .. 88)
         item {
-            val valueSizes = listOf(36f, 42f, 48f, 56f, 64f, 72f)
-            val valueSizeSteps = listOf("36", "42", "48", "56", "64", "72")
+            val valueSizes = listOf(36f, 42f, 48f, 56f, 64f, 72f, 80f, 88f)
+            val valueSizeSteps = listOf("36", "42", "48", "56", "64", "72", "80", "88")
             val currentIdx = findNearestIndex(valueSizes, global.valueSizeSp.toFloat())
             KarooSteppedSlider(
                 label = "Value Font Size",

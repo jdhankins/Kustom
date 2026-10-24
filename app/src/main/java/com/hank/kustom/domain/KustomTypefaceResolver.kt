@@ -8,7 +8,7 @@ import com.hank.kustom.data.model.KustomFont
 import java.io.File
 
 /**
- * Typeface loader with distinct font-family styling and stroke synthesis for weight rendering.
+ * Typeface loader with distinct font-family styling and native weight rendering.
  */
 object KustomTypefaceResolver {
 
@@ -20,28 +20,30 @@ object KustomTypefaceResolver {
     ) {
         paint.isAntiAlias = true
         paint.textSize = textSizePx
+        paint.style = Paint.Style.FILL
+        paint.strokeWidth = 0f
 
-        // Distinct character scale & letter spacing per font family
+        // Character scale & letter spacing per font family
         when (font) {
             KustomFont.RBNO2_BOLD -> {
-                paint.textScaleX = 0.82f
-                paint.letterSpacing = -0.02f
-            }
-            KustomFont.RBNO2_MEDIUM -> {
-                paint.textScaleX = 0.86f
+                paint.textScaleX = 0.90f
                 paint.letterSpacing = -0.01f
             }
-            KustomFont.BARLOW -> {
+            KustomFont.RBNO2_MEDIUM -> {
                 paint.textScaleX = 0.94f
-                paint.letterSpacing = 0.01f
+                paint.letterSpacing = 0.0f
+            }
+            KustomFont.BARLOW -> {
+                paint.textScaleX = 0.98f
+                paint.letterSpacing = 0.0f
             }
             KustomFont.ROBOTO -> {
                 paint.textScaleX = 1.0f
                 paint.letterSpacing = 0.0f
             }
             KustomFont.NOTO_SANS -> {
-                paint.textScaleX = 1.06f
-                paint.letterSpacing = 0.02f
+                paint.textScaleX = 1.02f
+                paint.letterSpacing = 0.01f
             }
         }
 
@@ -55,32 +57,7 @@ object KustomTypefaceResolver {
             paint.typeface = created ?: baseTypeface
         } else {
             paint.typeface = baseTypeface
-        }
-
-        // Apply stroke synthesis for distinct weight thickness
-        when {
-            effectiveWeight <= 300 -> {
-                paint.style = Paint.Style.FILL
-                paint.strokeWidth = 0f
-                paint.isFakeBoldText = false
-            }
-            effectiveWeight <= 400 -> {
-                paint.style = Paint.Style.FILL
-                paint.strokeWidth = 0f
-                paint.isFakeBoldText = false
-            }
-            effectiveWeight <= 500 -> {
-                paint.style = Paint.Style.FILL_AND_STROKE
-                paint.strokeWidth = textSizePx * 0.018f
-            }
-            effectiveWeight <= 700 -> {
-                paint.style = Paint.Style.FILL_AND_STROKE
-                paint.strokeWidth = textSizePx * 0.038f
-            }
-            else -> { // >= 900
-                paint.style = Paint.Style.FILL_AND_STROKE
-                paint.strokeWidth = textSizePx * 0.062f
-            }
+            paint.isFakeBoldText = effectiveWeight >= 700
         }
     }
 

@@ -114,7 +114,7 @@ object KustomFieldRenderer {
 
             // --- ZONE 1: TOP 25% ZONE FOR LABEL (0 .. 0.25 * height) ---
             val labelZoneHeight = height * 0.25f
-            val labelPx = spToPx(context, labelTypography.fontSizeSp, labelZoneHeight.toInt(), maxRatio = 0.65f)
+            val labelPx = spToPx(context, labelTypography.fontSizeSp, labelZoneHeight.toInt(), maxRatio = 0.92f)
             val labelPaint = TextPaint().apply {
                 color = labelColor
                 textAlign = align
@@ -126,6 +126,14 @@ object KustomFieldRenderer {
                 textSizePx = labelPx,
             )
 
+            // Auto-scale label font size if text width exceeds canvas width
+            val maxLabelWidth = width * 0.90f
+            val measuredLabelWidth = labelPaint.measureText(label.uppercase())
+            if (measuredLabelWidth > maxLabelWidth && measuredLabelWidth > 0f) {
+                val scaledLabelPx = labelPx * (maxLabelWidth / measuredLabelWidth)
+                labelPaint.textSize = scaledLabelPx
+            }
+
             val labelMetrics = labelPaint.fontMetrics
             val labelCenterY = labelZoneHeight / 2f
             val labelY = labelCenterY - ((labelMetrics.ascent + labelMetrics.descent) / 2f)
@@ -133,7 +141,7 @@ object KustomFieldRenderer {
             // --- ZONE 2: BOTTOM 75% ZONE FOR VALUE (0.25 * height .. height) ---
             val valueZoneTop = height * 0.25f
             val valueZoneHeight = height * 0.75f
-            val requestedValuePx = spToPx(context, valueTypography.fontSizeSp, valueZoneHeight.toInt(), maxRatio = 0.65f)
+            val requestedValuePx = spToPx(context, valueTypography.fontSizeSp, valueZoneHeight.toInt(), maxRatio = 0.95f)
             var valuePx = requestedValuePx
 
             val valuePaint = TextPaint().apply {
@@ -159,7 +167,7 @@ object KustomFieldRenderer {
             val valueCenterY = valueZoneTop + (valueZoneHeight / 2f)
             val valueY = valueCenterY - ((valueMetrics.ascent + valueMetrics.descent) / 2f)
 
-            // Draw Label & Value Text (Mathematically Centered in 25% / 75% Zones)
+            // Draw Label & Value Text
             canvas.drawText(label.uppercase(), textX, labelY, labelPaint)
             canvas.drawText(valueText, textX, valueY, valuePaint)
 
