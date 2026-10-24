@@ -907,7 +907,7 @@ fun KarooSegmentedPill(
                             .weight(weight)
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(50))
-                            .background(if (isSelected) Color(0xFFFFC800) else Color.Transparent)
+                            .background(if (isSelected) KarooSlateAccent else Color.Transparent)
                             .clickable { onZoneFormatSelected(format) }
                             .padding(horizontal = 8.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center,
@@ -916,7 +916,7 @@ fun KarooSegmentedPill(
                             text = labelText,
                             fontSize = 14.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) Color(0xFF0F1A2A) else Color(0xFF94A3B8),
+                            color = if (isSelected) KarooTextPrimary else KarooTextSecondary,
                             textAlign = TextAlign.Center,
                             maxLines = 1,
                             softWrap = false,
