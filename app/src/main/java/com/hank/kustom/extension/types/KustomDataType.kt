@@ -12,6 +12,7 @@ import com.hank.kustom.data.repository.KustomSettingsRepository
 import com.hank.kustom.domain.KustomColorGradeMapper
 import com.hank.kustom.domain.KustomFieldRenderer
 import com.hank.kustom.domain.RollingTimeSmoother
+import com.hank.kustom.util.KustomLogger
 import io.hammerhead.karooext.extension.DataTypeImpl
 import io.hammerhead.karooext.internal.Emitter
 import io.hammerhead.karooext.internal.ViewEmitter
@@ -94,7 +95,10 @@ class KustomDataType(
                                     mockValue = mockVal,
                                     targetDataPoint = DataPoint(
                                         dataTypeId = DataType.Type.WORKOUT_PRIMARY_TARGET,
-                                        values = mapOf(DataType.Field.WORKOUT_TARGET_VALUE to 250.0),
+                                        values = mapOf(
+                                            DataType.Field.WORKOUT_TARGET_MIN_VALUE to 117.0,
+                                            DataType.Field.WORKOUT_TARGET_MAX_VALUE to 146.0,
+                                        ),
                                     ),
                                 )
                             )
@@ -103,13 +107,16 @@ class KustomDataType(
                         }
                     }
                 } else if (definition.typeId == "workout-target-power") {
-                    // Workout Power: Stream live current power AND live target power
+                    // Workout Power: Stream live current power AND live workout target streams
                     val sdkTypeId = definition.resolveSdkDataTypeId(fieldConfig.smoothingOption)
                     combine(
                         karooSystemRepository.streamDataFlow(sdkTypeId),
+                        karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET),
                         karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_PRIMARY_TARGET),
-                    ) { powerState, targetState ->
-                        val targetDp = (targetState as? StreamState.Streaming)?.dataPoint
+                    ) { powerState, targetPowerState, primaryTargetState ->
+                        val pDp = (targetPowerState as? StreamState.Streaming)?.dataPoint
+                        val priDp = (primaryTargetState as? StreamState.Streaming)?.dataPoint
+                        val targetDp = priDp ?: pDp
                         RenderPayload(
                             streamState = powerState,
                             userProfile = userProfile,
@@ -227,9 +234,26 @@ class KustomDataType(
 
     private fun extractTargetPowerString(dataPoint: DataPoint?): String? {
         if (dataPoint == null) return null
-        val targetVal = dataPoint.values[DataType.Field.WORKOUT_TARGET_VALUE]
-        val minVal = dataPoint.values[DataType.Field.WORKOUT_TARGET_MIN_VALUE]
-        val maxVal = dataPoint.values[DataType.Field.WORKOUT_TARGET_MAX_VALUE]
+        KustomLogger.d("extractTargetPowerString dataPoint values: ${dataPoint.values}")
+
+        var minVal: Double? = null
+        var maxVal: Double? = null
+        var targetVal: Double? = null
+
+        for ((key, value) in dataPoint.values) {
+            when {
+                key.contains("MIN", ignoreCase = true) -> minVal = value
+                key.contains("MAX", ignoreCase = true) -> maxVal = value
+                key.contains("TARGET_VALUE", ignoreCase = true) || key.contains("OUTPUT", ignoreCase = true) -> {
+                    if (targetVal == null || targetVal == 0.0) targetVal = value
+                }
+                else -> {
+                    if (targetVal == null && value > 10.0) targetVal = value
+                }
+            }
+        }
+
+        KustomLogger.d("Extracted target watts: minVal=$minVal, maxVal=$maxVal, targetVal=$targetVal")
 
         return when {
             minVal != null && maxVal != null && minVal > 0 && maxVal > 0 && minVal != maxVal -> {
