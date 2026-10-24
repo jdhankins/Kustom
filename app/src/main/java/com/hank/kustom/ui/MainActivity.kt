@@ -1,10 +1,6 @@
 package com.hank.kustom.ui
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -32,18 +28,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -220,17 +212,6 @@ fun KustomKarooNativeScreen(
     var selectedTopNavTab by remember { mutableIntStateOf(0) } // 0 = Global, 1 = Fields
     var selectedField by remember { mutableStateOf(KustomFieldCatalog.POWER) }
     var expandedCategory by remember { mutableStateOf<FieldCategory?>(FieldCategory.POWER) }
-    var showLogsDialog by remember { mutableStateOf(false) }
-
-    val context = LocalContext.current
-
-    if (showLogsDialog) {
-        KustomLogsDialog(
-            context = context,
-            colors = colors,
-            onDismiss = { showLogsDialog = false },
-        )
-    }
 
     Column(
         modifier = Modifier
@@ -243,7 +224,6 @@ fun KustomKarooNativeScreen(
             selectedTab = selectedTopNavTab,
             colors = colors,
             onTabSelected = { selectedTopNavTab = it },
-            onOpenLogs = { showLogsDialog = true },
         )
 
         // Scrollable Menu Body
@@ -286,7 +266,6 @@ fun KustomKarooNativeScreen(
  * @param selectedTab Active tab index (0 = Global, 1 = Fields).
  * @param colors Active adaptive color scheme ([KustomColorScheme]).
  * @param onTabSelected Callback invoked when a navigation tab is selected.
- * @param onOpenLogs Callback invoked when logs dialog button is clicked.
  */
 @Composable
 fun KustomStickyHeaderSection(
@@ -294,7 +273,6 @@ fun KustomStickyHeaderSection(
     selectedTab: Int,
     colors: KustomColorScheme,
     onTabSelected: (Int) -> Unit,
-    onOpenLogs: () -> Unit,
 ) {
     val context = LocalContext.current
 
@@ -362,74 +340,49 @@ fun KustomStickyHeaderSection(
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            // 1. Navigation Pill Bar (Global | Fields) + Logs Link
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+            // 1. Navigation Pill Bar (Global | Fields)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(colors.trackBg)
+                    .padding(3.dp),
             ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(colors.trackBg)
-                        .padding(3.dp),
-                ) {
-                    Row(modifier = Modifier.fillMaxSize()) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clip(RoundedCornerShape(50))
-                                .background(if (selectedTab == 0) colors.accent else Color.Transparent)
-                                .clickable { onTabSelected(0) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = "Global",
-                                fontSize = 14.sp,
-                                fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium,
-                                color = colors.textPrimary,
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clip(RoundedCornerShape(50))
-                                .background(if (selectedTab == 1) colors.accent else Color.Transparent)
-                                .clickable { onTabSelected(1) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = "Fields",
-                                fontSize = 14.sp,
-                                fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium,
-                                color = colors.textPrimary,
-                            )
-                        }
+                Row(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(50))
+                            .background(if (selectedTab == 0) colors.accent else Color.Transparent)
+                            .clickable { onTabSelected(0) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "Global",
+                            fontSize = 14.sp,
+                            fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium,
+                            color = colors.textPrimary,
+                        )
                     }
-                }
 
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Box(
-                    modifier = Modifier
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(colors.trackBg)
-                        .clickable { onOpenLogs() }
-                        .padding(horizontal = 12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "Logs 📋",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = colors.textPrimary,
-                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(50))
+                            .background(if (selectedTab == 1) colors.accent else Color.Transparent)
+                            .clickable { onTabSelected(1) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "Fields",
+                            fontSize = 14.sp,
+                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium,
+                            color = colors.textPrimary,
+                        )
+                    }
                 }
             }
 
@@ -1116,72 +1069,6 @@ fun KarooSegmentedPill(
             }
         }
     }
-}
-
-/**
- * Dialog displaying buffered system logs and crash logs.
- *
- * @param context Application or activity context.
- * @param colors Active adaptive color scheme ([KustomColorScheme]).
- * @param onDismiss Callback invoked when dialog is dismissed.
- */
-@Composable
-fun KustomLogsDialog(
-    context: Context,
-    colors: KustomColorScheme,
-    onDismiss: () -> Unit,
-) {
-    val logsText = remember {
-        val buffered = KustomLogger.getBufferedLogs().joinToString("\n")
-        val crash = KustomLogger.readCrashLog(context)
-        "$buffered\n\n--- CRASH LOG ---\n$crash"
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Kustom System & Crash Logs",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.textPrimary,
-            )
-        },
-        text = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(260.dp)
-                    .background(colors.trackBg, RoundedCornerShape(8.dp))
-                    .padding(8.dp)
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                Text(
-                    text = logsText,
-                    fontSize = 11.sp,
-                    color = colors.textPrimary,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    val clip = ClipData.newPlainText("Kustom Logs", logsText)
-                    clipboard.setPrimaryClip(clip)
-                    Toast.makeText(context, "Logs copied to clipboard", Toast.LENGTH_SHORT).show()
-                },
-            ) {
-                Text("Copy", color = colors.accent, fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close", color = colors.textSecondary)
-            }
-        },
-        containerColor = colors.cardBg,
-    )
 }
 
 /**
