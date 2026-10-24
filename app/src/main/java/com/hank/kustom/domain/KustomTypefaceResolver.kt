@@ -5,10 +5,9 @@ import android.graphics.Typeface
 import android.os.Build
 import android.text.TextPaint
 import com.hank.kustom.data.model.KustomFont
-import java.io.File
 
 /**
- * Typeface loader with distinct font-family styling and native weight rendering.
+ * Typeface loader with distinct font-family styling and native/synthetic weight rendering.
  */
 object KustomTypefaceResolver {
 
@@ -48,7 +47,7 @@ object KustomTypefaceResolver {
         }
 
         val effectiveWeight = if (font == KustomFont.RBNO2_BOLD) weight.coerceAtLeast(700) else weight
-        val baseTypeface = resolveBaseTypeface(font, effectiveWeight)
+        val baseTypeface = resolveFamilyTypeface(font, effectiveWeight)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             val created = runCatching {
@@ -57,22 +56,15 @@ object KustomTypefaceResolver {
             paint.typeface = created ?: baseTypeface
         } else {
             paint.typeface = baseTypeface
-            paint.isFakeBoldText = effectiveWeight >= 700
         }
+
+        paint.isFakeBoldText = (effectiveWeight >= 700)
     }
 
-    private fun resolveBaseTypeface(font: KustomFont, weight: Int): Typeface {
-        for (path in font.systemPaths) {
-            val file = File(path)
-            if (file.exists()) {
-                val tf = runCatching { Typeface.createFromFile(file) }.getOrNull()
-                if (tf != null) return tf
-            }
-        }
-
+    private fun resolveFamilyTypeface(font: KustomFont, weight: Int): Typeface {
         val familyName = when (font) {
             KustomFont.RBNO2_BOLD, KustomFont.RBNO2_MEDIUM, KustomFont.BARLOW -> "sans-serif-condensed"
-            KustomFont.ROBOTO -> "Roboto"
+            KustomFont.ROBOTO -> "sans-serif"
             KustomFont.NOTO_SANS -> "sans-serif"
         }
 
