@@ -22,7 +22,7 @@ object KustomTypefaceResolver {
         paint.style = Paint.Style.FILL
         paint.strokeWidth = 0f
 
-        // Distinct character scale & letter spacing per cycling font family
+        // Character scale & letter spacing per cycling font family
         when (font) {
             KustomFont.KAROO_RBNO2 -> {
                 paint.textScaleX = 0.90f
@@ -54,16 +54,19 @@ object KustomTypefaceResolver {
 
         val baseTypeface = resolveFamilyTypeface(font, effectiveWeight)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            val created = runCatching {
+        val created = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            runCatching {
                 Typeface.create(baseTypeface, effectiveWeight.coerceIn(100, 900), false)
             }.getOrNull()
-            paint.typeface = created ?: baseTypeface
+        } else null
+
+        if (created != null) {
+            paint.typeface = created
+            paint.isFakeBoldText = false
         } else {
             paint.typeface = baseTypeface
+            paint.isFakeBoldText = (effectiveWeight >= 700)
         }
-
-        paint.isFakeBoldText = (effectiveWeight >= 700)
     }
 
     private fun resolveFamilyTypeface(font: KustomFont, weight: Int): Typeface {
