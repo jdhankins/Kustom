@@ -301,7 +301,7 @@ fun KustomStickyHeaderSection(
     val previewViewConfig = remember {
         ViewConfig(
             gridSize = Pair(60, 20),
-            viewSize = Pair(360, 200),
+            viewSize = Pair(360, 240),
             textSize = 38,
             alignment = ViewConfig.Alignment.CENTER,
             boundariesEnabled = true,
@@ -957,20 +957,20 @@ fun KarooSteppedSlider(
 
         // Aligned Step Labels Row with Individual Click Targets
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             steps.forEachIndexed { i, stepLabel ->
                 val isSelected = i == safeIndex
                 Box(
-                    modifier = Modifier
-                        .width(42.dp)
-                        .clickable { onStepSelected(i) },
+                    modifier = Modifier.clickable { onStepSelected(i) },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = stepLabel,
-                        fontSize = 13.5.sp,
+                        fontSize = 12.5.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         color = if (isSelected) colors.accent else colors.textSecondary,
                         textAlign = TextAlign.Center,
