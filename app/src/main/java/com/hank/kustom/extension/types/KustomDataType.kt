@@ -210,6 +210,7 @@ class KustomDataType(
                     colorMode = fieldConfig.colorMode,
                     mappedColor = mappedColor,
                     isDarkTheme = isDarkTheme,
+                    globalColors = settings.globalColors,
                 )
 
                 val remoteViews = RemoteViews(context.packageName, R.layout.kustom_remote_field_canvas).apply {

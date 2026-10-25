@@ -107,6 +107,45 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /** Updates Light Mode background color. */
+    fun updateLightBgColor(hex: String) {
+        val current = _settingsState.value
+        val updatedColors = current.globalColors.copy(lightBgColorHex = hex, useCustomBg = true)
+        _settingsState.value = current.copy(globalColors = updatedColors)
+
+        saveTypographyJob?.cancel()
+        saveTypographyJob = viewModelScope.launch {
+            delay(300L)
+            repository.updateLightBgColor(hex)
+        }
+    }
+
+    /** Updates Dark Mode background color. */
+    fun updateDarkBgColor(hex: String) {
+        val current = _settingsState.value
+        val updatedColors = current.globalColors.copy(darkBgColorHex = hex, useCustomBg = true)
+        _settingsState.value = current.copy(globalColors = updatedColors)
+
+        saveTypographyJob?.cancel()
+        saveTypographyJob = viewModelScope.launch {
+            delay(300L)
+            repository.updateDarkBgColor(hex)
+        }
+    }
+
+    /** Updates whether custom field background color is enabled. */
+    fun updateUseCustomBg(enabled: Boolean) {
+        val current = _settingsState.value
+        val updatedColors = current.globalColors.copy(useCustomBg = enabled)
+        _settingsState.value = current.copy(globalColors = updatedColors)
+
+        saveTypographyJob?.cancel()
+        saveTypographyJob = viewModelScope.launch {
+            delay(300L)
+            repository.updateUseCustomBg(enabled)
+        }
+    }
+
     /** Updates field smoothing option atomically without touching color mode. */
     fun updateFieldSmoothing(typeId: String, smoothing: SmoothingOption) {
         val current = _settingsState.value

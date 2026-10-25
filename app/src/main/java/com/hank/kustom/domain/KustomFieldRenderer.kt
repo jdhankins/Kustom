@@ -8,6 +8,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.text.TextPaint
 import com.hank.kustom.data.model.ColorMode
+import com.hank.kustom.data.model.GlobalColorConfig
 import com.hank.kustom.data.model.TypographyConfig
 import com.hank.kustom.util.KustomLogger
 import io.hammerhead.karooext.models.ViewConfig
@@ -29,6 +30,7 @@ object KustomFieldRenderer {
         colorMode: ColorMode,
         mappedColor: Int?,
         isDarkTheme: Boolean = false,
+        globalColors: GlobalColorConfig = GlobalColorConfig(),
     ): Bitmap {
         return runCatching {
             val width = config.viewSize.first.coerceAtLeast(10)
@@ -39,24 +41,24 @@ object KustomFieldRenderer {
 
             val boundaries = config.boundariesEnabled
 
-            // Default colors based on theme and boundaries
-            val defaultBgColor = if (boundaries) {
+            // Default colors based on theme, custom background preferences, and boundaries
+            val defaultBgColor = if (globalColors.useCustomBg) {
+                if (isDarkTheme) globalColors.getDarkColorInt() else globalColors.getLightColorInt()
+            } else if (boundaries) {
                 if (isDarkTheme) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
             } else {
                 0x00000000 // Transparent when boundaries OFF
             }
 
-            val defaultTextColor = if (isDarkTheme) {
+            val defaultTextColor = if (globalColors.useCustomBg && (colorMode != ColorMode.BACKGROUND_COLOR || mappedColor == null)) {
+                KustomColorGradeMapper.getContrastingTextColor(defaultBgColor)
+            } else if (isDarkTheme) {
                 0xFFFFFFFF.toInt() // White text in Dark Mode
             } else {
                 0xFF1E2225.toInt() // Charcoal text in Light Mode
             }
 
-            val mutedLabelColor = if (isDarkTheme) {
-                0xFFFFFFFF.toInt() // White label in Dark Mode
-            } else {
-                0xFF4A5258.toInt() // Muted slate label in Light Mode
-            }
+            val mutedLabelColor = defaultTextColor
 
             val backgroundColor: Int
             val labelColor: Int

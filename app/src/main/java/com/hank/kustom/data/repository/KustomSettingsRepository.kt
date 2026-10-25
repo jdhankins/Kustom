@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.hank.kustom.data.model.ColorMode
+import com.hank.kustom.data.model.GlobalColorConfig
 import com.hank.kustom.data.model.GlobalTypographyConfig
 import com.hank.kustom.data.model.KustomFieldCatalog
 import com.hank.kustom.data.model.KustomFieldConfig
@@ -53,6 +54,12 @@ class KustomSettingsRepository(context: Context) {
                 valueWeight = prefs[Keys.GLOBAL_VALUE_WEIGHT] ?: 700,
             )
 
+            val globalColors = GlobalColorConfig(
+                lightBgColorHex = prefs[Keys.GLOBAL_LIGHT_BG_COLOR] ?: "#FFFFFF",
+                darkBgColorHex = prefs[Keys.GLOBAL_DARK_BG_COLOR] ?: "#000000",
+                useCustomBg = prefs[Keys.GLOBAL_USE_CUSTOM_BG] ?: false,
+            )
+
             val configs = mutableMapOf<String, KustomFieldConfig>()
             KustomFieldCatalog.allFields.forEach { fieldDef ->
                 val typeId = fieldDef.typeId
@@ -70,6 +77,7 @@ class KustomSettingsRepository(context: Context) {
 
             KustomSettings(
                 globalTypography = globalTypo,
+                globalColors = globalColors,
                 fieldConfigs = configs,
             )
         }
@@ -116,6 +124,35 @@ class KustomSettingsRepository(context: Context) {
     suspend fun updateLabelFontWeight(weight: Int) {
         dataStore.edit { prefs ->
             prefs[Keys.GLOBAL_LABEL_WEIGHT] = weight
+        }
+    }
+
+    /**
+     * Atomically updates Light Mode background color in DataStore.
+     */
+    suspend fun updateLightBgColor(hex: String) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_LIGHT_BG_COLOR] = hex
+            prefs[Keys.GLOBAL_USE_CUSTOM_BG] = true
+        }
+    }
+
+    /**
+     * Atomically updates Dark Mode background color in DataStore.
+     */
+    suspend fun updateDarkBgColor(hex: String) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_DARK_BG_COLOR] = hex
+            prefs[Keys.GLOBAL_USE_CUSTOM_BG] = true
+        }
+    }
+
+    /**
+     * Atomically updates whether custom field background color is enabled.
+     */
+    suspend fun updateUseCustomBg(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_USE_CUSTOM_BG] = enabled
         }
     }
 
@@ -173,5 +210,8 @@ class KustomSettingsRepository(context: Context) {
         val GLOBAL_LABEL_WEIGHT = intPreferencesKey("global_label_weight")
         val GLOBAL_VALUE_SIZE_SP = intPreferencesKey("global_value_size_sp")
         val GLOBAL_VALUE_WEIGHT = intPreferencesKey("global_value_weight")
+        val GLOBAL_LIGHT_BG_COLOR = stringPreferencesKey("global_light_bg_color")
+        val GLOBAL_DARK_BG_COLOR = stringPreferencesKey("global_dark_bg_color")
+        val GLOBAL_USE_CUSTOM_BG = booleanPreferencesKey("global_use_custom_bg")
     }
 }
