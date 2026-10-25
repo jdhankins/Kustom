@@ -14,7 +14,7 @@ import io.hammerhead.karooext.models.ViewConfig
 /**
  * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas.
  * The top 25% zone is reserved for the label and the bottom 75% zone for the value,
- * with label and value always centered vertically in their respective spaces.
+ * with Wahoo ELEMNT style superscript formatting for decimals and time colons.
  */
 object KustomFieldRenderer {
 
@@ -158,7 +158,14 @@ object KustomFieldRenderer {
 
             // Auto-scale font size if text width exceeds canvas width
             val maxTextWidth = width * 0.88f
-            val measuredWidth = valuePaint.measureText(valueText)
+            val (primaryPart, secondaryPart) = parsePrimaryAndSecondary(valueText)
+            val measuredWidth = if (secondaryPart.isNotEmpty()) {
+                val secPaint = TextPaint(valuePaint).apply { textSize = valuePaint.textSize * 0.58f }
+                valuePaint.measureText(primaryPart) + secPaint.measureText(secondaryPart)
+            } else {
+                valuePaint.measureText(valueText)
+            }
+
             if (measuredWidth > maxTextWidth && measuredWidth > 0f) {
                 valuePx *= (maxTextWidth / measuredWidth)
                 valuePaint.textSize = valuePx
@@ -168,9 +175,9 @@ object KustomFieldRenderer {
             val valueCenterY = valueZoneTop + (valueZoneHeight / 2f)
             val valueY = valueCenterY - ((valueMetrics.ascent + valueMetrics.descent) / 2f)
 
-            // Draw Label & Value Text
+            // Draw Label & Value Text (Wahoo Superscript Style for Decimals/Time)
             canvas.drawText(label.uppercase(), textX, labelY, labelPaint)
-            canvas.drawText(valueText, textX, valueY, valuePaint)
+            drawWahooValueText(canvas, valueText, textX, valueY, valuePaint, align)
 
             bitmap
         }.getOrElse { throwable ->
@@ -180,6 +187,78 @@ object KustomFieldRenderer {
                 config.viewSize.second.coerceAtLeast(10),
             )
         }
+    }
+
+    /**
+     * Draws value text with Wahoo ELEMNT style superscript formatting for decimals and time colons.
+     */
+    private fun drawWahooValueText(
+        canvas: Canvas,
+        valueText: String,
+        primaryX: Float,
+        baseY: Float,
+        primaryPaint: TextPaint,
+        align: Paint.Align,
+    ) {
+        val (primaryPart, secondaryPart) = parsePrimaryAndSecondary(valueText)
+
+        if (secondaryPart.isEmpty()) {
+            canvas.drawText(primaryPart, primaryX, baseY, primaryPaint)
+            return
+        }
+
+        val secondaryPaint = TextPaint(primaryPaint).apply {
+            textSize = primaryPaint.textSize * 0.58f
+        }
+
+        val primaryWidth = primaryPaint.measureText(primaryPart)
+        val secondaryWidth = secondaryPaint.measureText(secondaryPart)
+        val totalWidth = primaryWidth + secondaryWidth
+
+        val primaryMetrics = primaryPaint.fontMetrics
+        val primaryAscent = -primaryMetrics.ascent
+
+        val secondaryMetrics = secondaryPaint.fontMetrics
+        val secondaryAscent = -secondaryMetrics.ascent
+
+        // Raised superscript position aligned near top of primary digits
+        val secondaryY = baseY - primaryAscent + secondaryAscent
+
+        val (primaryStartX, secondaryStartX) = when (align) {
+            Paint.Align.LEFT -> Pair(primaryX, primaryX + primaryWidth)
+            Paint.Align.CENTER -> {
+                val startX = primaryX - (totalWidth / 2f)
+                Pair(startX, startX + primaryWidth)
+            }
+            Paint.Align.RIGHT -> {
+                val startX = primaryX - totalWidth
+                Pair(startX, startX + primaryWidth)
+            }
+        }
+
+        val drawPrimaryPaint = TextPaint(primaryPaint).apply { textAlign = Paint.Align.LEFT }
+        canvas.drawText(primaryPart, primaryStartX, baseY, drawPrimaryPaint)
+
+        val drawSecondaryPaint = TextPaint(secondaryPaint).apply { textAlign = Paint.Align.LEFT }
+        canvas.drawText(secondaryPart, secondaryStartX, secondaryY, drawSecondaryPaint)
+    }
+
+    /**
+     * Splits value text into primary main digits and secondary superscript digits (for decimals or time colons).
+     */
+    private fun parsePrimaryAndSecondary(valueText: String): Pair<String, String> {
+        if (valueText.contains(":")) {
+            val idx = valueText.indexOf(":")
+            val primary = valueText.substring(0, idx)
+            val secondary = valueText.substring(idx)
+            return Pair(primary, secondary)
+        } else if (valueText.contains(".")) {
+            val idx = valueText.indexOf(".")
+            val primary = valueText.substring(0, idx)
+            val secondary = valueText.substring(idx + 1)
+            return Pair(primary, secondary)
+        }
+        return Pair(valueText, "")
     }
 
     private fun createFallbackBitmap(width: Int, height: Int): Bitmap {
