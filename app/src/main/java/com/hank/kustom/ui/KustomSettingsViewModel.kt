@@ -31,7 +31,10 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
     init {
         viewModelScope.launch {
             repository.settingsFlow.collect { diskSettings ->
-                _settingsState.value = diskSettings
+                // Sync disk settings only when user is not actively adjusting typography
+                if (saveTypographyJob?.isActive != true) {
+                    _settingsState.value = diskSettings
+                }
             }
         }
     }

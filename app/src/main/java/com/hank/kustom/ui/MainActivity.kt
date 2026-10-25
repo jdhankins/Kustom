@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -430,9 +431,8 @@ fun GlobalFontsTab(
     val global = settings.globalTypography
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -450,10 +450,10 @@ fun GlobalFontsTab(
             )
         }
 
-        // VALUE FONT SIZE (40 .. 72)
+        // VALUE FONT SIZE (36, 42, 48, 56, 64, 72)
         item {
-            val valueSizes = listOf(40f, 46f, 52f, 58f, 64f, 72f)
-            val valueSizeSteps = listOf("40", "46", "52", "58", "64", "72")
+            val valueSizes = listOf(36f, 42f, 48f, 56f, 64f, 72f)
+            val valueSizeSteps = listOf("36", "42", "48", "56", "64", "72")
             val currentIdx = findNearestIndex(valueSizes, global.valueSizeSp.toFloat())
             KarooSteppedSlider(
                 label = "Value Font Size",
@@ -461,33 +461,33 @@ fun GlobalFontsTab(
                 selectedIndex = currentIdx,
                 colors = colors,
                 onStepSelected = { idx ->
-                    val newSize = valueSizes.getOrElse(idx) { 52f }.toInt()
+                    val newSize = valueSizes.getOrElse(idx) { 48f }.toInt()
                     onUpdateGlobalTypography(global.copy(valueSizeSp = newSize))
                 },
             )
         }
 
-        // VALUE FONT WEIGHT
+        // VALUE FONT WEIGHT (300, 400, 500, 700, 900)
         item {
-            val weights = listOf(300, 400, 500, 700, 900)
+            val weights = listOf(300f, 400f, 500f, 700f, 900f)
             val weightSteps = listOf("300", "400", "500", "700", "900")
-            val currentIdx = findNearestIndex(weights.map { it.toFloat() }, global.valueWeight.toFloat())
+            val currentIdx = findNearestIndex(weights, global.valueWeight.toFloat())
             KarooSteppedSlider(
                 label = "Value Font Weight",
                 steps = weightSteps,
                 selectedIndex = currentIdx,
                 colors = colors,
                 onStepSelected = { idx ->
-                    val newWeight = weights.getOrElse(idx) { 700 }
+                    val newWeight = weights.getOrElse(idx) { 700f }.toInt()
                     onUpdateGlobalTypography(global.copy(valueWeight = newWeight))
                 },
             )
         }
 
-        // LABEL FONT SIZE (14 .. 30)
+        // LABEL FONT SIZE (10, 12, 14, 16, 18, 20)
         item {
-            val labelSizes = listOf(14f, 18f, 22f, 26f, 30f)
-            val labelSizeSteps = listOf("14", "18", "22", "26", "30")
+            val labelSizes = listOf(10f, 12f, 14f, 16f, 18f, 20f)
+            val labelSizeSteps = listOf("10", "12", "14", "16", "18", "20")
             val currentIdx = findNearestIndex(labelSizes, global.labelSizeSp.toFloat())
             KarooSteppedSlider(
                 label = "Label Font Size",
@@ -495,27 +495,32 @@ fun GlobalFontsTab(
                 selectedIndex = currentIdx,
                 colors = colors,
                 onStepSelected = { idx ->
-                    val newSize = labelSizes.getOrElse(idx) { 18f }.toInt()
+                    val newSize = labelSizes.getOrElse(idx) { 14f }.toInt()
                     onUpdateGlobalTypography(global.copy(labelSizeSp = newSize))
                 },
             )
         }
 
-        // LABEL FONT WEIGHT
+        // LABEL FONT WEIGHT (300, 400, 500, 700, 900)
         item {
-            val weights = listOf(300, 400, 500, 700, 900)
+            val weights = listOf(300f, 400f, 500f, 700f, 900f)
             val weightSteps = listOf("300", "400", "500", "700", "900")
-            val currentIdx = findNearestIndex(weights.map { it.toFloat() }, global.labelWeight.toFloat())
+            val currentIdx = findNearestIndex(weights, global.labelWeight.toFloat())
             KarooSteppedSlider(
                 label = "Label Font Weight",
                 steps = weightSteps,
                 selectedIndex = currentIdx,
                 colors = colors,
                 onStepSelected = { idx ->
-                    val newWeight = weights.getOrElse(idx) { 700 }
+                    val newWeight = weights.getOrElse(idx) { 700f }.toInt()
                     onUpdateGlobalTypography(global.copy(labelWeight = newWeight))
                 },
             )
+        }
+
+        // Bottom padding to ensure bottom slider is never clipped at screen edge
+        item {
+            Spacer(modifier = Modifier.height(36.dp))
         }
     }
 }
