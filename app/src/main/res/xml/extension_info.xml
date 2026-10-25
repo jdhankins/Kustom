@@ -98,9 +98,6 @@
     <DataType typeId="shift-front" displayName="@string/field_shift_front_name" description="@string/field_shift_front_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="shift-rear" displayName="@string/field_shift_rear_name" description="@string/field_shift_rear_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="shift-batt" displayName="@string/field_shift_batt_name" description="@string/field_shift_batt_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="wo-power-target" displayName="@string/field_wo_power_target_name" description="@string/field_wo_power_target_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="wo-rem-interval" displayName="@string/field_wo_rem_interval_name" description="@string/field_wo_rem_interval_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="wo-rem-total" displayName="@string/field_wo_rem_total_name" description="@string/field_wo_rem_total_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="battery-pct" displayName="@string/field_battery_pct_name" description="@string/field_battery_pct_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="temperature" displayName="@string/field_temperature_name" description="@string/field_temperature_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="psi-front" displayName="@string/field_psi_front_name" description="@string/field_psi_front_desc" graphical="true" icon="@drawable/ic_kustom_field" />
@@ -108,5 +105,15 @@
     <DataType typeId="core-temp" displayName="@string/field_core_temp_name" description="@string/field_core_temp_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="ebike-batt" displayName="@string/field_ebike_batt_name" description="@string/field_ebike_batt_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="ebike-range" displayName="@string/field_ebike_range_name" description="@string/field_ebike_range_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+
+    <!-- WORKOUT -->
+    <DataType typeId="workout-target-power" displayName="@string/field_workout_target_power_name" description="@string/field_workout_target_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-target-hr" displayName="@string/field_workout_target_hr_name" description="@string/field_workout_target_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-target-cadence" displayName="@string/field_workout_target_cadence_name" description="@string/field_workout_target_cadence_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-primary-target" displayName="@string/field_workout_primary_target_name" description="@string/field_workout_primary_target_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-interval-time-remaining" displayName="@string/field_workout_interval_time_remaining_name" description="@string/field_workout_interval_time_remaining_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-duration-remaining" displayName="@string/field_workout_duration_remaining_name" description="@string/field_workout_duration_remaining_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-interval-count" displayName="@string/field_workout_interval_count_name" description="@string/field_workout_interval_count_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-next-target" displayName="@string/field_workout_next_target_name" description="@string/field_workout_next_target_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
 </ExtensionInfo>

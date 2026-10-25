@@ -171,12 +171,6 @@
     <string name="field_shift_rear_desc">Rear sprocket teeth</string>
     <string name="field_shift_batt_name">General - Drivetrain Battery</string>
     <string name="field_shift_batt_desc">Shifting battery level %</string>
-    <string name="field_wo_power_target_name">General - Target Power</string>
-    <string name="field_wo_power_target_desc">Workout target power</string>
-    <string name="field_wo_rem_interval_name">General - INT REM</string>
-    <string name="field_wo_rem_interval_desc">Time remaining in interval</string>
-    <string name="field_wo_rem_total_name">General - WRK REM</string>
-    <string name="field_wo_rem_total_desc">Remaining workout time</string>
     <string name="field_battery_pct_name">General - Karoo Battery</string>
     <string name="field_battery_pct_desc">Karoo battery level %</string>
     <string name="field_temperature_name">General - Temperature</string>
@@ -191,4 +185,22 @@
     <string name="field_ebike_batt_desc">eBike battery level %</string>
     <string name="field_ebike_range_name">General - eBike Range</string>
     <string name="field_ebike_range_desc">Estimated eBike range</string>
+
+    <!-- WORKOUT -->
+    <string name="field_workout_target_power_name">Workout - Workout Power</string>
+    <string name="field_workout_target_power_desc">Target power label with current power value</string>
+    <string name="field_workout_target_hr_name">Workout - Workout Target HR</string>
+    <string name="field_workout_target_hr_desc">Target HR label with current HR value</string>
+    <string name="field_workout_target_cadence_name">Workout - Workout Target Cadence</string>
+    <string name="field_workout_target_cadence_desc">Target cadence label with current cadence value</string>
+    <string name="field_workout_primary_target_name">Workout - Workout Primary Target</string>
+    <string name="field_workout_primary_target_desc">Target power or heart rate</string>
+    <string name="field_workout_interval_time_remaining_name">Workout - INT REM</string>
+    <string name="field_workout_interval_time_remaining_desc">Time remaining in current interval</string>
+    <string name="field_workout_duration_remaining_name">Workout - WRK REM</string>
+    <string name="field_workout_duration_remaining_desc">Remaining workout time</string>
+    <string name="field_workout_interval_count_name">Workout - Interval Count</string>
+    <string name="field_workout_interval_count_desc">Current interval step count</string>
+    <string name="field_workout_next_target_name">Workout - Workout Next Target</string>
+    <string name="field_workout_next_target_desc">Upcoming interval target</string>
 </resources>

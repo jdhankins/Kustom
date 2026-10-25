@@ -13,6 +13,7 @@ enum class FieldCategory(val displayName: String) {
     TIME("Time"),
     NAVIGATION("Navigation"),
     GENERAL("General"),
+    WORKOUT("Workout"),
 }
 
 data class KustomFieldDefinition(
@@ -61,7 +62,7 @@ data class KustomFieldDefinition(
                 val converted = rawValue * multiplier
                 converted.toInt().toString()
             }
-            "ride-time", "elapsed-time", "paused-time", "lap-time", "last-lap-time", "wo-rem-interval", "wo-rem-total", "nav-time-dest" -> {
+            "ride-time", "elapsed-time", "paused-time", "lap-time", "last-lap-time", "workout-interval-time-remaining", "workout-duration-remaining" -> {
                 val totalSec = rawValue.toInt()
                 val hrs = totalSec / 3600
                 val mins = (totalSec % 3600) / 60
@@ -173,9 +174,14 @@ data class KustomFieldDefinition(
             "shift-front" -> DataType.Type.SHIFTING_FRONT_GEAR
             "shift-rear" -> DataType.Type.SHIFTING_REAR_GEAR
             "shift-batt" -> DataType.Type.SHIFTING_BATTERY
-            "wo-power-target" -> DataType.Type.WORKOUT_POWER_TARGET
-            "wo-rem-interval" -> DataType.Type.WORKOUT_REMAINING_INTERVAL_DURATION
-            "wo-rem-total" -> DataType.Type.WORKOUT_REMAINING_TOTAL_DURATION
+            "workout-target-power" -> smoothing.toPowerDataTypeId()
+            "workout-target-hr" -> DataType.Type.HEART_RATE
+            "workout-target-cadence" -> smoothing.toCadenceDataTypeId()
+            "workout-primary-target" -> DataType.Type.WORKOUT_PRIMARY_TARGET
+            "workout-interval-time-remaining" -> DataType.Type.WORKOUT_REMAINING_INTERVAL_DURATION
+            "workout-duration-remaining" -> DataType.Type.WORKOUT_REMAINING_TOTAL_DURATION
+            "workout-interval-count" -> DataType.Type.WORKOUT_INTERVAL_COUNT
+            "workout-next-target" -> DataType.Type.WORKOUT_SECONDARY_TARGET
             "battery-pct" -> DataType.Type.BATTERY_PERCENT
             "temperature" -> DataType.Type.TEMPERATURE
             "psi-front" -> DataType.Type.TIRE_PRESSURE_FRONT
@@ -284,9 +290,6 @@ object KustomFieldCatalog {
     val SHIFT_FRONT = KustomFieldDefinition("shift-front", "Front Gear", FieldCategory.GENERAL, "Front chainring teeth", supportsSmoothing = false, supportsZones = false, listOf(50.0, 50.0, 34.0, 34.0, 50.0))
     val SHIFT_REAR = KustomFieldDefinition("shift-rear", "Rear Gear", FieldCategory.GENERAL, "Rear sprocket teeth", supportsSmoothing = false, supportsZones = false, listOf(14.0, 16.0, 18.0, 21.0, 15.0))
     val SHIFT_BATT = KustomFieldDefinition("shift-batt", "Drivetrain Battery", FieldCategory.GENERAL, "Shifting battery level %", supportsSmoothing = false, supportsZones = false, listOf(100.0, 95.0, 90.0, 85.0, 80.0))
-    val WO_POWER_TARGET = KustomFieldDefinition("wo-power-target", "Target Power", FieldCategory.GENERAL, "Workout target power", supportsSmoothing = false, supportsZones = false, listOf(250.0, 260.0, 270.0, 280.0, 265.0))
-    val WO_REM_INTERVAL = KustomFieldDefinition("wo-rem-interval", "INT REM", FieldCategory.GENERAL, "Time remaining in interval", supportsSmoothing = false, supportsZones = false, listOf(185.0, 180.0, 175.0, 170.0, 165.0))
-    val WO_REM_TOTAL = KustomFieldDefinition("wo-rem-total", "WRK REM", FieldCategory.GENERAL, "Remaining workout time", supportsSmoothing = false, supportsZones = false, listOf(1800.0, 1740.0, 1680.0, 1620.0, 1560.0))
     val BATTERY_PCT = KustomFieldDefinition("battery-pct", "Karoo Battery", FieldCategory.GENERAL, "Karoo battery level %", supportsSmoothing = false, supportsZones = false, listOf(88.0, 87.0, 86.0, 85.0, 84.0))
     val TEMPERATURE = KustomFieldDefinition("temperature", "Temperature", FieldCategory.GENERAL, "Ambient air temperature", supportsSmoothing = false, supportsZones = false, listOf(22.0, 22.5, 23.0, 23.5, 22.8))
     val PSI_FRONT = KustomFieldDefinition("psi-front", "Front Tire PSI", FieldCategory.GENERAL, "Front tire pressure", supportsSmoothing = false, supportsZones = false, listOf(82.0, 81.5, 81.0, 80.5, 81.2))
@@ -294,6 +297,16 @@ object KustomFieldCatalog {
     val CORE_TEMP = KustomFieldDefinition("core-temp", "Core Temp", FieldCategory.GENERAL, "Core body temperature", supportsSmoothing = false, supportsZones = false, listOf(37.2, 37.4, 37.6, 37.8, 37.5))
     val EBIKE_BATT = KustomFieldDefinition("ebike-batt", "eBike Battery", FieldCategory.GENERAL, "eBike battery level %", supportsSmoothing = false, supportsZones = false, listOf(92.0, 90.0, 88.0, 85.0, 82.0))
     val EBIKE_RANGE = KustomFieldDefinition("ebike-range", "eBike Range", FieldCategory.GENERAL, "Estimated eBike range", supportsSmoothing = false, supportsZones = false, listOf(45.0, 43.0, 41.0, 39.0, 37.0))
+
+    // WORKOUT (FieldCategory.WORKOUT)
+    val WORKOUT_POWER = KustomFieldDefinition("workout-target-power", "Workout Power", FieldCategory.WORKOUT, "Target power label with current power value", supportsSmoothing = true, supportsZones = true, listOf(215.0, 228.0, 242.0, 260.0, 235.0))
+    val WORKOUT_TARGET_HR = KustomFieldDefinition("workout-target-hr", "Workout Target HR", FieldCategory.WORKOUT, "Target HR label with current HR value", supportsSmoothing = false, supportsZones = true, listOf(145.0, 148.0, 152.0, 156.0, 150.0))
+    val WORKOUT_TARGET_CADENCE = KustomFieldDefinition("workout-target-cadence", "Workout Target Cadence", FieldCategory.WORKOUT, "Target cadence label with current cadence value", supportsSmoothing = true, supportsZones = false, listOf(85.0, 88.0, 92.0, 95.0, 90.0))
+    val WORKOUT_PRIMARY_TARGET = KustomFieldDefinition("workout-primary-target", "Workout Primary Target", FieldCategory.WORKOUT, "Target power or heart rate", supportsSmoothing = false, supportsZones = true, listOf(250.0, 260.0, 270.0, 280.0, 265.0))
+    val WORKOUT_INTERVAL_TIME = KustomFieldDefinition("workout-interval-time-remaining", "INT REM", FieldCategory.WORKOUT, "Time remaining in current interval", supportsSmoothing = false, supportsZones = false, listOf(185.0, 180.0, 175.0, 170.0, 165.0))
+    val WORKOUT_DURATION_REMAINING = KustomFieldDefinition("workout-duration-remaining", "WRK REM", FieldCategory.WORKOUT, "Remaining workout time", supportsSmoothing = false, supportsZones = false, listOf(1800.0, 1740.0, 1680.0, 1620.0, 1560.0))
+    val WORKOUT_INTERVAL_COUNT = KustomFieldDefinition("workout-interval-count", "Interval Count", FieldCategory.WORKOUT, "Current interval step count", supportsSmoothing = false, supportsZones = false, listOf(3.0, 3.0, 4.0, 4.0, 5.0))
+    val WORKOUT_NEXT_TARGET = KustomFieldDefinition("workout-next-target", "Workout Next Target", FieldCategory.WORKOUT, "Upcoming interval target", supportsSmoothing = false, supportsZones = false, listOf(180.0, 180.0, 280.0, 280.0, 180.0))
 
     /** Complete list of all 75 registered data fields. */
     val allFields: List<KustomFieldDefinition> = listOf(
@@ -316,8 +329,10 @@ object KustomFieldCatalog {
         // NAVIGATION
         NAV_DIST_DEST, NAV_DIST_TURN, NAV_ELEV_REM, NAV_TIME_DEST, NAV_ETA, NAV_HEADING,
         // GENERAL
-        SHIFT_GEARS, SHIFT_FRONT, SHIFT_REAR, SHIFT_BATT, WO_POWER_TARGET, WO_REM_INTERVAL, WO_REM_TOTAL,
+        SHIFT_GEARS, SHIFT_FRONT, SHIFT_REAR, SHIFT_BATT,
         BATTERY_PCT, TEMPERATURE, PSI_FRONT, PSI_REAR, CORE_TEMP, EBIKE_BATT, EBIKE_RANGE,
+        // WORKOUT
+        WORKOUT_POWER, WORKOUT_TARGET_HR, WORKOUT_TARGET_CADENCE, WORKOUT_PRIMARY_TARGET, WORKOUT_INTERVAL_TIME, WORKOUT_DURATION_REMAINING, WORKOUT_INTERVAL_COUNT, WORKOUT_NEXT_TARGET,
     )
 
     /** Configurable data fields with smoothing or zone capabilities. */
