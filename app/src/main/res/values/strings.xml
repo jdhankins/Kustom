@@ -165,14 +165,26 @@
     <string name="field_workout_target_power_name">WORKOUT: WORKOUT POWER</string>
     <string name="field_workout_target_power_desc">Target power label with current power value</string>
 
+    <string name="field_workout_target_hr_name">WORKOUT: WORKOUT TARGET HR</string>
+    <string name="field_workout_target_hr_desc">Target HR label with current HR value</string>
+
+    <string name="field_workout_target_cadence_name">WORKOUT: WORKOUT TARGET CADENCE</string>
+    <string name="field_workout_target_cadence_desc">Target cadence label with current cadence value</string>
+
     <string name="field_workout_primary_target_name">WORKOUT: WORKOUT PRIMARY TARGET</string>
     <string name="field_workout_primary_target_desc">Target power or heart rate</string>
 
-    <string name="field_workout_next_target_name">WORKOUT: WORKOUT NEXT TARGET</string>
-    <string name="field_workout_next_target_desc">Upcoming interval target</string>
+    <string name="field_workout_interval_time_remaining_name">WORKOUT: INTERVAL TIME REMAINING</string>
+    <string name="field_workout_interval_time_remaining_desc">Time remaining in current interval</string>
 
     <string name="field_workout_duration_remaining_name">WORKOUT: WORKOUT DURATION REMAINING</string>
     <string name="field_workout_duration_remaining_desc">Remaining workout time</string>
+
+    <string name="field_workout_interval_count_name">WORKOUT: INTERVAL COUNT</string>
+    <string name="field_workout_interval_count_desc">Current interval step count</string>
+
+    <string name="field_workout_next_target_name">WORKOUT: WORKOUT NEXT TARGET</string>
+    <string name="field_workout_next_target_desc">Upcoming interval target</string>
 
     <!-- NAVIGATION -->
     <string name="field_nav_eta_name">NAVIGATION: ETA</string>

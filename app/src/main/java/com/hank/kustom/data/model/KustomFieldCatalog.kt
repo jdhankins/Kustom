@@ -66,7 +66,7 @@ data class KustomFieldDefinition(
                 val converted = rawValue * multiplier
                 converted.toInt().toString()
             }
-            "ride-time", "elapsed-time", "lap-time", "last-lap-time" -> {
+            "ride-time", "elapsed-time", "lap-time", "last-lap-time", "workout-interval-time-remaining", "workout-duration-remaining" -> {
                 val totalSec = rawValue.toInt()
                 val hrs = totalSec / 3600
                 val mins = (totalSec % 3600) / 60
@@ -94,7 +94,7 @@ data class KustomFieldDefinition(
             "speed" -> smoothing.toSpeedDataTypeId()
             "avg-speed" -> DataType.Type.AVERAGE_SPEED
             "max-speed" -> DataType.Type.MAX_SPEED
-            "hr" -> DataType.Type.HEART_RATE
+            "hr", "workout-target-hr" -> DataType.Type.HEART_RATE
             "avg-hr" -> DataType.Type.AVERAGE_HR
             "max-hr" -> DataType.Type.MAX_HR
             "hr-zone" -> DataType.Type.HR_ZONE
@@ -106,7 +106,7 @@ data class KustomFieldDefinition(
             "tss" -> DataType.Type.TRAINING_STRESS_SCORE
             "power-balance" -> DataType.Type.PEDAL_POWER_BALANCE
             "power-zone" -> DataType.Type.POWER_ZONE
-            "cadence" -> smoothing.toCadenceDataTypeId()
+            "cadence", "workout-target-cadence" -> smoothing.toCadenceDataTypeId()
             "avg-cadence" -> DataType.Type.AVERAGE_CADENCE
             "max-cadence" -> DataType.Type.MAX_CADENCE
             "distance" -> DataType.Type.DISTANCE
@@ -130,8 +130,10 @@ data class KustomFieldDefinition(
             "last-lap-time" -> DataType.Type.ELAPSED_TIME_LAST_LAP
             "last-lap-speed" -> DataType.Type.AVERAGE_SPEED_LAST_LAP
             "workout-primary-target" -> DataType.Type.WORKOUT_PRIMARY_TARGET
-            "workout-next-target" -> DataType.Type.WORKOUT_SECONDARY_TARGET
+            "workout-interval-time-remaining" -> DataType.Type.WORKOUT_REMAINING_INTERVAL_DURATION
             "workout-duration-remaining" -> DataType.Type.WORKOUT_REMAINING_TOTAL_DURATION
+            "workout-interval-count" -> DataType.Type.WORKOUT_INTERVAL_COUNT
+            "workout-next-target" -> DataType.Type.WORKOUT_SECONDARY_TARGET
             "nav-eta" -> DataType.Type.TIME_OF_ARRIVAL
             "nav-distance-to-next-turn" -> DataType.Type.DISTANCE_TO_NEXT_TURN
             "nav-heading" -> DataType.Type.HEADING
@@ -217,9 +219,13 @@ object KustomFieldCatalog {
 
     // WORKOUT
     val WORKOUT_POWER = KustomFieldDefinition("workout-target-power", "Workout Power", FieldCategory.WORKOUT, "Target power label with current power value", supportsSmoothing = true, supportsZones = true, listOf(215.0, 228.0, 242.0, 260.0, 235.0))
+    val WORKOUT_TARGET_HR = KustomFieldDefinition("workout-target-hr", "Workout Target HR", FieldCategory.WORKOUT, "Target HR label with current HR value", supportsSmoothing = false, supportsZones = true, listOf(145.0, 148.0, 152.0, 156.0, 150.0))
+    val WORKOUT_TARGET_CADENCE = KustomFieldDefinition("workout-target-cadence", "Workout Target Cadence", FieldCategory.WORKOUT, "Target cadence label with current cadence value", supportsSmoothing = true, supportsZones = false, listOf(85.0, 88.0, 92.0, 95.0, 90.0))
     val WORKOUT_PRIMARY_TARGET = KustomFieldDefinition("workout-primary-target", "Workout Primary Target", FieldCategory.WORKOUT, "Target power or heart rate", supportsSmoothing = false, supportsZones = true, listOf(250.0, 260.0, 270.0, 280.0, 265.0))
-    val WORKOUT_NEXT_TARGET = KustomFieldDefinition("workout-next-target", "Workout Next Target", FieldCategory.WORKOUT, "Upcoming interval target", supportsSmoothing = false, supportsZones = false, listOf(180.0, 180.0, 280.0, 280.0, 180.0))
+    val WORKOUT_INTERVAL_TIME = KustomFieldDefinition("workout-interval-time-remaining", "Interval Time Remaining", FieldCategory.WORKOUT, "Time remaining in current interval", supportsSmoothing = false, supportsZones = false, listOf(185.0, 180.0, 175.0, 170.0, 165.0))
     val WORKOUT_DURATION_REMAINING = KustomFieldDefinition("workout-duration-remaining", "Workout Duration Remaining", FieldCategory.WORKOUT, "Remaining workout time", supportsSmoothing = false, supportsZones = false, listOf(1800.0, 1740.0, 1680.0, 1620.0, 1560.0))
+    val WORKOUT_INTERVAL_COUNT = KustomFieldDefinition("workout-interval-count", "Interval Count", FieldCategory.WORKOUT, "Current interval step count", supportsSmoothing = false, supportsZones = false, listOf(3.0, 3.0, 4.0, 4.0, 5.0))
+    val WORKOUT_NEXT_TARGET = KustomFieldDefinition("workout-next-target", "Workout Next Target", FieldCategory.WORKOUT, "Upcoming interval target", supportsSmoothing = false, supportsZones = false, listOf(180.0, 180.0, 280.0, 280.0, 180.0))
 
     // NAVIGATION
     val NAV_ETA = KustomFieldDefinition("nav-eta", "ETA", FieldCategory.NAVIGATION, "Estimated arrival time", supportsSmoothing = false, supportsZones = false, listOf(36000.0, 36060.0, 36120.0, 36180.0, 36240.0))
@@ -240,7 +246,7 @@ object KustomFieldCatalog {
         TEMPERATURE, WIND_SPEED, WIND_DIRECTION,
         RADAR_VEHICLE_COUNT, RADAR_THREAT_LEVEL, RADAR_VEHICLE_SPEED,
         LAP_NUMBER, LAST_LAP_TIME, LAST_LAP_SPEED,
-        WORKOUT_POWER, WORKOUT_PRIMARY_TARGET, WORKOUT_NEXT_TARGET, WORKOUT_DURATION_REMAINING,
+        WORKOUT_POWER, WORKOUT_TARGET_HR, WORKOUT_TARGET_CADENCE, WORKOUT_PRIMARY_TARGET, WORKOUT_INTERVAL_TIME, WORKOUT_DURATION_REMAINING, WORKOUT_INTERVAL_COUNT, WORKOUT_NEXT_TARGET,
         NAV_ETA, NAV_DISTANCE_TO_NEXT_TURN, NAV_HEADING,
     )
 

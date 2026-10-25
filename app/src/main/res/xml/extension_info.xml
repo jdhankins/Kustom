@@ -80,9 +80,13 @@
 
     <!-- WORKOUT -->
     <DataType typeId="workout-target-power" displayName="@string/field_workout_target_power_name" description="@string/field_workout_target_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-target-hr" displayName="@string/field_workout_target_hr_name" description="@string/field_workout_target_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-target-cadence" displayName="@string/field_workout_target_cadence_name" description="@string/field_workout_target_cadence_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="workout-primary-target" displayName="@string/field_workout_primary_target_name" description="@string/field_workout_primary_target_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="workout-next-target" displayName="@string/field_workout_next_target_name" description="@string/field_workout_next_target_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-interval-time-remaining" displayName="@string/field_workout_interval_time_remaining_name" description="@string/field_workout_interval_time_remaining_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="workout-duration-remaining" displayName="@string/field_workout_duration_remaining_name" description="@string/field_workout_duration_remaining_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-interval-count" displayName="@string/field_workout_interval_count_name" description="@string/field_workout_interval_count_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-next-target" displayName="@string/field_workout_next_target_name" description="@string/field_workout_next_target_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
     <!-- NAVIGATION -->
     <DataType typeId="nav-eta" displayName="@string/field_nav_eta_name" description="@string/field_nav_eta_desc" graphical="true" icon="@drawable/ic_kustom_field" />
