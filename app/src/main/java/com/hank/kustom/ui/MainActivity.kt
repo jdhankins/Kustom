@@ -181,7 +181,7 @@ fun KustomKarooNativeScreen(
     val settings by viewModel.settingsState.collectAsState()
     var selectedTopNavTab by remember { mutableIntStateOf(0) } // 0 = Global, 1 = Fields
     var selectedField by remember { mutableStateOf(KustomFieldCatalog.POWER) }
-    var expandedCategory by remember { mutableStateOf<FieldCategory?>(FieldCategory.POWER) }
+    var expandedCategory by remember { mutableStateOf<FieldCategory?>(null) }
 
     Column(
         modifier = Modifier
@@ -238,28 +238,19 @@ fun KustomStickyHeaderSection(
     onTabSelected: (Int) -> Unit,
 ) {
     val context = LocalContext.current
+    val globalTypo = settings.globalTypography
 
-    val currentField = KustomFieldCatalog.POWER
+    val genericMockValues = remember { listOf("123", "145", "168", "182", "154") }
 
     var mockStepIndex by remember(selectedTab) { mutableIntStateOf(0) }
     LaunchedEffect(selectedTab) {
         while (true) {
             delay(1200L)
-            mockStepIndex = (mockStepIndex + 1) % currentField.mockValues.size
+            mockStepIndex = (mockStepIndex + 1) % genericMockValues.size
         }
     }
 
-    val currentMockVal = currentField.mockValues.getOrElse(mockStepIndex) { currentField.mockValues.first() }
-    val fieldConfig = settings.getFieldConfig(currentField.typeId)
-
-    val sampleValueText = currentField.formatNumericValueOnly(currentMockVal)
-    val dynamicLabel = currentField.resolveDynamicLabel(fieldConfig.smoothingOption)
-
-    val mappedColor = if (currentField.supportsZones) {
-        KustomColorGradeMapper.getPowerZoneColor(currentMockVal, null, fieldConfig.colorMode)
-    } else null
-
-    val globalTypo = settings.globalTypography
+    val sampleValueText = genericMockValues.getOrElse(mockStepIndex) { "123" }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -350,7 +341,7 @@ fun KustomStickyHeaderSection(
                         val bitmap = KustomFieldRenderer.render(
                             context = context,
                             config = previewViewConfig,
-                            label = dynamicLabel,
+                            label = "LABEL",
                             valueText = sampleValueText,
                             labelTypography = TypographyConfig(
                                 font = globalTypo.fontFamily,
@@ -362,8 +353,8 @@ fun KustomStickyHeaderSection(
                                 fontWeight = globalTypo.valueWeight,
                                 fontSizeSp = globalTypo.valueSizeSp.toFloat(),
                             ),
-                            colorMode = fieldConfig.colorMode,
-                            mappedColor = mappedColor,
+                            colorMode = ColorMode.NONE,
+                            mappedColor = null,
                             isDarkTheme = colors.isDark,
                         )
 
@@ -390,7 +381,7 @@ fun GlobalFontsTab(
     viewModel: KustomSettingsViewModel,
 ) {
     val global = settings.globalTypography
-    var isTypographyExpanded by remember { mutableStateOf(true) }
+    var isTypographyExpanded by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
