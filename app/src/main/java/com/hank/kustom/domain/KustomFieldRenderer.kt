@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
 import android.text.TextPaint
 import com.hank.kustom.data.model.ColorMode
@@ -191,6 +192,7 @@ object KustomFieldRenderer {
 
     /**
      * Draws value text with Wahoo ELEMNT style superscript formatting for decimals and time colons.
+     * The top of the superscript digits is aligned exactly even with the top of the main value digits.
      */
     private fun drawWahooValueText(
         canvas: Canvas,
@@ -215,14 +217,17 @@ object KustomFieldRenderer {
         val secondaryWidth = secondaryPaint.measureText(secondaryPart)
         val totalWidth = primaryWidth + secondaryWidth
 
-        val primaryMetrics = primaryPaint.fontMetrics
-        val primaryAscent = -primaryMetrics.ascent
+        // Exact cap-height top bounds for primary digits
+        val primaryBounds = Rect()
+        primaryPaint.getTextBounds("0", 0, 1, primaryBounds)
 
-        val secondaryMetrics = secondaryPaint.fontMetrics
-        val secondaryAscent = -secondaryMetrics.ascent
+        // Exact cap-height top bounds for secondary digits
+        val secondaryBounds = Rect()
+        val sampleChar = if (secondaryPart.startsWith(":")) "0" else secondaryPart.first().toString()
+        secondaryPaint.getTextBounds(sampleChar, 0, 1, secondaryBounds)
 
-        // Raised superscript position aligned near top of primary digits
-        val secondaryY = baseY - primaryAscent + secondaryAscent
+        // Calculate secondary baseline Y so top of secondary digits is EXACTLY EVEN with top of primary digits
+        val secondaryY = baseY + primaryBounds.top - secondaryBounds.top
 
         val (primaryStartX, secondaryStartX) = when (align) {
             Paint.Align.LEFT -> Pair(primaryX, primaryX + primaryWidth)
