@@ -5,115 +5,115 @@
     icon="@drawable/ic_kustom_field"
     scansDevices="false">
 
-    <!-- POWER -->
-    <DataType typeId="power" displayName="@string/field_power_name" description="@string/field_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="np" displayName="@string/field_np_name" description="@string/field_np_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="avg-power" displayName="@string/field_avg_power_name" description="@string/field_avg_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="max-power" displayName="@string/field_max_power_name" description="@string/field_max_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="power-20m" displayName="@string/field_power_20m_name" description="@string/field_power_20m_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="power-1hr" displayName="@string/field_power_1hr_name" description="@string/field_power_1hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="power-balance" displayName="@string/field_power_balance_name" description="@string/field_power_balance_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="percent-ftp" displayName="@string/field_percent_ftp_name" description="@string/field_percent_ftp_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="power-to-weight" displayName="@string/field_power_to_weight_name" description="@string/field_power_to_weight_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="power-zone" displayName="@string/field_power_zone_name" description="@string/field_power_zone_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="intensity-factor" displayName="@string/field_intensity_factor_name" description="@string/field_intensity_factor_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="tss" displayName="@string/field_tss_name" description="@string/field_tss_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="power-vi" displayName="@string/field_power_vi_name" description="@string/field_power_vi_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="power-kj" displayName="@string/field_power_kj_name" description="@string/field_power_kj_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="power-cal" displayName="@string/field_power_cal_name" description="@string/field_power_cal_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="power-cal-hr" displayName="@string/field_power_cal_hr_name" description="@string/field_power_cal_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="power-smoothness" displayName="@string/field_power_smoothness_name" description="@string/field_power_smoothness_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="power-te" displayName="@string/field_power_te_name" description="@string/field_power_te_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="avg-power-balance" displayName="@string/field_avg_power_balance_name" description="@string/field_avg_power_balance_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-
-    <!-- HEART RATE -->
-    <DataType typeId="hr" displayName="@string/field_hr_name" description="@string/field_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="avg-hr" displayName="@string/field_avg_hr_name" description="@string/field_avg_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="max-hr" displayName="@string/field_max_hr_name" description="@string/field_max_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="hr-zone" displayName="@string/field_hr_zone_name" description="@string/field_hr_zone_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="percent-max-hr" displayName="@string/field_percent_max_hr_name" description="@string/field_percent_max_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="percent-hrr" displayName="@string/field_percent_hrr_name" description="@string/field_percent_hrr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="avg-percent-hrr" displayName="@string/field_avg_percent_hrr_name" description="@string/field_avg_percent_hrr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-
-    <!-- SPEED -->
-    <DataType typeId="speed" displayName="@string/field_speed_name" description="@string/field_speed_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="avg-speed" displayName="@string/field_avg_speed_name" description="@string/field_avg_speed_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="max-speed" displayName="@string/field_max_speed_name" description="@string/field_max_speed_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="distance" displayName="@string/field_distance_name" description="@string/field_distance_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-
-    <!-- CADENCE -->
-    <DataType typeId="cadence" displayName="@string/field_cadence_name" description="@string/field_cadence_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="torque" displayName="@string/field_torque_name" description="@string/field_torque_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <!-- 1. CADENCE -->
     <DataType typeId="avg-cadence" displayName="@string/field_avg_cadence_name" description="@string/field_avg_cadence_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="max-cadence" displayName="@string/field_max_cadence_name" description="@string/field_max_cadence_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="avg-torque" displayName="@string/field_avg_torque_name" description="@string/field_avg_torque_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="cadence" displayName="@string/field_cadence_name" description="@string/field_cadence_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="max-cadence" displayName="@string/field_max_cadence_name" description="@string/field_max_cadence_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="max-torque" displayName="@string/field_max_torque_name" description="@string/field_max_torque_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="torque" displayName="@string/field_torque_name" description="@string/field_torque_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
-    <!-- CLIMB -->
-    <DataType typeId="grade" displayName="@string/field_grade_name" description="@string/field_grade_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="vam" displayName="@string/field_vam_name" description="@string/field_vam_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="elevation" displayName="@string/field_elevation_name" description="@string/field_elevation_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <!-- 2. CLIMB -->
     <DataType typeId="ascent" displayName="@string/field_ascent_name" description="@string/field_ascent_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="descent" displayName="@string/field_descent_name" description="@string/field_descent_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="avg-vam" displayName="@string/field_avg_vam_name" description="@string/field_avg_vam_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="climb-number" displayName="@string/field_climb_number_name" description="@string/field_climb_number_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="descent" displayName="@string/field_descent_name" description="@string/field_descent_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="dist-to-top" displayName="@string/field_dist_to_top_name" description="@string/field_dist_to_top_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="elev-to-top" displayName="@string/field_elev_to_top_name" description="@string/field_elev_to_top_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="climb-number" displayName="@string/field_climb_number_name" description="@string/field_climb_number_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="elevation" displayName="@string/field_elevation_name" description="@string/field_elevation_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="grade" displayName="@string/field_grade_name" description="@string/field_grade_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="vam" displayName="@string/field_vam_name" description="@string/field_vam_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
-    <!-- LAP -->
-    <DataType typeId="lap-power" displayName="@string/field_lap_power_name" description="@string/field_lap_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="lap-np" displayName="@string/field_lap_np_name" description="@string/field_lap_np_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="lap-hr" displayName="@string/field_lap_hr_name" description="@string/field_lap_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="last-lap-power" displayName="@string/field_last_lap_power_name" description="@string/field_last_lap_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="last-lap-np" displayName="@string/field_last_lap_np_name" description="@string/field_last_lap_np_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="last-lap-hr" displayName="@string/field_last_lap_hr_name" description="@string/field_last_lap_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="lap-number" displayName="@string/field_lap_number_name" description="@string/field_lap_number_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="lap-time" displayName="@string/field_lap_time_name" description="@string/field_lap_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="lap-dist" displayName="@string/field_lap_dist_name" description="@string/field_lap_dist_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="lap-speed" displayName="@string/field_lap_speed_name" description="@string/field_lap_speed_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="lap-cadence" displayName="@string/field_lap_cadence_name" description="@string/field_lap_cadence_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <!-- 3. GENERAL -->
+    <DataType typeId="core-temp" displayName="@string/field_core_temp_name" description="@string/field_core_temp_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="shift-batt" displayName="@string/field_shift_batt_name" description="@string/field_shift_batt_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="ebike-batt" displayName="@string/field_ebike_batt_name" description="@string/field_ebike_batt_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="ebike-range" displayName="@string/field_ebike_range_name" description="@string/field_ebike_range_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="shift-front" displayName="@string/field_shift_front_name" description="@string/field_shift_front_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="psi-front" displayName="@string/field_psi_front_name" description="@string/field_psi_front_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="shift-gears" displayName="@string/field_shift_gears_name" description="@string/field_shift_gears_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="battery-pct" displayName="@string/field_battery_pct_name" description="@string/field_battery_pct_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="shift-rear" displayName="@string/field_shift_rear_name" description="@string/field_shift_rear_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="psi-rear" displayName="@string/field_psi_rear_name" description="@string/field_psi_rear_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="temperature" displayName="@string/field_temperature_name" description="@string/field_temperature_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+
+    <!-- 4. HEART RATE -->
+    <DataType typeId="percent-hrr" displayName="@string/field_percent_hrr_name" description="@string/field_percent_hrr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="percent-max-hr" displayName="@string/field_percent_max_hr_name" description="@string/field_percent_max_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="avg-percent-hrr" displayName="@string/field_avg_percent_hrr_name" description="@string/field_avg_percent_hrr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="avg-hr" displayName="@string/field_avg_hr_name" description="@string/field_avg_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="hr" displayName="@string/field_hr_name" description="@string/field_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="hr-zone" displayName="@string/field_hr_zone_name" description="@string/field_hr_zone_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="max-hr" displayName="@string/field_max_hr_name" description="@string/field_max_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+
+    <!-- 5. LAP -->
     <DataType typeId="lap-ascent" displayName="@string/field_lap_ascent_name" description="@string/field_lap_ascent_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="last-lap-time" displayName="@string/field_last_lap_time_name" description="@string/field_last_lap_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="lap-cadence" displayName="@string/field_lap_cadence_name" description="@string/field_lap_cadence_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="lap-dist" displayName="@string/field_lap_dist_name" description="@string/field_lap_dist_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="lap-hr" displayName="@string/field_lap_hr_name" description="@string/field_lap_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="lap-np" displayName="@string/field_lap_np_name" description="@string/field_lap_np_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="lap-number" displayName="@string/field_lap_number_name" description="@string/field_lap_number_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="lap-power" displayName="@string/field_lap_power_name" description="@string/field_lap_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="lap-speed" displayName="@string/field_lap_speed_name" description="@string/field_lap_speed_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="lap-time" displayName="@string/field_lap_time_name" description="@string/field_lap_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="last-lap-dist" displayName="@string/field_last_lap_dist_name" description="@string/field_last_lap_dist_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="last-lap-hr" displayName="@string/field_last_lap_hr_name" description="@string/field_last_lap_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="last-lap-np" displayName="@string/field_last_lap_np_name" description="@string/field_last_lap_np_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="last-lap-power" displayName="@string/field_last_lap_power_name" description="@string/field_last_lap_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="last-lap-speed" displayName="@string/field_last_lap_speed_name" description="@string/field_last_lap_speed_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="last-lap-time" displayName="@string/field_last_lap_time_name" description="@string/field_last_lap_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
-    <!-- TIME -->
-    <DataType typeId="ride-time" displayName="@string/field_ride_time_name" description="@string/field_ride_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="elapsed-time" displayName="@string/field_elapsed_time_name" description="@string/field_elapsed_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="paused-time" displayName="@string/field_paused_time_name" description="@string/field_paused_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="clock-time" displayName="@string/field_clock_time_name" description="@string/field_clock_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="sunrise" displayName="@string/field_sunrise_name" description="@string/field_sunrise_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="sunset" displayName="@string/field_sunset_name" description="@string/field_sunset_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-
-    <!-- NAVIGATION -->
+    <!-- 6. NAVIGATION -->
     <DataType typeId="nav-dist-dest" displayName="@string/field_nav_dist_dest_name" description="@string/field_nav_dist_dest_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="nav-dist-turn" displayName="@string/field_nav_dist_turn_name" description="@string/field_nav_dist_turn_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="nav-elev-rem" displayName="@string/field_nav_elev_rem_name" description="@string/field_nav_elev_rem_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="nav-time-dest" displayName="@string/field_nav_time_dest_name" description="@string/field_nav_time_dest_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="nav-eta" displayName="@string/field_nav_eta_name" description="@string/field_nav_eta_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="nav-heading" displayName="@string/field_nav_heading_name" description="@string/field_nav_heading_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="nav-time-dest" displayName="@string/field_nav_time_dest_name" description="@string/field_nav_time_dest_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
-    <!-- GENERAL -->
-    <DataType typeId="shift-gears" displayName="@string/field_shift_gears_name" description="@string/field_shift_gears_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="shift-front" displayName="@string/field_shift_front_name" description="@string/field_shift_front_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="shift-rear" displayName="@string/field_shift_rear_name" description="@string/field_shift_rear_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="shift-batt" displayName="@string/field_shift_batt_name" description="@string/field_shift_batt_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="battery-pct" displayName="@string/field_battery_pct_name" description="@string/field_battery_pct_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="temperature" displayName="@string/field_temperature_name" description="@string/field_temperature_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="psi-front" displayName="@string/field_psi_front_name" description="@string/field_psi_front_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="psi-rear" displayName="@string/field_psi_rear_name" description="@string/field_psi_rear_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="core-temp" displayName="@string/field_core_temp_name" description="@string/field_core_temp_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="ebike-batt" displayName="@string/field_ebike_batt_name" description="@string/field_ebike_batt_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="ebike-range" displayName="@string/field_ebike_range_name" description="@string/field_ebike_range_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <!-- 7. POWER -->
+    <DataType typeId="percent-ftp" displayName="@string/field_percent_ftp_name" description="@string/field_percent_ftp_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="power-1hr" displayName="@string/field_power_1hr_name" description="@string/field_power_1hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="power-20m" displayName="@string/field_power_20m_name" description="@string/field_power_20m_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="avg-power-balance" displayName="@string/field_avg_power_balance_name" description="@string/field_avg_power_balance_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="avg-power" displayName="@string/field_avg_power_name" description="@string/field_avg_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="power-cal-hr" displayName="@string/field_power_cal_hr_name" description="@string/field_power_cal_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="power-cal" displayName="@string/field_power_cal_name" description="@string/field_power_cal_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="intensity-factor" displayName="@string/field_intensity_factor_name" description="@string/field_intensity_factor_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="power-kj" displayName="@string/field_power_kj_name" description="@string/field_power_kj_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="max-power" displayName="@string/field_max_power_name" description="@string/field_max_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="np" displayName="@string/field_np_name" description="@string/field_np_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="power-smoothness" displayName="@string/field_power_smoothness_name" description="@string/field_power_smoothness_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="power" displayName="@string/field_power_name" description="@string/field_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="power-balance" displayName="@string/field_power_balance_name" description="@string/field_power_balance_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="power-zone" displayName="@string/field_power_zone_name" description="@string/field_power_zone_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="power-te" displayName="@string/field_power_te_name" description="@string/field_power_te_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="tss" displayName="@string/field_tss_name" description="@string/field_tss_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="power-vi" displayName="@string/field_power_vi_name" description="@string/field_power_vi_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="power-to-weight" displayName="@string/field_power_to_weight_name" description="@string/field_power_to_weight_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
-    <!-- WORKOUT -->
-    <DataType typeId="workout-target-power" displayName="@string/field_workout_target_power_name" description="@string/field_workout_target_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="workout-target-hr" displayName="@string/field_workout_target_hr_name" description="@string/field_workout_target_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="workout-target-cadence" displayName="@string/field_workout_target_cadence_name" description="@string/field_workout_target_cadence_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="workout-primary-target" displayName="@string/field_workout_primary_target_name" description="@string/field_workout_primary_target_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="workout-interval-time-remaining" displayName="@string/field_workout_interval_time_remaining_name" description="@string/field_workout_interval_time_remaining_desc" graphical="true" icon="@drawable/ic_kustom_field" />
-    <DataType typeId="workout-duration-remaining" displayName="@string/field_workout_duration_remaining_name" description="@string/field_workout_duration_remaining_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <!-- 8. SPEED -->
+    <DataType typeId="avg-speed" displayName="@string/field_avg_speed_name" description="@string/field_avg_speed_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="distance" displayName="@string/field_distance_name" description="@string/field_distance_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="max-speed" displayName="@string/field_max_speed_name" description="@string/field_max_speed_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="speed" displayName="@string/field_speed_name" description="@string/field_speed_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+
+    <!-- 9. TIME -->
+    <DataType typeId="clock-time" displayName="@string/field_clock_time_name" description="@string/field_clock_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="elapsed-time" displayName="@string/field_elapsed_time_name" description="@string/field_elapsed_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="paused-time" displayName="@string/field_paused_time_name" description="@string/field_paused_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="ride-time" displayName="@string/field_ride_time_name" description="@string/field_ride_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="sunrise" displayName="@string/field_sunrise_name" description="@string/field_sunrise_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="sunset" displayName="@string/field_sunset_name" description="@string/field_sunset_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+
+    <!-- 10. WORKOUT -->
     <DataType typeId="workout-interval-count" displayName="@string/field_workout_interval_count_name" description="@string/field_workout_interval_count_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-interval-time-remaining" displayName="@string/field_workout_interval_time_remaining_name" description="@string/field_workout_interval_time_remaining_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="workout-next-target" displayName="@string/field_workout_next_target_name" description="@string/field_workout_next_target_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-target-power" displayName="@string/field_workout_target_power_name" description="@string/field_workout_target_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-primary-target" displayName="@string/field_workout_primary_target_name" description="@string/field_workout_primary_target_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-target-cadence" displayName="@string/field_workout_target_cadence_name" description="@string/field_workout_target_cadence_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-target-hr" displayName="@string/field_workout_target_hr_name" description="@string/field_workout_target_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-duration-remaining" displayName="@string/field_workout_duration_remaining_name" description="@string/field_workout_duration_remaining_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
 </ExtensionInfo>

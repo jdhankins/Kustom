@@ -45,12 +45,14 @@ data class KustomFieldDefinition(
     fun formatNumericValueOnly(rawValue: Double, isImperial: Boolean = false): String {
         return when (typeId) {
             "speed", "avg-speed", "max-speed", "lap-speed", "last-lap-speed" -> {
+                // Karoo streams speed in m/s -> convert to mph (imperial) or km/h (metric)
                 val multiplier = if (isImperial) 2.23694 else 3.6
                 val converted = rawValue * multiplier
                 String.format(Locale.US, "%.1f", converted)
             }
             "distance", "lap-dist", "last-lap-dist", "nav-dist-dest", "nav-dist-turn", "dist-to-top" -> {
-                val multiplier = if (isImperial) 0.621371 else 0.001
+                // Karoo streams distance in meters -> convert to miles (imperial) or km (metric)
+                val multiplier = if (isImperial) 0.000621371 else 0.001
                 val converted = rawValue * multiplier
                 String.format(Locale.US, "%.1f", converted)
             }
@@ -58,9 +60,20 @@ data class KustomFieldDefinition(
                 String.format(Locale.US, "%.1f", rawValue)
             }
             "elevation", "ascent", "descent", "lap-ascent", "elev-to-top", "nav-elev-rem" -> {
+                // Karoo streams elevation in meters -> convert to feet (imperial) or meters (metric)
                 val multiplier = if (isImperial) 3.28084 else 1.0
                 val converted = rawValue * multiplier
                 converted.toInt().toString()
+            }
+            "temperature", "core-temp" -> {
+                // Karoo streams temperature in Celsius -> convert to Fahrenheit (imperial) or Celsius (metric)
+                val converted = if (isImperial) (rawValue * 9.0 / 5.0 + 32.0) else rawValue
+                String.format(Locale.US, "%.1f", converted)
+            }
+            "psi-front", "psi-rear" -> {
+                // Karoo streams pressure in PSI -> convert to Bar (metric) or PSI (imperial)
+                val converted = if (isImperial) rawValue else (rawValue * 0.0689476)
+                String.format(Locale.US, "%.1f", converted)
             }
             "ride-time", "elapsed-time", "paused-time", "lap-time", "last-lap-time", "workout-interval-time-remaining", "workout-duration-remaining" -> {
                 val totalSec = rawValue.toInt()
@@ -77,9 +90,6 @@ data class KustomFieldDefinition(
                 String.format(Locale.US, "%.2f", rawValue)
             }
             "power-to-weight" -> {
-                String.format(Locale.US, "%.1f", rawValue)
-            }
-            "psi-front", "psi-rear", "temperature", "core-temp" -> {
                 String.format(Locale.US, "%.1f", rawValue)
             }
             else -> {
