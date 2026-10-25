@@ -44,6 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +61,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import com.hank.kustom.data.model.ColorMode
 import com.hank.kustom.data.model.FieldCategory
 import com.hank.kustom.data.model.GlobalTypographyConfig
 import com.hank.kustom.data.model.KustomFieldCatalog
@@ -80,55 +82,22 @@ import kotlin.math.roundToInt
 
 /**
  * Dynamic adaptive color scheme model for Light and Dark modes.
- *
- * @property bg Base screen background color.
- * @property cardBg Card surface background color.
- * @property trackBg Input track / pill container background color.
- * @property textPrimary Primary text color.
- * @property textSecondary Secondary text color.
- * @property accent Primary accent highlight color (Electric Blue).
- * @property border Card border stroke color.
- * @property sliderTrack Slider track background color.
- * @property headerText Section header text color.
- * @property isDark Whether dark theme is active.
  */
 data class KustomColorScheme(
-    /** Base screen background color. */
     val bg: Color,
-
-    /** Card surface background color. */
     val cardBg: Color,
-
-    /** Input track / pill container background color. */
     val trackBg: Color,
-
-    /** Primary text color. */
     val textPrimary: Color,
-
-    /** Secondary text color. */
     val textSecondary: Color,
-
-    /** Primary accent highlight color. */
     val accent: Color,
-
-    /** Card border stroke color. */
     val border: Color,
-
-    /** Slider track background color. */
     val sliderTrack: Color,
-
-    /** Section header text color. */
     val headerText: Color,
-
-    /** Whether dark theme is active. */
     val isDark: Boolean,
 )
 
 /**
- * Resolves the active [KustomColorScheme] based on system Light/Dark mode settings.
- *
- * @param isDark Whether dark mode is enabled on the device.
- * @return The corresponding [KustomColorScheme].
+ * Resolves active [KustomColorScheme] based on system Light/Dark mode settings.
  */
 @Composable
 fun getKustomColors(isDark: Boolean = isSystemInDarkTheme()): KustomColorScheme {
@@ -200,9 +169,6 @@ class MainActivity : ComponentActivity() {
 
 /**
  * Primary Jetpack Compose screen layout for Kustom settings activity.
- *
- * @param viewModel Settings view model instance ([KustomSettingsViewModel]).
- * @param colors Active adaptive color scheme ([KustomColorScheme]).
  */
 @Composable
 fun KustomKarooNativeScreen(
@@ -237,12 +203,13 @@ fun KustomKarooNativeScreen(
                 GlobalFontsTab(
                     settings = settings,
                     colors = colors,
-                    onUpdateGlobalTypography = { viewModel.updateGlobalTypography(it) },
+                    viewModel = viewModel,
                 )
             } else {
                 FieldsTab(
                     settings = settings,
                     colors = colors,
+                    viewModel = viewModel,
                     expandedCategory = expandedCategory,
                     onFieldSelected = { field ->
                         selectedField = field
@@ -250,9 +217,6 @@ fun KustomKarooNativeScreen(
                     },
                     onCategoryToggled = { category ->
                         expandedCategory = if (expandedCategory == category) null else category
-                    },
-                    onUpdateFieldConfig = { typeId, config ->
-                        viewModel.updateFieldConfig(typeId, config)
                     },
                 )
             }
@@ -262,11 +226,6 @@ fun KustomKarooNativeScreen(
 
 /**
  * Top sticky header section featuring pill navigation and global live field preview.
- *
- * @param settings Current [KustomSettings] state.
- * @param selectedTab Active tab index (0 = Global, 1 = Fields).
- * @param colors Active adaptive color scheme ([KustomColorScheme]).
- * @param onTabSelected Callback invoked when a navigation tab is selected.
  */
 @Composable
 fun KustomStickyHeaderSection(
@@ -298,37 +257,6 @@ fun KustomStickyHeaderSection(
     } else null
 
     val globalTypo = settings.globalTypography
-
-    val previewViewConfig = remember {
-        ViewConfig(
-            gridSize = Pair(60, 20),
-            viewSize = Pair(360, 240),
-            textSize = 38,
-            alignment = ViewConfig.Alignment.CENTER,
-            boundariesEnabled = true,
-            preview = true,
-        )
-    }
-
-    val bitmap = KustomFieldRenderer.render(
-        context = context,
-        config = previewViewConfig,
-        label = dynamicLabel,
-        valueText = sampleValueText,
-        labelTypography = TypographyConfig(
-            font = globalTypo.fontFamily,
-            fontWeight = globalTypo.labelWeight,
-            fontSizeSp = globalTypo.labelSizeSp.toFloat(),
-        ),
-        valueTypography = TypographyConfig(
-            font = globalTypo.fontFamily,
-            fontWeight = globalTypo.valueWeight,
-            fontSizeSp = globalTypo.valueSizeSp.toFloat(),
-        ),
-        colorMode = fieldConfig.colorMode,
-        mappedColor = mappedColor,
-        isDarkTheme = colors.isDark,
-    )
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -395,18 +323,52 @@ fun KustomStickyHeaderSection(
                         .padding(bottom = 2.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Box(
+                    BoxWithConstraints(
                         modifier = Modifier
-                            .width(160.dp)
-                            .height(76.dp)
+                            .width(168.dp)
+                            .height(78.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(12.dp)),
                     ) {
+                        val widthPx = constraints.maxWidth.coerceAtLeast(1)
+                        val heightPx = constraints.maxHeight.coerceAtLeast(1)
+
+                        val previewViewConfig = remember(widthPx, heightPx) {
+                            ViewConfig(
+                                gridSize = Pair(60, 20),
+                                viewSize = Pair(widthPx, heightPx),
+                                textSize = 38,
+                                alignment = ViewConfig.Alignment.CENTER,
+                                boundariesEnabled = true,
+                                preview = true,
+                            )
+                        }
+
+                        val bitmap = KustomFieldRenderer.render(
+                            context = context,
+                            config = previewViewConfig,
+                            label = dynamicLabel,
+                            valueText = sampleValueText,
+                            labelTypography = TypographyConfig(
+                                font = globalTypo.fontFamily,
+                                fontWeight = globalTypo.labelWeight,
+                                fontSizeSp = globalTypo.labelSizeSp.toFloat(),
+                            ),
+                            valueTypography = TypographyConfig(
+                                font = globalTypo.fontFamily,
+                                fontWeight = globalTypo.valueWeight,
+                                fontSizeSp = globalTypo.valueSizeSp.toFloat(),
+                            ),
+                            colorMode = fieldConfig.colorMode,
+                            mappedColor = mappedColor,
+                            isDarkTheme = colors.isDark,
+                        )
+
                         Image(
                             bitmap = bitmap.asImageBitmap(),
                             contentDescription = "Live Preview",
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.FillBounds,
+                            contentScale = ContentScale.Fit,
                         )
                     }
                 }
@@ -417,16 +379,12 @@ fun KustomStickyHeaderSection(
 
 /**
  * Global typography settings tab containing font family dropdown and typography sliders.
- *
- * @param settings Current [KustomSettings] state.
- * @param colors Active adaptive color scheme ([KustomColorScheme]).
- * @param onUpdateGlobalTypography Callback invoked to update global typography configuration.
  */
 @Composable
 fun GlobalFontsTab(
     settings: KustomSettings,
     colors: KustomColorScheme,
-    onUpdateGlobalTypography: (GlobalTypographyConfig) -> Unit,
+    viewModel: KustomSettingsViewModel,
 ) {
     val global = settings.globalTypography
 
@@ -445,7 +403,7 @@ fun GlobalFontsTab(
                 selectedFont = global.fontFamily,
                 colors = colors,
                 onFontSelected = { font ->
-                    onUpdateGlobalTypography(global.copy(fontFamily = font))
+                    viewModel.updateFontFamily(font)
                 },
             )
         }
@@ -462,7 +420,7 @@ fun GlobalFontsTab(
                 colors = colors,
                 onStepSelected = { idx ->
                     val newSize = valueSizes.getOrElse(idx) { 48f }.toInt()
-                    onUpdateGlobalTypography(global.copy(valueSizeSp = newSize))
+                    viewModel.updateValueFontSizeSp(newSize)
                 },
             )
         }
@@ -479,7 +437,7 @@ fun GlobalFontsTab(
                 colors = colors,
                 onStepSelected = { idx ->
                     val newWeight = weights.getOrElse(idx) { 700f }.toInt()
-                    onUpdateGlobalTypography(global.copy(valueWeight = newWeight))
+                    viewModel.updateValueFontWeight(newWeight)
                 },
             )
         }
@@ -496,7 +454,7 @@ fun GlobalFontsTab(
                 colors = colors,
                 onStepSelected = { idx ->
                     val newSize = labelSizes.getOrElse(idx) { 14f }.toInt()
-                    onUpdateGlobalTypography(global.copy(labelSizeSp = newSize))
+                    viewModel.updateLabelFontSizeSp(newSize)
                 },
             )
         }
@@ -513,7 +471,7 @@ fun GlobalFontsTab(
                 colors = colors,
                 onStepSelected = { idx ->
                     val newWeight = weights.getOrElse(idx) { 700f }.toInt()
-                    onUpdateGlobalTypography(global.copy(labelWeight = newWeight))
+                    viewModel.updateLabelFontWeight(newWeight)
                 },
             )
         }
@@ -527,31 +485,23 @@ fun GlobalFontsTab(
 
 /**
  * Per-metric fields configuration accordion tab grouping configurable metrics by category.
- *
- * @param settings Current [KustomSettings] state.
- * @param colors Active adaptive color scheme ([KustomColorScheme]).
- * @param expandedCategory Currently expanded field category ([FieldCategory]).
- * @param onFieldSelected Callback invoked when a field card is selected.
- * @param onCategoryToggled Callback invoked to toggle category expansion.
- * @param onUpdateFieldConfig Callback invoked to update configuration for a specific field.
  */
 @Composable
 fun FieldsTab(
     settings: KustomSettings,
     colors: KustomColorScheme,
+    viewModel: KustomSettingsViewModel,
     expandedCategory: FieldCategory?,
     onFieldSelected: (KustomFieldDefinition) -> Unit,
     onCategoryToggled: (FieldCategory) -> Unit,
-    onUpdateFieldConfig: (String, KustomFieldConfig) -> Unit,
 ) {
     val configurableGrouped = remember {
         KustomFieldCatalog.configurableFields.groupBy { it.category }
     }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 6.dp, vertical = 6.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         configurableGrouped.forEach { (category, fields) ->
@@ -602,8 +552,8 @@ fun FieldsTab(
                                         fieldConfig = fieldConfig,
                                         globalTypography = settings.globalTypography,
                                         colors = colors,
+                                        viewModel = viewModel,
                                         onFieldSelected = onFieldSelected,
-                                        onUpdateFieldConfig = onUpdateFieldConfig,
                                     )
                                 }
                             }
@@ -612,18 +562,15 @@ fun FieldsTab(
                 }
             }
         }
+
+        item {
+            Spacer(modifier = Modifier.height(36.dp))
+        }
     }
 }
 
 /**
  * Individual field configuration card displaying metric name, description, live preview, and controls.
- *
- * @param field Field definition metadata ([KustomFieldDefinition]).
- * @param fieldConfig Field specific configuration ([KustomFieldConfig]).
- * @param globalTypography Shared global typography configuration ([GlobalTypographyConfig]).
- * @param colors Active adaptive color scheme ([KustomColorScheme]).
- * @param onFieldSelected Callback invoked when card is selected.
- * @param onUpdateFieldConfig Callback invoked to update field configuration.
  */
 @Composable
 fun FieldCardItem(
@@ -631,8 +578,8 @@ fun FieldCardItem(
     fieldConfig: KustomFieldConfig,
     globalTypography: GlobalTypographyConfig,
     colors: KustomColorScheme,
+    viewModel: KustomSettingsViewModel,
     onFieldSelected: (KustomFieldDefinition) -> Unit,
-    onUpdateFieldConfig: (String, KustomFieldConfig) -> Unit,
 ) {
     val context = LocalContext.current
 
@@ -651,43 +598,12 @@ fun FieldCardItem(
 
     val mappedColor = if (field.supportsZones) {
         when (field.typeId) {
-            "power", "np", "avg-power", "max-power", "lap-power", "last-lap-power", "percent-ftp", "power-balance", "power-zone", "power-to-weight", "workout-target-power", "workout-primary-target" -> KustomColorGradeMapper.getPowerZoneColor(currentMockVal, null, fieldConfig.colorMode)
-            "hr", "avg-hr", "max-hr", "lap-hr", "percent-max-hr", "hr-zone" -> KustomColorGradeMapper.getHeartRateZoneColor(currentMockVal, null, fieldConfig.colorMode)
+            "power", "np", "avg-power", "max-power", "power-20m", "power-1hr", "lap-power", "lap-np", "last-lap-power", "last-lap-np", "percent-ftp", "power-balance", "power-zone", "power-to-weight", "workout-target-power", "workout-primary-target" -> KustomColorGradeMapper.getPowerZoneColor(currentMockVal, null, fieldConfig.colorMode)
+            "hr", "avg-hr", "max-hr", "lap-hr", "last-lap-hr", "percent-max-hr", "hr-zone" -> KustomColorGradeMapper.getHeartRateZoneColor(currentMockVal, null, fieldConfig.colorMode)
             "grade" -> KustomColorGradeMapper.getGradeColor(currentMockVal, fieldConfig.colorMode)
             else -> null
         }
     } else null
-
-    val previewViewConfig = remember {
-        ViewConfig(
-            gridSize = Pair(60, 20),
-            viewSize = Pair(320, 180),
-            textSize = 38,
-            alignment = ViewConfig.Alignment.CENTER,
-            boundariesEnabled = true,
-            preview = true,
-        )
-    }
-
-    val bitmap = KustomFieldRenderer.render(
-        context = context,
-        config = previewViewConfig,
-        label = dynamicLabel,
-        valueText = sampleValueText,
-        labelTypography = TypographyConfig(
-            font = globalTypography.fontFamily,
-            fontWeight = globalTypography.labelWeight,
-            fontSizeSp = globalTypography.labelSizeSp.toFloat(),
-        ),
-        valueTypography = TypographyConfig(
-            font = globalTypography.fontFamily,
-            fontWeight = globalTypography.valueWeight,
-            fontSizeSp = globalTypography.valueSizeSp.toFloat(),
-        ),
-        colorMode = fieldConfig.colorMode,
-        mappedColor = mappedColor,
-        isDarkTheme = colors.isDark,
-    )
 
     Card(
         modifier = Modifier
@@ -703,38 +619,78 @@ fun FieldCardItem(
                 .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // Bold Metric Name
-            Text(
-                text = field.childTitle,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.textPrimary,
-            )
-
-            // Description on Next Line
-            Text(
-                text = field.description,
-                fontSize = 13.sp,
-                color = colors.textSecondary,
-            )
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            // Per-Metric Live Preview Box (Centered, Narrower Width)
-            Box(
-                modifier = Modifier
-                    .width(150.dp)
-                    .height(72.dp)
-                    .align(Alignment.CenterHorizontally)
-                    .clip(RoundedCornerShape(12.dp))
-                    .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(12.dp)),
+            // Top Row: Left Column (Title + Desc) & Right Column (Live Preview Box)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "Metric Preview",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.FillBounds,
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = field.childTitle,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.textPrimary,
+                    )
+                    Text(
+                        text = field.description,
+                        fontSize = 13.sp,
+                        color = colors.textSecondary,
+                    )
+                }
+
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .size(width = 132.dp, height = 68.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(12.dp)),
+                ) {
+                    val widthPx = constraints.maxWidth.coerceAtLeast(1)
+                    val heightPx = constraints.maxHeight.coerceAtLeast(1)
+
+                    val previewViewConfig = remember(widthPx, heightPx) {
+                        ViewConfig(
+                            gridSize = Pair(60, 20),
+                            viewSize = Pair(widthPx, heightPx),
+                            textSize = 38,
+                            alignment = ViewConfig.Alignment.CENTER,
+                            boundariesEnabled = true,
+                            preview = true,
+                        )
+                    }
+
+                    val bitmap = KustomFieldRenderer.render(
+                        context = context,
+                        config = previewViewConfig,
+                        label = dynamicLabel,
+                        valueText = sampleValueText,
+                        labelTypography = TypographyConfig(
+                            font = globalTypography.fontFamily,
+                            fontWeight = globalTypography.labelWeight,
+                            fontSizeSp = globalTypography.labelSizeSp.toFloat(),
+                        ),
+                        valueTypography = TypographyConfig(
+                            font = globalTypography.fontFamily,
+                            fontWeight = globalTypography.valueWeight,
+                            fontSizeSp = globalTypography.valueSizeSp.toFloat(),
+                        ),
+                        colorMode = fieldConfig.colorMode,
+                        mappedColor = mappedColor,
+                        isDarkTheme = colors.isDark,
+                    )
+
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Metric Preview",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit,
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -750,7 +706,7 @@ fun FieldCardItem(
                     colors = colors,
                     onStepSelected = { idx ->
                         val option = SmoothingOption.entries.getOrElse(idx) { SmoothingOption.THREE_SEC }
-                        onUpdateFieldConfig(field.typeId, fieldConfig.copy(smoothingOption = option))
+                        viewModel.updateFieldSmoothing(field.typeId, option)
                     },
                 )
             }
@@ -761,7 +717,7 @@ fun FieldCardItem(
                     fieldName = field.childTitle,
                     colors = colors,
                     onZoneFormatSelected = { format ->
-                        onUpdateFieldConfig(field.typeId, fieldConfig.copy(zoneFormat = format))
+                        viewModel.updateFieldColorMode(field.typeId, format.toColorMode())
                     },
                 )
             }
@@ -771,11 +727,6 @@ fun FieldCardItem(
 
 /**
  * Dropdown menu selector for global font family choice.
- *
- * @param selectedFont Currently selected [KustomFont] choice.
- * @param colors Active adaptive color scheme ([KustomColorScheme]).
- * @param onFontSelected Callback invoked when a font is selected.
- * @param modifier Optional Compose layout modifier.
  */
 @Composable
 fun KarooFontDropdown(
@@ -852,14 +803,7 @@ fun KarooFontDropdown(
 }
 
 /**
- * High-precision interactive stepped slider component with 60fps local gesture tracking.
- *
- * @param label Section title label string.
- * @param steps List of step label strings.
- * @param selectedIndex Currently selected step index.
- * @param colors Active adaptive color scheme ([KustomColorScheme]).
- * @param onStepSelected Callback invoked when a step is selected.
- * @param modifier Optional Compose layout modifier.
+ * High-precision interactive stepped slider component with sleek teal track and zero edge clipping.
  */
 @Composable
 fun KarooSteppedSlider(
@@ -870,8 +814,12 @@ fun KarooSteppedSlider(
     onStepSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val currentOnStepSelected by rememberUpdatedState(onStepSelected)
+
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(
@@ -886,98 +834,90 @@ fun KarooSteppedSlider(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(40.dp),
+                .height(34.dp),
             contentAlignment = Alignment.CenterStart,
         ) {
-            val totalWidthPx = constraints.maxWidth.toFloat()
-            val density = LocalDensity.current
-            val paddingPx = with(density) { 16.dp.toPx() }
-            val thumbRadiusPx = with(density) { 11.dp.toPx() }
-            val travelPx = (totalWidthPx - (paddingPx * 2f)).coerceAtLeast(1f)
-
+            val thumbRadius = 10.dp
+            val usableWidth = maxWidth - (thumbRadius * 2)
             val stepCount = steps.size
             val fraction = if (stepCount > 1) safeIndex.toFloat() / (stepCount - 1) else 0f
-            val thumbCenterXPx = paddingPx + (fraction * travelPx)
 
-            val activeTrackWidthDp = with(density) { (thumbCenterXPx - paddingPx).toDp() }
-            val thumbOffsetDp = with(density) { (thumbCenterXPx - thumbRadiusPx).toDp() }
+            val tealAccent = Color(0xFF00C4B4)
+            val inactiveTrackColor = Color(0xFFCBD5E1)
 
-            fun updateFromPx(xPx: Float) {
-                if (stepCount <= 1 || travelPx <= 0f) return
-                val clampedX = (xPx - paddingPx).coerceIn(0f, travelPx)
-                val targetFraction = clampedX / travelPx
-                val nearestIdx = (targetFraction * (stepCount - 1)).roundToInt().coerceIn(0, stepCount - 1)
-                onStepSelected(nearestIdx)
+            // Inactive Background Track
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = thumbRadius)
+                    .height(3.dp)
+                    .background(inactiveTrackColor, RoundedCornerShape(50)),
+            )
+
+            // Active Teal Track
+            if (fraction > 0f) {
+                Box(
+                    modifier = Modifier
+                        .padding(start = thumbRadius)
+                        .width(usableWidth * fraction)
+                        .height(3.dp)
+                        .background(tealAccent, RoundedCornerShape(50)),
+                )
             }
 
-            // Touch & Drag Gesture Container (40dp Height Target)
+            // Solid Teal Thumb
+            Box(
+                modifier = Modifier
+                    .offset(x = usableWidth * fraction)
+                    .size(20.dp)
+                    .background(tealAccent, CircleShape),
+            )
+
+            // Interactive Touch & Drag Overlay
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(stepCount) {
+                    .pointerInput(steps.size) {
                         detectTapGestures { offset ->
-                            updateFromPx(offset.x)
+                            if (steps.size > 1 && size.width > 0) {
+                                val idx = ((offset.x / size.width.toFloat()) * (steps.size - 1)).roundToInt().coerceIn(0, steps.lastIndex)
+                                currentOnStepSelected(idx)
+                            }
                         }
                     }
-                    .pointerInput(stepCount) {
+                    .pointerInput(steps.size) {
                         detectHorizontalDragGestures { change, _ ->
                             change.consume()
-                            updateFromPx(change.position.x)
+                            if (steps.size > 1 && size.width > 0) {
+                                val idx = ((change.position.x / size.width.toFloat()) * (steps.size - 1)).roundToInt().coerceIn(0, steps.lastIndex)
+                                currentOnStepSelected(idx)
+                            }
                         }
                     },
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                // Inactive Background Track
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .height(5.dp)
-                        .clip(CircleShape)
-                        .background(colors.sliderTrack),
-                )
-
-                // Active Progress Track (Accent)
-                if (activeTrackWidthDp > 0.dp) {
-                    Box(
-                        modifier = Modifier
-                            .offset(x = 16.dp)
-                            .width(activeTrackWidthDp)
-                            .height(5.dp)
-                            .clip(CircleShape)
-                            .background(colors.accent),
-                    )
-                }
-
-                // Thumb Circle (22dp Accent Target)
-                Box(
-                    modifier = Modifier
-                        .offset(x = thumbOffsetDp)
-                        .size(22.dp)
-                        .clip(CircleShape)
-                        .background(colors.accent),
-                )
-            }
+            )
         }
 
-        // Aligned Step Labels Row with Individual Click Targets
+        // Aligned Step Labels
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
+            val selectedTeal = Color(0xFF00897B)
+            val unselectedSlate = Color(0xFF475569)
+
             steps.forEachIndexed { i, stepLabel ->
                 val isSelected = i == safeIndex
                 Box(
-                    modifier = Modifier.clickable { onStepSelected(i) },
+                    modifier = Modifier.clickable { currentOnStepSelected(i) },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = stepLabel,
-                        fontSize = 12.5.sp,
+                        fontSize = 13.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) colors.accent else colors.textSecondary,
+                        color = if (isSelected) selectedTeal else unselectedSlate,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         softWrap = false,
@@ -989,13 +929,7 @@ fun KarooSteppedSlider(
 }
 
 /**
- * Segmented pill option selector for zone color formatting choices (None, Text, Fill).
- *
- * @param selectedZoneFormat Currently selected [ZoneFormat].
- * @param fieldName Metric child title string.
- * @param colors Active adaptive color scheme ([KustomColorScheme]).
- * @param onZoneFormatSelected Callback invoked when a zone format option is selected.
- * @param modifier Optional Compose layout modifier.
+ * Modernized white pill container with gold active segment selector for zone color options.
  */
 @Composable
 fun KarooSegmentedPill(
@@ -1005,6 +939,8 @@ fun KarooSegmentedPill(
     onZoneFormatSelected: (ZoneFormat) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val currentOnOptionSelected by rememberUpdatedState(onZoneFormatSelected)
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -1031,21 +967,25 @@ fun KarooSegmentedPill(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp)
+                .height(46.dp)
                 .clip(RoundedCornerShape(50))
-                .background(colors.trackBg)
-                .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(50))
+                .background(Color.White)
+                .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(50))
                 .padding(4.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 val options = listOf(
-                    Triple(ZoneFormat.NONE, "None", 1f),
-                    Triple(ZoneFormat.TEXT, "Text", 1f),
-                    Triple(ZoneFormat.BACKGROUND, "Fill", 1f),
+                    Triple(ZoneFormat.NONE, "None", 0.9f),
+                    Triple(ZoneFormat.TEXT, "Text", 0.9f),
+                    Triple(ZoneFormat.BACKGROUND, "Fill", 1.2f),
                 )
+
+                val activeGold = Color(0xFFF4C414)
+                val activeDarkText = Color(0xFF1E2225)
+                val unselectedSlate = Color(0xFF475569)
 
                 options.forEach { (format, labelText, weight) ->
                     val isSelected = selectedZoneFormat == format
@@ -1055,16 +995,16 @@ fun KarooSegmentedPill(
                             .weight(weight)
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(50))
-                            .background(if (isSelected) colors.accent else Color.Transparent)
-                            .clickable { onZoneFormatSelected(format) }
+                            .background(if (isSelected) activeGold else Color.Transparent)
+                            .clickable { currentOnOptionSelected(format) }
                             .padding(horizontal = 8.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = labelText,
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) Color.White else colors.textSecondary,
+                            color = if (isSelected) activeDarkText else unselectedSlate,
                             textAlign = TextAlign.Center,
                             maxLines = 1,
                             softWrap = false,
@@ -1077,11 +1017,7 @@ fun KarooSegmentedPill(
 }
 
 /**
- * Helper finding the list index closest in value to a target float.
- *
- * @param values Candidate float values list.
- * @param target Target float value.
- * @return Index of nearest value in list, or 0 if empty.
+ * Helper finding list index closest in value to a target float.
  */
 fun findNearestIndex(values: List<Float>, target: Float): Int {
     return values.minByOrNull { abs(it - target) }?.let { values.indexOf(it) } ?: 0

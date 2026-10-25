@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.hank.kustom.data.model.ColorMode
 import com.hank.kustom.data.model.GlobalTypographyConfig
 import com.hank.kustom.data.model.KustomFieldCatalog
 import com.hank.kustom.data.model.KustomFieldConfig
@@ -24,7 +25,7 @@ import java.io.IOException
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "kustom_settings")
 
 /**
- * DataStore repository managing [KustomSettings] persistent user preferences.
+ * DataStore repository managing [KustomSettings] persistent user preferences with atomic per-property updates.
  *
  * @param context Application or activity context.
  */
@@ -74,9 +75,71 @@ class KustomSettingsRepository(context: Context) {
         }
 
     /**
-     * Updates and persists global typography preferences to DataStore.
-     *
-     * @param typography Updated [GlobalTypographyConfig].
+     * Atomically updates font family in DataStore.
+     */
+    suspend fun updateFontFamily(fontFamily: KustomFont) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_FONT_FAMILY] = fontFamily.name
+        }
+    }
+
+    /**
+     * Atomically updates value font size in DataStore.
+     */
+    suspend fun updateValueFontSizeSp(sizeSp: Int) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_VALUE_SIZE_SP] = sizeSp
+        }
+    }
+
+    /**
+     * Atomically updates value font weight in DataStore.
+     */
+    suspend fun updateValueFontWeight(weight: Int) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_VALUE_WEIGHT] = weight
+        }
+    }
+
+    /**
+     * Atomically updates label font size in DataStore.
+     */
+    suspend fun updateLabelFontSizeSp(sizeSp: Int) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_LABEL_SIZE_SP] = sizeSp
+        }
+    }
+
+    /**
+     * Atomically updates label font weight in DataStore.
+     */
+    suspend fun updateLabelFontWeight(weight: Int) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_LABEL_WEIGHT] = weight
+        }
+    }
+
+    /**
+     * Atomically updates field smoothing in DataStore without touching zone color.
+     */
+    suspend fun updateFieldSmoothing(typeId: String, smoothing: SmoothingOption) {
+        dataStore.edit { prefs ->
+            prefs[intPreferencesKey("${typeId}_smoothing")] = smoothing.seconds
+        }
+    }
+
+    /**
+     * Atomically updates field color mode / zone format in DataStore without touching smoothing.
+     */
+    suspend fun updateFieldColorMode(typeId: String, colorMode: ColorMode) {
+        val zoneFormat = ZoneFormat.fromColorMode(colorMode)
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey("${typeId}_zone_format")] = zoneFormat.name
+        }
+    }
+
+    /**
+     * Legacy helper updating full global typography.
      */
     suspend fun updateGlobalTypography(typography: GlobalTypographyConfig) {
         dataStore.edit { prefs ->
@@ -89,10 +152,7 @@ class KustomSettingsRepository(context: Context) {
     }
 
     /**
-     * Updates and persists field configuration for a specific [typeId] to DataStore.
-     *
-     * @param typeId Unique field data type identifier (e.g. "power", "hr", "speed").
-     * @param config Updated [KustomFieldConfig].
+     * Legacy helper updating full field config.
      */
     suspend fun updateFieldConfig(typeId: String, config: KustomFieldConfig) {
         dataStore.edit { prefs ->

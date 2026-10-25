@@ -115,16 +115,17 @@ object KustomFieldRenderer {
 
             // --- ZONE 1: TOP 26% ZONE FOR LABEL (0 .. 0.26 * height) ---
             val labelZoneHeight = height * 0.26f
-            val requestedLabelPx = spToPx(context, labelTypography.fontSizeSp)
+            val labelPx = (height * (labelTypography.fontSizeSp / 68f)).coerceAtLeast(10f)
             val labelPaint = TextPaint().apply {
                 color = labelColor
                 textAlign = align
+                textScaleX = 1.0f // True 1:1 aspect ratio
             }
             KustomTypefaceResolver.applyTypography(
                 paint = labelPaint,
                 font = labelTypography.font,
                 weight = labelTypography.fontWeight,
-                textSizePx = requestedLabelPx,
+                textSizePx = labelPx,
             )
 
             // Auto-scale label font size only if text width exceeds canvas width
@@ -143,17 +144,18 @@ object KustomFieldRenderer {
             // --- ZONE 2: BOTTOM 74% ZONE FOR VALUE (0.26 * height .. height) ---
             val valueZoneTop = height * 0.26f
             val valueZoneHeight = height * 0.74f
-            val requestedValuePx = spToPx(context, valueTypography.fontSizeSp)
+            val valuePx = (height * (valueTypography.fontSizeSp / 86f)).coerceAtLeast(18f)
 
             val valuePaint = TextPaint().apply {
                 color = valueColor
                 textAlign = align
+                textScaleX = 1.0f // True 1:1 aspect ratio
             }
             KustomTypefaceResolver.applyTypography(
                 paint = valuePaint,
                 font = valueTypography.font,
                 weight = valueTypography.fontWeight,
-                textSizePx = requestedValuePx,
+                textSizePx = valuePx,
             )
 
             // Auto-scale value font size only if text width exceeds canvas width
@@ -213,6 +215,7 @@ object KustomFieldRenderer {
 
         val secondaryPaint = TextPaint(primaryPaint).apply {
             textSize = primaryPaint.textSize * 0.58f
+            textScaleX = 1.0f
         }
 
         val primaryWidth = primaryPaint.measureText(primaryPart)
@@ -279,10 +282,5 @@ object KustomFieldRenderer {
         }
         canvas.drawText("ERR", width / 2f, height / 2f, paint)
         return bitmap
-    }
-
-    private fun spToPx(context: Context, sp: Float): Float {
-        val density = context.resources.displayMetrics.scaledDensity
-        return sp * density
     }
 }

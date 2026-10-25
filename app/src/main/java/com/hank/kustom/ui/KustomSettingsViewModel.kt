@@ -3,9 +3,13 @@ package com.hank.kustom.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.hank.kustom.data.model.ColorMode
 import com.hank.kustom.data.model.GlobalTypographyConfig
 import com.hank.kustom.data.model.KustomFieldConfig
+import com.hank.kustom.data.model.KustomFont
 import com.hank.kustom.data.model.KustomSettings
+import com.hank.kustom.data.model.SmoothingOption
+import com.hank.kustom.data.model.ZoneFormat
 import com.hank.kustom.data.repository.KustomSettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -31,7 +35,6 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
     init {
         viewModelScope.launch {
             repository.settingsFlow.collect { diskSettings ->
-                // Sync disk settings only when user is not actively adjusting typography
                 if (saveTypographyJob?.isActive != true) {
                     _settingsState.value = diskSettings
                 }
@@ -39,18 +42,105 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    /**
-     * Updates global typography instantly in memory for 0ms lag,
-     * and debounces DataStore disk persistence by 300ms.
-     */
-    fun updateGlobalTypography(typography: GlobalTypographyConfig) {
+    /** Updates global font family atomically. */
+    fun updateFontFamily(fontFamily: KustomFont) {
         val current = _settingsState.value
-        if (current.globalTypography == typography) return
+        val updatedTypo = current.globalTypography.copy(fontFamily = fontFamily)
+        _settingsState.value = current.copy(globalTypography = updatedTypo)
 
-        // 1. Instant 0ms In-Memory Main Thread Update
-        _settingsState.value = current.copy(globalTypography = typography)
+        saveTypographyJob?.cancel()
+        saveTypographyJob = viewModelScope.launch {
+            delay(300L)
+            repository.updateFontFamily(fontFamily)
+        }
+    }
 
-        // 2. Asynchronous Debounced Disk Persistence
+    /** Updates value font size in SP atomically. */
+    fun updateValueFontSizeSp(sizeSp: Int) {
+        val current = _settingsState.value
+        val updatedTypo = current.globalTypography.copy(valueSizeSp = sizeSp)
+        _settingsState.value = current.copy(globalTypography = updatedTypo)
+
+        saveTypographyJob?.cancel()
+        saveTypographyJob = viewModelScope.launch {
+            delay(300L)
+            repository.updateValueFontSizeSp(sizeSp)
+        }
+    }
+
+    /** Updates value font weight atomically. */
+    fun updateValueFontWeight(weight: Int) {
+        val current = _settingsState.value
+        val updatedTypo = current.globalTypography.copy(valueWeight = weight)
+        _settingsState.value = current.copy(globalTypography = updatedTypo)
+
+        saveTypographyJob?.cancel()
+        saveTypographyJob = viewModelScope.launch {
+            delay(300L)
+            repository.updateValueFontWeight(weight)
+        }
+    }
+
+    /** Updates label font size in SP atomically. */
+    fun updateLabelFontSizeSp(sizeSp: Int) {
+        val current = _settingsState.value
+        val updatedTypo = current.globalTypography.copy(labelSizeSp = sizeSp)
+        _settingsState.value = current.copy(globalTypography = updatedTypo)
+
+        saveTypographyJob?.cancel()
+        saveTypographyJob = viewModelScope.launch {
+            delay(300L)
+            repository.updateLabelFontSizeSp(sizeSp)
+        }
+    }
+
+    /** Updates label font weight atomically. */
+    fun updateLabelFontWeight(weight: Int) {
+        val current = _settingsState.value
+        val updatedTypo = current.globalTypography.copy(labelWeight = weight)
+        _settingsState.value = current.copy(globalTypography = updatedTypo)
+
+        saveTypographyJob?.cancel()
+        saveTypographyJob = viewModelScope.launch {
+            delay(300L)
+            repository.updateLabelFontWeight(weight)
+        }
+    }
+
+    /** Updates field smoothing option atomically without touching color mode. */
+    fun updateFieldSmoothing(typeId: String, smoothing: SmoothingOption) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        updatedConfigs[typeId] = currentConfig.copy(smoothingOption = smoothing)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateFieldSmoothing(typeId, smoothing)
+        }
+    }
+
+    /** Updates field color mode atomically without touching smoothing option. */
+    fun updateFieldColorMode(typeId: String, colorMode: ColorMode) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        val zoneFormat = ZoneFormat.fromColorMode(colorMode)
+        updatedConfigs[typeId] = currentConfig.copy(zoneFormat = zoneFormat)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateFieldColorMode(typeId, colorMode)
+        }
+    }
+
+    /** Legacy helper updating full typography. */
+    fun updateGlobalTypography(typography: GlobalTypographyConfig) {
+        _settingsState.value = _settingsState.value.copy(globalTypography = typography)
         saveTypographyJob?.cancel()
         saveTypographyJob = viewModelScope.launch {
             delay(300L)
@@ -58,20 +148,13 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    /**
-     * Updates field config instantly in memory for 0ms lag,
-     * and debounces DataStore disk persistence by 300ms.
-     */
+    /** Legacy helper updating full field config. */
     fun updateFieldConfig(typeId: String, config: KustomFieldConfig) {
         val current = _settingsState.value
         val updatedConfigs = current.fieldConfigs.toMutableMap()
-        if (updatedConfigs[typeId] == config) return
-
-        // 1. Instant 0ms In-Memory Main Thread Update
         updatedConfigs[typeId] = config
         _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
 
-        // 2. Asynchronous Debounced Disk Persistence
         saveFieldJobs[typeId]?.cancel()
         saveFieldJobs[typeId] = viewModelScope.launch {
             delay(300L)

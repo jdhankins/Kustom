@@ -8,6 +8,7 @@ import com.hank.kustom.data.model.KustomFont
 
 /**
  * Typeface loader for top 5 cycling computer fonts (Karoo, Wahoo, Garmin, Athletic Display, Clean).
+ * Guarantees 1:1 true aspect ratio with zero textScaleX stretching.
  */
 object KustomTypefaceResolver {
 
@@ -19,32 +20,8 @@ object KustomTypefaceResolver {
     ) {
         paint.isAntiAlias = true
         paint.textSize = textSizePx
-        paint.style = Paint.Style.FILL
-        paint.strokeWidth = 0f
-
-        // Character scale & letter spacing per cycling font family
-        when (font) {
-            KustomFont.KAROO_RBNO2 -> {
-                paint.textScaleX = 0.90f
-                paint.letterSpacing = -0.01f
-            }
-            KustomFont.WAHOO_BARLOW -> {
-                paint.textScaleX = 0.96f
-                paint.letterSpacing = 0.01f
-            }
-            KustomFont.GARMIN_DIN -> {
-                paint.textScaleX = 0.88f
-                paint.letterSpacing = -0.02f
-            }
-            KustomFont.ATHLETIC_DISPLAY -> {
-                paint.textScaleX = 0.80f
-                paint.letterSpacing = -0.03f
-            }
-            KustomFont.ROBOTO_CLEAN -> {
-                paint.textScaleX = 1.0f
-                paint.letterSpacing = 0.0f
-            }
-        }
+        paint.textScaleX = 1.0f // True 1:1 typographic aspect ratio (never stretch)
+        paint.letterSpacing = 0.0f
 
         val effectiveWeight = if (font == KustomFont.KAROO_RBNO2 || font == KustomFont.GARMIN_DIN || font == KustomFont.ATHLETIC_DISPLAY) {
             weight.coerceAtLeast(700)
@@ -66,6 +43,15 @@ object KustomTypefaceResolver {
         } else {
             paint.typeface = baseTypeface
             paint.isFakeBoldText = (effectiveWeight >= 700)
+        }
+
+        // Supplemental proportional stroke for clean weight thickening on custom fonts without altering width/height ratio
+        if (effectiveWeight >= 700) {
+            paint.style = Paint.Style.FILL_AND_STROKE
+            paint.strokeWidth = textSizePx * ((effectiveWeight - 400) / 12000f).coerceAtLeast(0f)
+        } else {
+            paint.style = Paint.Style.FILL
+            paint.strokeWidth = 0f
         }
     }
 
