@@ -21,7 +21,15 @@ data class GlobalColorConfig(
     }
 
     companion object {
-        val LIGHT_PRESETS = listOf("#FFFFFF", "#F4F6F7", "#E2E8F0", "#E0F2FE", "#FEF3C7", "#1E2225")
-        val DARK_PRESETS = listOf("#000000", "#17283C", "#1E293B", "#18181B", "#0F172A", "#FFFFFF")
+        val LIGHT_PRESETS = listOf(
+            "#FFFFFF", "#FCFCFC", "#F8F8F8", "#F4F4F4", "#F1F1F1", "#EDEDED",
+            "#EAEAEA", "#E6E6E6", "#E2E2E2", "#DEDEDE", "#DADADA", "#D7D7D7",
+            "#D3D3D3", "#CFCFCF", "#CCCCCC", "#C8C8C8", "#C4C4C4", "#BFBFBF"
+        )
+        val DARK_PRESETS = listOf(
+            "#8C8C8C", "#848484", "#7C7C7C", "#747474", "#6C6C6C", "#646464",
+            "#5C5C5C", "#545454", "#4C4C4C", "#444444", "#3C3C3C", "#343434",
+            "#2C2C2C", "#242424", "#1C1C1C", "#141414", "#0C0C0C", "#000000"
+        )
     }
 }

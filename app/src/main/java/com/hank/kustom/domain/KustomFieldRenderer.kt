@@ -41,21 +41,14 @@ object KustomFieldRenderer {
 
             val boundaries = config.boundariesEnabled
 
-            // Default colors based on theme, custom background preferences, and boundaries
+            // Default colors based on theme and custom background preferences
             val defaultBgColor = if (isDarkTheme) {
-                if (globalColors.useCustomBg) globalColors.getDarkColorInt() else (if (boundaries) 0xFF000000.toInt() else 0x00000000)
+                globalColors.getDarkColorInt()
             } else {
                 globalColors.getLightColorInt()
             }
 
-            val defaultTextColor = if (!isDarkTheme) {
-                KustomColorGradeMapper.getContrastingTextColor(defaultBgColor)
-            } else if (globalColors.useCustomBg && (colorMode != ColorMode.BACKGROUND_COLOR || mappedColor == null)) {
-                KustomColorGradeMapper.getContrastingTextColor(defaultBgColor)
-            } else {
-                0xFFFFFFFF.toInt() // White text in Dark Mode
-            }
-
+            val defaultTextColor = KustomColorGradeMapper.getContrastingTextColor(defaultBgColor)
             val mutedLabelColor = defaultTextColor
 
             val backgroundColor: Int

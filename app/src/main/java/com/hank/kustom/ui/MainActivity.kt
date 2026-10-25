@@ -10,6 +10,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import com.github.dhaval2404.colorpicker.ColorPickerDialog
 import com.github.dhaval2404.colorpicker.MaterialColorPickerDialog
 import com.github.dhaval2404.colorpicker.model.ColorShape
 import com.github.dhaval2404.colorpicker.model.ColorSwatch
@@ -27,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -34,6 +38,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -66,6 +71,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import com.hank.kustom.data.model.ColorMode
 import com.hank.kustom.data.model.FieldCategory
+import com.hank.kustom.data.model.GlobalColorConfig
 import com.hank.kustom.data.model.GlobalTypographyConfig
 import com.hank.kustom.data.model.KustomFieldCatalog
 import com.hank.kustom.data.model.KustomFieldConfig
@@ -403,6 +409,35 @@ fun GlobalFontsTab(
 ) {
     val global = settings.globalTypography
     var isTypographyExpanded by remember { mutableStateOf(false) }
+    var isFieldBackgroundExpanded by remember { mutableStateOf(false) }
+    var showLightColorDialog by remember { mutableStateOf(false) }
+    var showDarkColorDialog by remember { mutableStateOf(false) }
+
+    if (showLightColorDialog) {
+        FieldBackgroundColorDialog(
+            title = "Light Mode Background",
+            selectedHex = settings.globalColors.lightBgColorHex,
+            presetHexes = GlobalColorConfig.LIGHT_PRESETS,
+            colors = colors,
+            onColorSelected = { hex ->
+                viewModel.updateLightBgColor(hex)
+            },
+            onDismiss = { showLightColorDialog = false },
+        )
+    }
+
+    if (showDarkColorDialog) {
+        FieldBackgroundColorDialog(
+            title = "Dark Mode Background",
+            selectedHex = settings.globalColors.darkBgColorHex,
+            presetHexes = GlobalColorConfig.DARK_PRESETS,
+            colors = colors,
+            onColorSelected = { hex ->
+                viewModel.updateDarkBgColor(hex)
+            },
+            onDismiss = { showDarkColorDialog = false },
+        )
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -563,6 +598,9 @@ fun GlobalFontsTab(
                         val selectedLightColor = runCatching {
                             Color(android.graphics.Color.parseColor(globalColors.lightBgColorHex))
                         }.getOrDefault(Color.White)
+                        val selectedDarkColor = runCatching {
+                            Color(android.graphics.Color.parseColor(globalColors.darkBgColorHex))
+                        }.getOrDefault(Color.Black)
 
                         Column(
                             modifier = Modifier
@@ -570,6 +608,7 @@ fun GlobalFontsTab(
                                 .padding(top = 4.dp, bottom = 4.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
+                            // Row 1: Light Mode
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -582,17 +621,7 @@ fun GlobalFontsTab(
                                         .clip(RoundedCornerShape(50))
                                         .background(colors.accent)
                                         .clickable {
-                                            (localContext as? ComponentActivity)?.let { activity ->
-                                                MaterialColorPickerDialog
-                                                    .Builder(activity)
-                                                    .setTitle("Light Mode Background")
-                                                    .setColorShape(ColorShape.SQAURE)
-                                                    .setColorSwatch(ColorSwatch._100)
-                                                    .setColorListener { _, colorHex ->
-                                                        viewModel.updateLightBgColor(colorHex)
-                                                    }
-                                                    .show()
-                                            }
+                                            showLightColorDialog = true
                                         },
                                     contentAlignment = Alignment.Center,
                                 ) {
@@ -615,6 +644,43 @@ fun GlobalFontsTab(
                                         .border(BorderStroke(2.dp, colors.border), CircleShape),
                                 )
                             }
+
+                            // Row 2: Dark Mode
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp)
+                                        .clip(RoundedCornerShape(50))
+                                        .background(colors.accent)
+                                        .clickable {
+                                            showDarkColorDialog = true
+                                        },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text = "Dark Mode",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                // Selected Dark Mode Color Indicator Swatch
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(CircleShape)
+                                        .background(selectedDarkColor)
+                                        .border(BorderStroke(2.dp, colors.border), CircleShape),
+                                )
+                            }
                         }
                     }
                 }
@@ -626,6 +692,100 @@ fun GlobalFontsTab(
             Spacer(modifier = Modifier.height(36.dp))
         }
     }
+}
+
+/**
+ * Custom Compose dialog displaying color presets in a 3x6 scrollable grid.
+ */
+@Composable
+fun FieldBackgroundColorDialog(
+    title: String,
+    selectedHex: String,
+    presetHexes: List<String>,
+    colors: KustomColorScheme,
+    onColorSelected: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val rows: List<List<String>> = presetHexes.chunked(3)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = colors.cardBg,
+        title = {
+            Text(
+                text = title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.textPrimary,
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 280.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                rows.forEach { rowHexes ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        rowHexes.forEach { hexStr ->
+                            val isSelected = selectedHex.equals(hexStr, ignoreCase = true)
+                            val parsedColor = runCatching { Color(android.graphics.Color.parseColor(hexStr)) }.getOrDefault(Color.White)
+                            val dotColor = if (hexStr.equals("#000000", ignoreCase = true) || hexStr.startsWith("#0") || hexStr.startsWith("#1") || hexStr.startsWith("#2")) Color.White else Color.Black
+
+                            Box(
+                                modifier = Modifier
+                                    .size(62.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(parsedColor)
+                                    .border(
+                                        border = BorderStroke(
+                                            width = if (isSelected) 3.dp else 1.dp,
+                                            color = if (isSelected) colors.accent else Color(0xFFCBD5E1),
+                                        ),
+                                        shape = RoundedCornerShape(8.dp),
+                                    )
+                                    .clickable {
+                                        onColorSelected(hexStr)
+                                        onDismiss()
+                                    },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (isSelected) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(14.dp)
+                                            .clip(CircleShape)
+                                            .background(dotColor),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Box(
+                modifier = Modifier
+                    .clickable { onDismiss() }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = "CLOSE",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.accent,
+                )
+            }
+        },
+    )
 }
 
 /**
