@@ -397,6 +397,17 @@ fun GlobalFontsTab(
             Spacer(modifier = Modifier.height(2.dp))
         }
 
+        // SECTION HEADER: TYPOGRAPHY
+        item {
+            Text(
+                text = "Typography",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.textPrimary,
+                modifier = Modifier.padding(start = 2.dp, top = 4.dp),
+            )
+        }
+
         // FONT FAMILY DROPDOWN
         item {
             KarooFontDropdown(
