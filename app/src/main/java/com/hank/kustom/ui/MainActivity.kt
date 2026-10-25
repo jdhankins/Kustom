@@ -387,104 +387,123 @@ fun GlobalFontsTab(
     viewModel: KustomSettingsViewModel,
 ) {
     val global = settings.globalTypography
+    var isTypographyExpanded by remember { mutableStateOf(true) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            Spacer(modifier = Modifier.height(2.dp))
-        }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = colors.cardBg),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isTypographyExpanded = !isTypographyExpanded }
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "TYPOGRAPHY",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textPrimary,
+                        )
+                        Text(
+                            text = if (isTypographyExpanded) "▲" else "▼",
+                            fontSize = 14.sp,
+                            color = colors.textSecondary,
+                        )
+                    }
 
-        // SECTION HEADER: TYPOGRAPHY
-        item {
-            Text(
-                text = "Typography",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.textPrimary,
-                modifier = Modifier.padding(start = 2.dp, top = 4.dp),
-            )
-        }
+                    AnimatedVisibility(visible = isTypographyExpanded) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                        ) {
+                            // FONT FAMILY DROPDOWN
+                            KarooFontDropdown(
+                                selectedFont = global.fontFamily,
+                                colors = colors,
+                                onFontSelected = { font ->
+                                    viewModel.updateFontFamily(font)
+                                },
+                            )
 
-        // FONT FAMILY DROPDOWN
-        item {
-            KarooFontDropdown(
-                selectedFont = global.fontFamily,
-                colors = colors,
-                onFontSelected = { font ->
-                    viewModel.updateFontFamily(font)
-                },
-            )
-        }
+                            // VALUE FONT SIZE (36, 42, 48, 56, 64, 72)
+                            val valueSizes = listOf(36f, 42f, 48f, 56f, 64f, 72f)
+                            val valueSizeSteps = listOf("36", "42", "48", "56", "64", "72")
+                            val currentValSizeIdx = findNearestIndex(valueSizes, global.valueSizeSp.toFloat())
+                            KarooSteppedSlider(
+                                label = "Value Font Size",
+                                steps = valueSizeSteps,
+                                selectedIndex = currentValSizeIdx,
+                                colors = colors,
+                                onStepSelected = { idx ->
+                                    val newSize = valueSizes.getOrElse(idx) { 48f }.toInt()
+                                    viewModel.updateValueFontSizeSp(newSize)
+                                },
+                            )
 
-        // VALUE FONT SIZE (36, 42, 48, 56, 64, 72)
-        item {
-            val valueSizes = listOf(36f, 42f, 48f, 56f, 64f, 72f)
-            val valueSizeSteps = listOf("36", "42", "48", "56", "64", "72")
-            val currentIdx = findNearestIndex(valueSizes, global.valueSizeSp.toFloat())
-            KarooSteppedSlider(
-                label = "Value Font Size",
-                steps = valueSizeSteps,
-                selectedIndex = currentIdx,
-                colors = colors,
-                onStepSelected = { idx ->
-                    val newSize = valueSizes.getOrElse(idx) { 48f }.toInt()
-                    viewModel.updateValueFontSizeSp(newSize)
-                },
-            )
-        }
+                            // VALUE FONT WEIGHT (300, 400, 500, 700, 900)
+                            val weights = listOf(300f, 400f, 500f, 700f, 900f)
+                            val weightSteps = listOf("300", "400", "500", "700", "900")
+                            val currentValWeightIdx = findNearestIndex(weights, global.valueWeight.toFloat())
+                            KarooSteppedSlider(
+                                label = "Value Font Weight",
+                                steps = weightSteps,
+                                selectedIndex = currentValWeightIdx,
+                                colors = colors,
+                                onStepSelected = { idx ->
+                                    val newWeight = weights.getOrElse(idx) { 700f }.toInt()
+                                    viewModel.updateValueFontWeight(newWeight)
+                                },
+                            )
 
-        // VALUE FONT WEIGHT (300, 400, 500, 700, 900)
-        item {
-            val weights = listOf(300f, 400f, 500f, 700f, 900f)
-            val weightSteps = listOf("300", "400", "500", "700", "900")
-            val currentIdx = findNearestIndex(weights, global.valueWeight.toFloat())
-            KarooSteppedSlider(
-                label = "Value Font Weight",
-                steps = weightSteps,
-                selectedIndex = currentIdx,
-                colors = colors,
-                onStepSelected = { idx ->
-                    val newWeight = weights.getOrElse(idx) { 700f }.toInt()
-                    viewModel.updateValueFontWeight(newWeight)
-                },
-            )
-        }
+                            // LABEL FONT SIZE (10, 12, 14, 16, 18, 20)
+                            val labelSizes = listOf(10f, 12f, 14f, 16f, 18f, 20f)
+                            val labelSizeSteps = listOf("10", "12", "14", "16", "18", "20")
+                            val currentLabelSizeIdx = findNearestIndex(labelSizes, global.labelSizeSp.toFloat())
+                            KarooSteppedSlider(
+                                label = "Label Font Size",
+                                steps = labelSizeSteps,
+                                selectedIndex = currentLabelSizeIdx,
+                                colors = colors,
+                                onStepSelected = { idx ->
+                                    val newSize = labelSizes.getOrElse(idx) { 14f }.toInt()
+                                    viewModel.updateLabelFontSizeSp(newSize)
+                                },
+                            )
 
-        // LABEL FONT SIZE (10, 12, 14, 16, 18, 20)
-        item {
-            val labelSizes = listOf(10f, 12f, 14f, 16f, 18f, 20f)
-            val labelSizeSteps = listOf("10", "12", "14", "16", "18", "20")
-            val currentIdx = findNearestIndex(labelSizes, global.labelSizeSp.toFloat())
-            KarooSteppedSlider(
-                label = "Label Font Size",
-                steps = labelSizeSteps,
-                selectedIndex = currentIdx,
-                colors = colors,
-                onStepSelected = { idx ->
-                    val newSize = labelSizes.getOrElse(idx) { 14f }.toInt()
-                    viewModel.updateLabelFontSizeSp(newSize)
-                },
-            )
-        }
-
-        // LABEL FONT WEIGHT (300, 400, 500, 700, 900)
-        item {
-            val weights = listOf(300f, 400f, 500f, 700f, 900f)
-            val weightSteps = listOf("300", "400", "500", "700", "900")
-            val currentIdx = findNearestIndex(weights, global.labelWeight.toFloat())
-            KarooSteppedSlider(
-                label = "Label Font Weight",
-                steps = weightSteps,
-                selectedIndex = currentIdx,
-                colors = colors,
-                onStepSelected = { idx ->
-                    val newWeight = weights.getOrElse(idx) { 700f }.toInt()
-                    viewModel.updateLabelFontWeight(newWeight)
-                },
-            )
+                            // LABEL FONT WEIGHT (300, 400, 500, 700, 900)
+                            val currentLabelWeightIdx = findNearestIndex(weights, global.labelWeight.toFloat())
+                            KarooSteppedSlider(
+                                label = "Label Font Weight",
+                                steps = weightSteps,
+                                selectedIndex = currentLabelWeightIdx,
+                                colors = colors,
+                                onStepSelected = { idx ->
+                                    val newWeight = weights.getOrElse(idx) { 700f }.toInt()
+                                    viewModel.updateLabelFontWeight(newWeight)
+                                },
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         // Bottom padding to ensure bottom slider is never clipped at screen edge
