@@ -358,6 +358,7 @@ fun KustomStickyHeaderSection(
                             colorMode = ColorMode.NONE,
                             mappedColor = null,
                             isDarkTheme = previewIsDark,
+                            globalColors = settings.globalColors,
                         )
 
                         Image(
@@ -558,38 +559,60 @@ fun GlobalFontsTab(
 
                     AnimatedVisibility(visible = isFieldBackgroundExpanded) {
                         val localContext = LocalContext.current
+                        val globalColors = settings.globalColors
+                        val selectedLightColor = runCatching {
+                            Color(android.graphics.Color.parseColor(globalColors.lightBgColorHex))
+                        }.getOrDefault(Color.White)
+
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 4.dp, bottom = 4.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(44.dp)
-                                    .clip(RoundedCornerShape(50))
-                                    .background(colors.accent)
-                                    .clickable {
-                                        (localContext as? ComponentActivity)?.let { activity ->
-                                            MaterialColorPickerDialog
-                                                .Builder(activity)
-                                                .setTitle("Select Field Background Color")
-                                                .setColorShape(ColorShape.SQAURE)
-                                                .setColorSwatch(ColorSwatch._500)
-                                                .setColorListener { _, _ ->
-                                                    // Popup only - no saving per request
-                                                }
-                                                .show()
-                                        }
-                                    },
-                                contentAlignment = Alignment.Center,
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
-                                Text(
-                                    text = "Select Background Color",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp)
+                                        .clip(RoundedCornerShape(50))
+                                        .background(colors.accent)
+                                        .clickable {
+                                            (localContext as? ComponentActivity)?.let { activity ->
+                                                MaterialColorPickerDialog
+                                                    .Builder(activity)
+                                                    .setTitle("Light Mode Background")
+                                                    .setColorShape(ColorShape.SQAURE)
+                                                    .setColorSwatch(ColorSwatch._100)
+                                                    .setColorListener { _, colorHex ->
+                                                        viewModel.updateLightBgColor(colorHex)
+                                                    }
+                                                    .show()
+                                            }
+                                        },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text = "Light Mode",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                // Selected Light Mode Color Indicator Swatch
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(CircleShape)
+                                        .background(selectedLightColor)
+                                        .border(BorderStroke(2.dp, colors.border), CircleShape),
                                 )
                             }
                         }
@@ -704,6 +727,7 @@ fun FieldCardItem(
     onFieldSelected: (KustomFieldDefinition) -> Unit,
 ) {
     val context = LocalContext.current
+    val settings by viewModel.settingsState.collectAsState()
 
     // Live Mock Ticker every 1200ms for per-metric preview
     var mockStepIndex by remember(field) { mutableIntStateOf(0) }
@@ -804,6 +828,7 @@ fun FieldCardItem(
                         colorMode = fieldConfig.colorMode,
                         mappedColor = mappedColor,
                         isDarkTheme = colors.isDark,
+                        globalColors = settings.globalColors,
                     )
 
                     Image(
