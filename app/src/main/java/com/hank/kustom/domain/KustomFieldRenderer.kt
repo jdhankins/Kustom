@@ -14,8 +14,8 @@ import io.hammerhead.karooext.models.ViewConfig
 
 /**
  * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas.
- * The top 25% zone is reserved for the label and the bottom 75% zone for the value,
- * with Wahoo ELEMNT style superscript formatting for decimals and time colons.
+ * The top 26% zone is reserved for the label and the bottom 74% zone for the value,
+ * with iterative horizontal and vertical auto-fit and Wahoo ELEMNT style superscript formatting.
  */
 object KustomFieldRenderer {
 
@@ -113,9 +113,9 @@ object KustomFieldRenderer {
                 ViewConfig.Alignment.RIGHT -> width - marginX
             }
 
-            // --- ZONE 1: TOP 25% ZONE FOR LABEL (0 .. 0.25 * height) ---
-            val labelZoneHeight = height * 0.25f
-            val labelPx = spToPx(context, labelTypography.fontSizeSp, labelZoneHeight.toInt(), maxRatio = 0.98f)
+            // --- ZONE 1: TOP 26% ZONE FOR LABEL (0 .. 0.26 * height) ---
+            val labelZoneHeight = height * 0.26f
+            val requestedLabelPx = spToPx(context, labelTypography.fontSizeSp, labelZoneHeight.toInt(), maxRatio = 0.98f)
             val labelPaint = TextPaint().apply {
                 color = labelColor
                 textAlign = align
@@ -124,15 +124,17 @@ object KustomFieldRenderer {
                 paint = labelPaint,
                 font = labelTypography.font,
                 weight = labelTypography.fontWeight,
-                textSizePx = labelPx,
+                textSizePx = requestedLabelPx,
             )
 
-            // Auto-scale label font size only if text width exceeds canvas width
-            val maxLabelWidth = width * 0.92f
-            val measuredLabelWidth = labelPaint.measureText(label.uppercase())
-            if (measuredLabelWidth > maxLabelWidth && measuredLabelWidth > 0f) {
-                val scaledLabelPx = labelPx * (maxLabelWidth / measuredLabelWidth)
-                labelPaint.textSize = scaledLabelPx
+            // Iterative horizontal and vertical auto-fit for Label
+            val upperLabel = label.uppercase()
+            val minLabelTextSize = 10f
+            while (labelPaint.textSize > minLabelTextSize &&
+                (labelPaint.measureText(upperLabel) > width * 0.90f ||
+                 (labelPaint.fontMetrics.descent - labelPaint.fontMetrics.ascent) > labelZoneHeight * 0.85f)
+            ) {
+                labelPaint.textSize -= 1f
             }
 
             val labelMetrics = labelPaint.fontMetrics
@@ -140,11 +142,10 @@ object KustomFieldRenderer {
             val labelCenterY = (labelZoneHeight / 2f) + topPadding
             val labelY = labelCenterY - ((labelMetrics.ascent + labelMetrics.descent) / 2f)
 
-            // --- ZONE 2: BOTTOM 75% ZONE FOR VALUE (0.25 * height .. height) ---
-            val valueZoneTop = height * 0.25f
-            val valueZoneHeight = height * 0.75f
+            // --- ZONE 2: BOTTOM 74% ZONE FOR VALUE (0.26 * height .. height) ---
+            val valueZoneTop = height * 0.26f
+            val valueZoneHeight = height * 0.74f
             val requestedValuePx = spToPx(context, valueTypography.fontSizeSp, valueZoneHeight.toInt(), maxRatio = 0.95f)
-            var valuePx = requestedValuePx
 
             val valuePaint = TextPaint().apply {
                 color = valueColor
@@ -154,22 +155,27 @@ object KustomFieldRenderer {
                 paint = valuePaint,
                 font = valueTypography.font,
                 weight = valueTypography.fontWeight,
-                textSizePx = valuePx,
+                textSizePx = requestedValuePx,
             )
 
-            // Auto-scale font size if text width exceeds canvas width
-            val maxTextWidth = width * 0.88f
+            // Iterative horizontal and vertical auto-fit for Value
             val (primaryPart, secondaryPart) = parsePrimaryAndSecondary(valueText)
-            val measuredWidth = if (secondaryPart.isNotEmpty()) {
-                val secPaint = TextPaint(valuePaint).apply { textSize = valuePaint.textSize * 0.58f }
-                valuePaint.measureText(primaryPart) + secPaint.measureText(secondaryPart)
-            } else {
-                valuePaint.measureText(valueText)
+            val minValueTextSize = 16f
+
+            fun getMeasuredValueWidth(): Float {
+                return if (secondaryPart.isNotEmpty()) {
+                    val secPaint = TextPaint(valuePaint).apply { textSize = valuePaint.textSize * 0.58f }
+                    valuePaint.measureText(primaryPart) + secPaint.measureText(secondaryPart)
+                } else {
+                    valuePaint.measureText(valueText)
+                }
             }
 
-            if (measuredWidth > maxTextWidth && measuredWidth > 0f) {
-                valuePx *= (maxTextWidth / measuredWidth)
-                valuePaint.textSize = valuePx
+            while (valuePaint.textSize > minValueTextSize &&
+                (getMeasuredValueWidth() > width * 0.90f ||
+                 (valuePaint.fontMetrics.descent - valuePaint.fontMetrics.ascent) > valueZoneHeight * 0.86f)
+            ) {
+                valuePaint.textSize -= 1f
             }
 
             val valueMetrics = valuePaint.fontMetrics
@@ -177,7 +183,7 @@ object KustomFieldRenderer {
             val valueY = valueCenterY - ((valueMetrics.ascent + valueMetrics.descent) / 2f)
 
             // Draw Label & Value Text (Wahoo Superscript Style for Decimals/Time)
-            canvas.drawText(label.uppercase(), textX, labelY, labelPaint)
+            canvas.drawText(upperLabel, textX, labelY, labelPaint)
             drawWahooValueText(canvas, valueText, textX, valueY, valuePaint, align)
 
             bitmap

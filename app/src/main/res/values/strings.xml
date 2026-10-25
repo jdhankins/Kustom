@@ -2,197 +2,193 @@
     <string name="app_name">Kustom</string>
     <string name="extension_name">Kustom</string>
 
-    <!-- SPEED -->
-    <string name="field_speed_name">SPEED: SPEED</string>
-    <string name="field_speed_desc">Current riding speed</string>
-
-    <string name="field_avg_speed_name">SPEED: AVG</string>
-    <string name="field_avg_speed_desc">Average ride speed</string>
-
-    <string name="field_max_speed_name">SPEED: MAX</string>
-    <string name="field_max_speed_desc">Maximum ride speed</string>
+    <!-- POWER -->
+    <string name="field_power_name">Power - Power</string>
+    <string name="field_power_desc">Current power output</string>
+    <string name="field_np_name">Power - NP</string>
+    <string name="field_np_desc">Normalized power</string>
+    <string name="field_avg_power_name">Power - Avg Power</string>
+    <string name="field_avg_power_desc">Average ride power</string>
+    <string name="field_max_power_name">Power - Max Power</string>
+    <string name="field_max_power_desc">Maximum ride power</string>
+    <string name="field_power_20m_name">Power - 20m Power</string>
+    <string name="field_power_20m_desc">20-minute rolling avg power</string>
+    <string name="field_power_1hr_name">Power - 1hr Power</string>
+    <string name="field_power_1hr_desc">1-hour rolling avg power</string>
+    <string name="field_power_balance_name">Power - Power Balance</string>
+    <string name="field_power_balance_desc">L/R power balance %</string>
+    <string name="field_percent_ftp_name">Power - % FTP</string>
+    <string name="field_percent_ftp_desc">Percentage of FTP</string>
+    <string name="field_power_to_weight_name">Power - W/kg</string>
+    <string name="field_power_to_weight_desc">Power output in W/kg</string>
+    <string name="field_power_zone_name">Power - Power Zone</string>
+    <string name="field_power_zone_desc">Current power zone</string>
+    <string name="field_intensity_factor_name">Power - IF</string>
+    <string name="field_intensity_factor_desc">Intensity factor</string>
+    <string name="field_tss_name">Power - TSS</string>
+    <string name="field_tss_desc">Training stress score</string>
+    <string name="field_power_vi_name">Power - VI</string>
+    <string name="field_power_vi_desc">Variability Index</string>
+    <string name="field_power_kj_name">Power - kJ</string>
+    <string name="field_power_kj_desc">Energy output in kilojoules</string>
+    <string name="field_power_cal_name">Power - Calories</string>
+    <string name="field_power_cal_desc">Calories burned</string>
+    <string name="field_power_cal_hr_name">Power - Cal/hr</string>
+    <string name="field_power_cal_hr_desc">Calorie burn rate per hour</string>
+    <string name="field_power_smoothness_name">Power - Pedal Smoothness</string>
+    <string name="field_power_smoothness_desc">Pedal smoothness %</string>
+    <string name="field_power_te_name">Power - Torque Effectiveness</string>
+    <string name="field_power_te_desc">Torque effectiveness %</string>
+    <string name="field_avg_power_balance_name">Power - Avg Balance</string>
+    <string name="field_avg_power_balance_desc">Average L/R power balance</string>
 
     <!-- HEART RATE -->
-    <string name="field_hr_name">HEART RATE: HEART RATE</string>
+    <string name="field_hr_name">Heart Rate - Heart Rate</string>
     <string name="field_hr_desc">Current heart rate</string>
-
-    <string name="field_avg_hr_name">HEART RATE: AVG</string>
-    <string name="field_avg_hr_desc">Average ride heart rate</string>
-
-    <string name="field_max_hr_name">HEART RATE: MAX</string>
-    <string name="field_max_hr_desc">Maximum ride heart rate</string>
-
-    <string name="field_hr_zone_name">HEART RATE: ZONE</string>
+    <string name="field_avg_hr_name">Heart Rate - Avg HR</string>
+    <string name="field_avg_hr_desc">Average heart rate</string>
+    <string name="field_max_hr_name">Heart Rate - Max HR</string>
+    <string name="field_max_hr_desc">Maximum heart rate</string>
+    <string name="field_hr_zone_name">Heart Rate - HR Zone</string>
     <string name="field_hr_zone_desc">Current HR zone</string>
+    <string name="field_percent_max_hr_name">Heart Rate - % Max HR</string>
+    <string name="field_percent_max_hr_desc">% of maximum heart rate</string>
+    <string name="field_percent_hrr_name">Heart Rate - % HRR</string>
+    <string name="field_percent_hrr_desc">% of heart rate reserve</string>
+    <string name="field_avg_percent_hrr_name">Heart Rate - Avg % HRR</string>
+    <string name="field_avg_percent_hrr_desc">Average % of HR reserve</string>
 
-    <!-- POWER -->
-    <string name="field_power_name">POWER: POWER</string>
-    <string name="field_power_desc">Current power output</string>
-
-    <string name="field_avg_power_name">POWER: AVG</string>
-    <string name="field_avg_power_desc">Average ride power</string>
-
-    <string name="field_max_power_name">POWER: MAX</string>
-    <string name="field_max_power_desc">Maximum ride power</string>
-
-    <string name="field_np_name">POWER: NP</string>
-    <string name="field_np_desc">Normalized power</string>
-
-    <string name="field_intensity_factor_name">POWER: IF</string>
-    <string name="field_intensity_factor_desc">Intensity factor</string>
-
-    <string name="field_tss_name">POWER: TSS</string>
-    <string name="field_tss_desc">Training stress score</string>
-
-    <string name="field_power_balance_name">POWER: BALANCE</string>
-    <string name="field_power_balance_desc">L/R power balance</string>
-
-    <string name="field_power_zone_name">POWER: ZONE</string>
-    <string name="field_power_zone_desc">Current power zone</string>
-
-    <string name="field_kickr_resistance_name">POWER: KICKR RESISTANCE</string>
-    <string name="field_kickr_resistance_desc">Trainer resistance level</string>
-
-    <!-- CADENCE -->
-    <string name="field_cadence_name">CADENCE: CADENCE</string>
-    <string name="field_cadence_desc">Current pedaling cadence</string>
-
-    <string name="field_avg_cadence_name">CADENCE: AVG</string>
-    <string name="field_avg_cadence_desc">Average ride cadence</string>
-
-    <string name="field_max_cadence_name">CADENCE: MAX</string>
-    <string name="field_max_cadence_desc">Maximum ride cadence</string>
-
-    <!-- DISTANCE -->
-    <string name="field_distance_name">DISTANCE: DISTANCE</string>
+    <!-- SPEED -->
+    <string name="field_speed_name">Speed - Speed</string>
+    <string name="field_speed_desc">Current riding speed</string>
+    <string name="field_avg_speed_name">Speed - Avg Speed</string>
+    <string name="field_avg_speed_desc">Average riding speed</string>
+    <string name="field_max_speed_name">Speed - Max Speed</string>
+    <string name="field_max_speed_desc">Maximum riding speed</string>
+    <string name="field_distance_name">Speed - Distance</string>
     <string name="field_distance_desc">Distance traveled</string>
 
-    <string name="field_distance_remaining_name">DISTANCE: REMAINING</string>
-    <string name="field_distance_remaining_desc">Distance left on route</string>
+    <!-- CADENCE -->
+    <string name="field_cadence_name">Cadence - Cadence</string>
+    <string name="field_cadence_desc">Current pedaling cadence</string>
+    <string name="field_torque_name">Cadence - Torque</string>
+    <string name="field_torque_desc">Current crank torque</string>
+    <string name="field_avg_cadence_name">Cadence - Avg Cadence</string>
+    <string name="field_avg_cadence_desc">Average pedaling cadence</string>
+    <string name="field_max_cadence_name">Cadence - Max Cadence</string>
+    <string name="field_max_cadence_desc">Maximum pedaling cadence</string>
+    <string name="field_avg_torque_name">Cadence - Avg Torque</string>
+    <string name="field_avg_torque_desc">Average crank torque</string>
+    <string name="field_max_torque_name">Cadence - Max Torque</string>
+    <string name="field_max_torque_desc">Maximum crank torque</string>
 
-    <string name="field_lap_distance_name">DISTANCE: LAP DISTANCE</string>
-    <string name="field_lap_distance_desc">Distance traveled this lap</string>
-
-    <string name="field_odometer_name">DISTANCE: ODOMETER</string>
-    <string name="field_odometer_desc">Total lifetime distance</string>
-
-    <!-- ELEVATION -->
-    <string name="field_elevation_name">ELEVATION: ELEVATION</string>
-    <string name="field_elevation_desc">Current altitude</string>
-
-    <string name="field_ascent_name">ELEVATION: ASCENT</string>
-    <string name="field_ascent_desc">Total elevation gained</string>
-
-    <string name="field_descent_name">ELEVATION: DESCENT</string>
-    <string name="field_descent_desc">Total elevation descended</string>
-
-    <string name="field_grade_name">ELEVATION: GRADE</string>
+    <!-- CLIMB -->
+    <string name="field_grade_name">Climb - Grade</string>
     <string name="field_grade_desc">Current road gradient</string>
-
-    <string name="field_vam_name">ELEVATION: VAM</string>
-    <string name="field_vam_desc">Vertical ascent speed</string>
-
-    <!-- TIME -->
-    <string name="field_elapsed_time_name">TIME: ELAPSED TIME</string>
-    <string name="field_elapsed_time_desc">Total elapsed duration</string>
-
-    <string name="field_ride_time_name">TIME: RIDING TIME</string>
-    <string name="field_ride_time_desc">Active riding duration</string>
-
-    <string name="field_clock_time_name">TIME: CLOCK TIME</string>
-    <string name="field_clock_time_desc">Current time of day</string>
-
-    <string name="field_lap_time_name">TIME: LAP TIME</string>
-    <string name="field_lap_time_desc">Duration of current lap</string>
-
-    <string name="field_time_ahead_behind_name">TIME: TIME AHEAD/BEHIND</string>
-    <string name="field_time_ahead_behind_desc">Delta against target time</string>
-
-    <!-- BATTERY -->
-    <string name="field_battery_single_name">BATTERY: SINGLE</string>
-    <string name="field_battery_single_desc">Karoo battery level</string>
-
-    <string name="field_battery_shifting_name">BATTERY: SHIFTING BATTERY</string>
-    <string name="field_battery_shifting_desc">Drivetrain battery level</string>
-
-    <string name="field_battery_phone_name">BATTERY: PHONE BATTERY</string>
-    <string name="field_battery_phone_desc">Connected phone battery</string>
-
-    <!-- GEAR RATIO -->
-    <string name="field_front_gear_name">GEAR RATIO: FRONT GEAR</string>
-    <string name="field_front_gear_desc">Current chainring teeth</string>
-
-    <string name="field_rear_gear_name">GEAR RATIO: REAR GEAR</string>
-    <string name="field_rear_gear_desc">Current cassette sprocket</string>
-
-    <string name="field_gear_ratio_name">GEAR RATIO: GEAR RATIO</string>
-    <string name="field_gear_ratio_desc">Front to rear gear ratio</string>
-
-    <string name="field_gear_combination_name">GEAR RATIO: GEAR COMBINATION</string>
-    <string name="field_gear_combination_desc">Current gear selection</string>
-
-    <!-- ENVIRONMENT -->
-    <string name="field_temperature_name">ENVIRONMENT: TEMPERATURE</string>
-    <string name="field_temperature_desc">Ambient air temperature</string>
-
-    <string name="field_wind_speed_name">ENVIRONMENT: WIND SPEED</string>
-    <string name="field_wind_speed_desc">Current wind speed</string>
-
-    <string name="field_wind_direction_name">ENVIRONMENT: WIND DIRECTION</string>
-    <string name="field_wind_direction_desc">Current wind bearing</string>
-
-    <!-- RADAR -->
-    <string name="field_radar_vehicle_count_name">RADAR: VEHICLE COUNT</string>
-    <string name="field_radar_vehicle_count_desc">Approaching vehicles count</string>
-
-    <string name="field_radar_threat_level_name">RADAR: THREAT LEVEL</string>
-    <string name="field_radar_threat_level_desc">Radar threat alert level</string>
-
-    <string name="field_radar_vehicle_speed_name">RADAR: VEHICLE SPEED</string>
-    <string name="field_radar_vehicle_speed_desc">Fastest vehicle speed</string>
+    <string name="field_vam_name">Climb - VAM</string>
+    <string name="field_vam_desc">30s vertical ascent speed</string>
+    <string name="field_elevation_name">Climb - Elevation</string>
+    <string name="field_elevation_desc">Current altitude</string>
+    <string name="field_ascent_name">Climb - Ascent</string>
+    <string name="field_ascent_desc">Total elevation gained</string>
+    <string name="field_descent_name">Climb - Descent</string>
+    <string name="field_descent_desc">Total elevation descended</string>
+    <string name="field_avg_vam_name">Climb - Avg VAM</string>
+    <string name="field_avg_vam_desc">Average vertical ascent speed</string>
+    <string name="field_dist_to_top_name">Climb - Dist To Top</string>
+    <string name="field_dist_to_top_desc">Distance to top of climb</string>
+    <string name="field_elev_to_top_name">Climb - Elev To Top</string>
+    <string name="field_elev_to_top_desc">Elevation remaining on climb</string>
+    <string name="field_climb_number_name">Climb - Climb Number</string>
+    <string name="field_climb_number_desc">Current climb counter</string>
 
     <!-- LAP -->
-    <string name="field_lap_number_name">LAP: LAP NUMBER</string>
+    <string name="field_lap_power_name">Lap - Lap Power</string>
+    <string name="field_lap_power_desc">Average power this lap</string>
+    <string name="field_lap_np_name">Lap - Lap NP</string>
+    <string name="field_lap_np_desc">Normalized power this lap</string>
+    <string name="field_lap_hr_name">Lap - Lap HR</string>
+    <string name="field_lap_hr_desc">Average HR this lap</string>
+    <string name="field_last_lap_power_name">Lap - Last Lap Power</string>
+    <string name="field_last_lap_power_desc">Average power last lap</string>
+    <string name="field_last_lap_np_name">Lap - Last Lap NP</string>
+    <string name="field_last_lap_np_desc">Normalized power last lap</string>
+    <string name="field_last_lap_hr_name">Lap - Last Lap HR</string>
+    <string name="field_last_lap_hr_desc">Average HR last lap</string>
+    <string name="field_lap_number_name">Lap - Lap Number</string>
     <string name="field_lap_number_desc">Current lap counter</string>
-
-    <string name="field_last_lap_time_name">LAP: LAST LAP TIME</string>
+    <string name="field_lap_time_name">Lap - Lap Time</string>
+    <string name="field_lap_time_desc">Duration of current lap</string>
+    <string name="field_lap_dist_name">Lap - Lap Distance</string>
+    <string name="field_lap_dist_desc">Distance traveled this lap</string>
+    <string name="field_lap_speed_name">Lap - Lap Speed</string>
+    <string name="field_lap_speed_desc">Average speed this lap</string>
+    <string name="field_lap_cadence_name">Lap - Lap Cadence</string>
+    <string name="field_lap_cadence_desc">Average cadence this lap</string>
+    <string name="field_lap_ascent_name">Lap - Lap Ascent</string>
+    <string name="field_lap_ascent_desc">Elevation gained this lap</string>
+    <string name="field_last_lap_time_name">Lap - Last Lap Time</string>
     <string name="field_last_lap_time_desc">Duration of previous lap</string>
-
-    <string name="field_last_lap_speed_name">LAP: LAST LAP SPEED</string>
+    <string name="field_last_lap_dist_name">Lap - Last Lap Dist</string>
+    <string name="field_last_lap_dist_desc">Distance of previous lap</string>
+    <string name="field_last_lap_speed_name">Lap - Last Lap Speed</string>
     <string name="field_last_lap_speed_desc">Average speed of previous lap</string>
 
-    <!-- WORKOUT -->
-    <string name="field_workout_target_power_name">WORKOUT: WORKOUT POWER</string>
-    <string name="field_workout_target_power_desc">Target power label with current power value</string>
-
-    <string name="field_workout_target_hr_name">WORKOUT: WORKOUT TARGET HR</string>
-    <string name="field_workout_target_hr_desc">Target HR label with current HR value</string>
-
-    <string name="field_workout_target_cadence_name">WORKOUT: WORKOUT TARGET CADENCE</string>
-    <string name="field_workout_target_cadence_desc">Target cadence label with current cadence value</string>
-
-    <string name="field_workout_primary_target_name">WORKOUT: WORKOUT PRIMARY TARGET</string>
-    <string name="field_workout_primary_target_desc">Target power or heart rate</string>
-
-    <string name="field_workout_interval_time_remaining_name">WORKOUT: INT REM</string>
-    <string name="field_workout_interval_time_remaining_desc">Time remaining in current interval</string>
-
-    <string name="field_workout_duration_remaining_name">WORKOUT: WRK REM</string>
-    <string name="field_workout_duration_remaining_desc">Remaining workout time</string>
-
-    <string name="field_workout_interval_count_name">WORKOUT: INTERVAL COUNT</string>
-    <string name="field_workout_interval_count_desc">Current interval step count</string>
-
-    <string name="field_workout_next_target_name">WORKOUT: WORKOUT NEXT TARGET</string>
-    <string name="field_workout_next_target_desc">Upcoming interval target</string>
+    <!-- TIME -->
+    <string name="field_ride_time_name">Time - Riding Time</string>
+    <string name="field_ride_time_desc">Active riding duration</string>
+    <string name="field_elapsed_time_name">Time - Elapsed Time</string>
+    <string name="field_elapsed_time_desc">Total elapsed duration</string>
+    <string name="field_paused_time_name">Time - Paused Time</string>
+    <string name="field_paused_time_desc">Total paused duration</string>
+    <string name="field_clock_time_name">Time - Clock Time</string>
+    <string name="field_clock_time_desc">Current time of day</string>
+    <string name="field_sunrise_name">Time - Sunrise</string>
+    <string name="field_sunrise_desc">Local sunrise time</string>
+    <string name="field_sunset_name">Time - Sunset</string>
+    <string name="field_sunset_desc">Local sunset time</string>
 
     <!-- NAVIGATION -->
-    <string name="field_nav_eta_name">NAVIGATION: ETA</string>
+    <string name="field_nav_dist_dest_name">Navigation - Dist To Dest</string>
+    <string name="field_nav_dist_dest_desc">Distance to route destination</string>
+    <string name="field_nav_dist_turn_name">Navigation - Dist To Turn</string>
+    <string name="field_nav_dist_turn_desc">Distance to next turn</string>
+    <string name="field_nav_elev_rem_name">Navigation - Elev Remaining</string>
+    <string name="field_nav_elev_rem_desc">Ascent remaining on route</string>
+    <string name="field_nav_time_dest_name">Navigation - Time To Dest</string>
+    <string name="field_nav_time_dest_desc">Estimated time to destination</string>
+    <string name="field_nav_eta_name">Navigation - ETA</string>
     <string name="field_nav_eta_desc">Estimated arrival time</string>
-
-    <string name="field_nav_distance_to_next_turn_name">NAVIGATION: DISTANCE TO NEXT TURN</string>
-    <string name="field_nav_distance_to_next_turn_desc">Distance until next maneuver</string>
-
-    <string name="field_nav_heading_name">NAVIGATION: HEADING</string>
+    <string name="field_nav_heading_name">Navigation - Heading</string>
     <string name="field_nav_heading_desc">Compass heading direction</string>
+
+    <!-- GENERAL -->
+    <string name="field_shift_gears_name">General - Gears</string>
+    <string name="field_shift_gears_desc">Current front &amp; rear gear</string>
+    <string name="field_shift_front_name">General - Front Gear</string>
+    <string name="field_shift_front_desc">Front chainring teeth</string>
+    <string name="field_shift_rear_name">General - Rear Gear</string>
+    <string name="field_shift_rear_desc">Rear sprocket teeth</string>
+    <string name="field_shift_batt_name">General - Drivetrain Battery</string>
+    <string name="field_shift_batt_desc">Shifting battery level %</string>
+    <string name="field_wo_power_target_name">General - Target Power</string>
+    <string name="field_wo_power_target_desc">Workout target power</string>
+    <string name="field_wo_rem_interval_name">General - INT REM</string>
+    <string name="field_wo_rem_interval_desc">Time remaining in interval</string>
+    <string name="field_wo_rem_total_name">General - WRK REM</string>
+    <string name="field_wo_rem_total_desc">Remaining workout time</string>
+    <string name="field_battery_pct_name">General - Karoo Battery</string>
+    <string name="field_battery_pct_desc">Karoo battery level %</string>
+    <string name="field_temperature_name">General - Temperature</string>
+    <string name="field_temperature_desc">Ambient air temperature</string>
+    <string name="field_psi_front_name">General - Front Tire PSI</string>
+    <string name="field_psi_front_desc">Front tire pressure</string>
+    <string name="field_psi_rear_name">General - Rear Tire PSI</string>
+    <string name="field_psi_rear_desc">Rear tire pressure</string>
+    <string name="field_core_temp_name">General - Core Temp</string>
+    <string name="field_core_temp_desc">Core body temperature</string>
+    <string name="field_ebike_batt_name">General - eBike Battery</string>
+    <string name="field_ebike_batt_desc">eBike battery level %</string>
+    <string name="field_ebike_range_name">General - eBike Range</string>
+    <string name="field_ebike_range_desc">Estimated eBike range</string>
 </resources>

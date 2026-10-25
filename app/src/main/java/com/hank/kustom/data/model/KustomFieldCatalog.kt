@@ -4,20 +4,15 @@ import io.hammerhead.karooext.models.DataType
 import java.util.Locale
 
 enum class FieldCategory(val displayName: String) {
-    SPEED("Speed"),
-    HEART_RATE("Heart Rate"),
     POWER("Power"),
+    HEART_RATE("Heart Rate"),
+    SPEED("Speed"),
     CADENCE("Cadence"),
-    DISTANCE("Distance"),
-    ELEVATION("Elevation"),
-    TIME("Time"),
-    BATTERY("Battery"),
-    GEAR_RATIO("Gear Ratio"),
-    ENVIRONMENT("Environment"),
-    RADAR("Radar"),
+    CLIMB("Climb"),
     LAP("Lap"),
-    WORKOUT("Workout"),
+    TIME("Time"),
     NAVIGATION("Navigation"),
+    GENERAL("General"),
 }
 
 data class KustomFieldDefinition(
@@ -36,7 +31,7 @@ data class KustomFieldDefinition(
         get() = pageSetupTitle
 
     val pageSetupTitle: String
-        get() = "${category.displayName.uppercase()}: ${childTitle.uppercase()}"
+        get() = "${category.displayName} - $childTitle"
 
     fun resolveDynamicLabel(smoothing: SmoothingOption): String {
         return if (supportsSmoothing && smoothing != SmoothingOption.NONE) {
@@ -48,12 +43,12 @@ data class KustomFieldDefinition(
 
     fun formatNumericValueOnly(rawValue: Double, isImperial: Boolean = false): String {
         return when (typeId) {
-            "speed", "avg-speed", "max-speed", "last-lap-speed" -> {
+            "speed", "avg-speed", "max-speed", "lap-speed", "last-lap-speed" -> {
                 val multiplier = if (isImperial) 2.23694 else 3.6
                 val converted = rawValue * multiplier
                 String.format(Locale.US, "%.1f", converted)
             }
-            "distance", "lap-distance", "distance-remaining", "odometer", "nav-distance-to-next-turn" -> {
+            "distance", "lap-dist", "last-lap-dist", "nav-dist-dest", "nav-dist-turn", "dist-to-top" -> {
                 val multiplier = if (isImperial) 0.621371 else 0.001
                 val converted = rawValue * multiplier
                 String.format(Locale.US, "%.1f", converted)
@@ -61,12 +56,12 @@ data class KustomFieldDefinition(
             "grade" -> {
                 String.format(Locale.US, "%.1f", rawValue)
             }
-            "elevation", "ascent", "descent" -> {
+            "elevation", "ascent", "descent", "lap-ascent", "elev-to-top", "nav-elev-rem" -> {
                 val multiplier = if (isImperial) 3.28084 else 1.0
                 val converted = rawValue * multiplier
                 converted.toInt().toString()
             }
-            "ride-time", "elapsed-time", "lap-time", "last-lap-time", "workout-interval-time-remaining", "workout-duration-remaining" -> {
+            "ride-time", "elapsed-time", "paused-time", "lap-time", "last-lap-time", "wo-rem-interval", "wo-rem-total", "nav-time-dest" -> {
                 val totalSec = rawValue.toInt()
                 val hrs = totalSec / 3600
                 val mins = (totalSec % 3600) / 60
@@ -74,13 +69,16 @@ data class KustomFieldDefinition(
                 if (hrs > 0) String.format(Locale.US, "%d:%02d:%02d", hrs, mins, secs)
                 else String.format(Locale.US, "%02d:%02d", mins, secs)
             }
-            "clock-time", "nav-eta" -> {
+            "clock-time", "sunrise", "sunset", "nav-eta" -> {
                 "09:42"
             }
-            "intensity-factor", "gear-ratio" -> {
+            "intensity-factor", "power-vi" -> {
                 String.format(Locale.US, "%.2f", rawValue)
             }
             "power-to-weight" -> {
+                String.format(Locale.US, "%.1f", rawValue)
+            }
+            "psi-front", "psi-rear", "temperature", "core-temp" -> {
                 String.format(Locale.US, "%.1f", rawValue)
             }
             else -> {
@@ -91,52 +89,101 @@ data class KustomFieldDefinition(
 
     fun resolveSdkDataTypeId(smoothing: SmoothingOption): String {
         return when (typeId) {
-            "speed" -> smoothing.toSpeedDataTypeId()
-            "avg-speed" -> DataType.Type.AVERAGE_SPEED
-            "max-speed" -> DataType.Type.MAX_SPEED
-            "hr", "workout-target-hr" -> DataType.Type.HEART_RATE
+            "power" -> smoothing.toPowerDataTypeId()
+            "np" -> DataType.Type.NORMALIZED_POWER
+            "avg-power" -> DataType.Type.AVERAGE_POWER
+            "max-power" -> DataType.Type.MAX_POWER
+            "power-20m" -> DataType.Type.SMOOTHED_20M_AVERAGE_POWER
+            "power-1hr" -> DataType.Type.SMOOTHED_1HR_AVERAGE_POWER
+            "power-balance" -> smoothing.toCadenceDataTypeId()
+            "percent-ftp" -> DataType.Type.PERCENT_MAX_FTP
+            "power-to-weight" -> DataType.Type.POWER_TO_WEIGHT
+            "power-zone" -> DataType.Type.POWER_ZONE
+            "intensity-factor" -> DataType.Type.INTENSITY_FACTOR
+            "tss" -> DataType.Type.TRAINING_STRESS_SCORE
+            "power-vi" -> DataType.Type.VARIABILITY_INDEX
+            "power-kj" -> DataType.Type.ENERGY_OUTPUT
+            "power-cal" -> DataType.Type.CALORIES
+            "power-cal-hr" -> DataType.Type.CALORIES_PER_HOUR
+            "power-smoothness" -> DataType.Type.PEDAL_POWER_BALANCE
+            "power-te" -> DataType.Type.POWER
+            "avg-power-balance" -> DataType.Type.AVERAGE_PEDAL_POWER_BALANCE
+
+            "hr" -> DataType.Type.HEART_RATE
             "avg-hr" -> DataType.Type.AVERAGE_HR
             "max-hr" -> DataType.Type.MAX_HR
             "hr-zone" -> DataType.Type.HR_ZONE
-            "power", "workout-target-power" -> smoothing.toPowerDataTypeId()
-            "avg-power" -> DataType.Type.AVERAGE_POWER
-            "max-power" -> DataType.Type.MAX_POWER
-            "np" -> DataType.Type.NORMALIZED_POWER
-            "intensity-factor" -> DataType.Type.INTENSITY_FACTOR
-            "tss" -> DataType.Type.TRAINING_STRESS_SCORE
-            "power-balance" -> DataType.Type.PEDAL_POWER_BALANCE
-            "power-zone" -> DataType.Type.POWER_ZONE
-            "cadence", "workout-target-cadence" -> smoothing.toCadenceDataTypeId()
+            "percent-max-hr" -> DataType.Type.PERCENT_MAX_HR
+            "percent-hrr" -> DataType.Type.PERCENT_HRR
+            "avg-percent-hrr" -> DataType.Type.AVERAGE_PERCENT_HRR
+
+            "speed" -> smoothing.toSpeedDataTypeId()
+            "avg-speed" -> DataType.Type.AVERAGE_SPEED
+            "max-speed" -> DataType.Type.MAX_SPEED
+            "distance" -> DataType.Type.DISTANCE
+
+            "cadence" -> smoothing.toCadenceDataTypeId()
+            "torque" -> DataType.Type.TORQUE
             "avg-cadence" -> DataType.Type.AVERAGE_CADENCE
             "max-cadence" -> DataType.Type.MAX_CADENCE
-            "distance" -> DataType.Type.DISTANCE
-            "lap-distance" -> DataType.Type.DISTANCE_LAP
+            "avg-torque" -> DataType.Type.TORQUE
+            "max-torque" -> DataType.Type.TORQUE
+
+            "grade" -> DataType.Type.ELEVATION_GRADE
+            "vam" -> DataType.Type.AVERAGE_VERTICAL_SPEED_30S
             "elevation" -> DataType.Type.PRESSURE_ELEVATION_CORRECTION
             "ascent" -> DataType.Type.ELEVATION_GAIN
             "descent" -> DataType.Type.ELEVATION_LOSS
-            "grade" -> DataType.Type.ELEVATION_GRADE
-            "vam" -> DataType.Type.AVERAGE_VERTICAL_SPEED_30S
-            "elapsed-time" -> DataType.Type.RIDE_TIME
-            "ride-time" -> DataType.Type.ELAPSED_TIME
-            "clock-time" -> DataType.Type.CLOCK_TIME
-            "lap-time" -> DataType.Type.ELAPSED_TIME_LAP
-            "battery-single" -> DataType.Type.BATTERY_PERCENT
-            "battery-shifting" -> DataType.Type.SHIFTING_BATTERY
-            "front-gear" -> DataType.Type.SHIFTING_FRONT_GEAR
-            "rear-gear" -> DataType.Type.SHIFTING_REAR_GEAR
-            "temperature" -> DataType.Type.TEMPERATURE
-            "radar-threat-level" -> DataType.Type.RADAR
+            "avg-vam" -> DataType.Type.AVERAGE_VERTICAL_SPEED
+            "dist-to-top" -> DataType.Type.DISTANCE_TO_TOP
+            "elev-to-top" -> DataType.Type.ELEVATION_TO_TOP
+            "climb-number" -> DataType.Type.CLIMB_NUMBER
+
+            "lap-power" -> DataType.Type.POWER_LAP
+            "lap-np" -> DataType.Type.NORMALIZED_POWER_LAP
+            "lap-hr" -> DataType.Type.AVERAGE_LAP_HR
+            "last-lap-power" -> DataType.Type.AVERAGE_POWER_LAST_LAP
+            "last-lap-np" -> DataType.Type.NORMALIZED_POWER_LAST_LAP
+            "last-lap-hr" -> DataType.Type.AVERAGE_HR_LAST_LAP
             "lap-number" -> DataType.Type.LAP_NUMBER
+            "lap-time" -> DataType.Type.ELAPSED_TIME_LAP
+            "lap-dist" -> DataType.Type.DISTANCE_LAP
+            "lap-speed" -> DataType.Type.AVERAGE_SPEED_LAP
+            "lap-cadence" -> DataType.Type.CADENCE_LAP
+            "lap-ascent" -> DataType.Type.ELEVATION_GAIN_LAP
             "last-lap-time" -> DataType.Type.ELAPSED_TIME_LAST_LAP
+            "last-lap-dist" -> DataType.Type.DISTANCE_LAP_LAST_LAP
             "last-lap-speed" -> DataType.Type.AVERAGE_SPEED_LAST_LAP
-            "workout-primary-target" -> DataType.Type.WORKOUT_PRIMARY_TARGET
-            "workout-interval-time-remaining" -> DataType.Type.WORKOUT_REMAINING_INTERVAL_DURATION
-            "workout-duration-remaining" -> DataType.Type.WORKOUT_REMAINING_TOTAL_DURATION
-            "workout-interval-count" -> DataType.Type.WORKOUT_INTERVAL_COUNT
-            "workout-next-target" -> DataType.Type.WORKOUT_SECONDARY_TARGET
+
+            "ride-time" -> DataType.Type.ELAPSED_TIME
+            "elapsed-time" -> DataType.Type.RIDE_TIME
+            "paused-time" -> DataType.Type.PAUSED_TIME
+            "clock-time" -> DataType.Type.CLOCK_TIME
+            "sunrise" -> DataType.Type.SUNRISE
+            "sunset" -> DataType.Type.SUNSET
+
+            "nav-dist-dest" -> DataType.Type.DISTANCE_TO_DESTINATION
+            "nav-dist-turn" -> DataType.Type.DISTANCE_TO_NEXT_TURN
+            "nav-elev-rem" -> DataType.Type.ELEVATION_REMAINING
+            "nav-time-dest" -> DataType.Type.TIME_TO_DESTINATION
             "nav-eta" -> DataType.Type.TIME_OF_ARRIVAL
-            "nav-distance-to-next-turn" -> DataType.Type.DISTANCE_TO_NEXT_TURN
             "nav-heading" -> DataType.Type.HEADING
+
+            "shift-gears" -> DataType.Type.SHIFTING_GEARS
+            "shift-front" -> DataType.Type.SHIFTING_FRONT_GEAR
+            "shift-rear" -> DataType.Type.SHIFTING_REAR_GEAR
+            "shift-batt" -> DataType.Type.SHIFTING_BATTERY
+            "wo-power-target" -> DataType.Type.WORKOUT_POWER_TARGET
+            "wo-rem-interval" -> DataType.Type.WORKOUT_REMAINING_INTERVAL_DURATION
+            "wo-rem-total" -> DataType.Type.WORKOUT_REMAINING_TOTAL_DURATION
+            "battery-pct" -> DataType.Type.BATTERY_PERCENT
+            "temperature" -> DataType.Type.TEMPERATURE
+            "psi-front" -> DataType.Type.TIRE_PRESSURE_FRONT
+            "psi-rear" -> DataType.Type.TIRE_PRESSURE_REAR
+            "core-temp" -> DataType.Type.CORE_TEMP
+            "ebike-batt" -> DataType.Type.LEV_BATTERY_STATUS
+            "ebike-range" -> DataType.Type.LEV_ESTIMATED_RANGE
+
             else -> DataType.Type.POWER
         }
     }
@@ -144,110 +191,133 @@ data class KustomFieldDefinition(
 
 object KustomFieldCatalog {
 
-    // SPEED
-    val SPEED = KustomFieldDefinition("speed", "Speed", FieldCategory.SPEED, "Current riding speed", supportsSmoothing = true, supportsZones = false, listOf(8.4, 8.8, 9.2, 9.5, 9.0))
-    val AVG_SPEED = KustomFieldDefinition("avg-speed", "Avg", FieldCategory.SPEED, "Average ride speed", supportsSmoothing = true, supportsZones = false, listOf(8.1, 8.3, 8.5, 8.6, 8.4))
-    val MAX_SPEED = KustomFieldDefinition("max-speed", "Max", FieldCategory.SPEED, "Maximum ride speed", supportsSmoothing = true, supportsZones = false, listOf(12.5, 13.8, 14.2, 15.1, 14.0))
-
-    // HEART RATE
-    val HR = KustomFieldDefinition("hr", "Heart Rate", FieldCategory.HEART_RATE, "Current heart rate", supportsSmoothing = false, supportsZones = true, listOf(145.0, 148.0, 152.0, 156.0, 150.0))
-    val AVG_HR = KustomFieldDefinition("avg-hr", "Avg", FieldCategory.HEART_RATE, "Average ride heart rate", supportsSmoothing = false, supportsZones = true, listOf(140.0, 142.0, 145.0, 147.0, 144.0))
-    val MAX_HR = KustomFieldDefinition("max-hr", "Max", FieldCategory.HEART_RATE, "Maximum ride heart rate", supportsSmoothing = false, supportsZones = true, listOf(172.0, 175.0, 178.0, 180.0, 177.0))
-    val HR_ZONE = KustomFieldDefinition("hr-zone", "Zone", FieldCategory.HEART_RATE, "Current HR zone", supportsSmoothing = false, supportsZones = true, listOf(3.0, 3.2, 4.1, 4.5, 3.8))
-
-    // POWER
+    // POWER (FieldCategory.POWER)
     val POWER = KustomFieldDefinition("power", "Power", FieldCategory.POWER, "Current power output", supportsSmoothing = true, supportsZones = true, listOf(215.0, 228.0, 242.0, 260.0, 235.0))
-    val AVG_POWER = KustomFieldDefinition("avg-power", "Avg", FieldCategory.POWER, "Average ride power", supportsSmoothing = true, supportsZones = true, listOf(210.0, 215.0, 218.0, 220.0, 216.0))
-    val MAX_POWER = KustomFieldDefinition("max-power", "Max", FieldCategory.POWER, "Maximum ride power", supportsSmoothing = true, supportsZones = true, listOf(450.0, 520.0, 680.0, 710.0, 690.0))
-    val NORM_POWER = KustomFieldDefinition("np", "NP", FieldCategory.POWER, "Normalized power", supportsSmoothing = true, supportsZones = true, listOf(220.0, 225.0, 230.0, 235.0, 228.0))
-    val IF = KustomFieldDefinition("intensity-factor", "IF", FieldCategory.POWER, "Intensity factor", supportsSmoothing = true, supportsZones = true, listOf(0.82, 0.85, 0.88, 0.90, 0.86))
-    val TSS = KustomFieldDefinition("tss", "TSS", FieldCategory.POWER, "Training stress score", supportsSmoothing = true, supportsZones = true, listOf(110.0, 115.0, 122.0, 130.0, 125.0))
-    val POWER_BALANCE = KustomFieldDefinition("power-balance", "Balance", FieldCategory.POWER, "L/R power balance", supportsSmoothing = true, supportsZones = true, listOf(50.0, 51.0, 49.0, 52.0, 50.0))
-    val POWER_ZONE = KustomFieldDefinition("power-zone", "Zone", FieldCategory.POWER, "Current power zone", supportsSmoothing = true, supportsZones = true, listOf(3.0, 3.5, 4.0, 4.2, 3.8))
-    val KICKR_RESISTANCE = KustomFieldDefinition("kickr-resistance", "Kickr Resistance", FieldCategory.POWER, "Trainer resistance level", supportsSmoothing = false, supportsZones = false, listOf(25.0, 30.0, 35.0, 40.0, 35.0))
+    val NP = KustomFieldDefinition("np", "NP", FieldCategory.POWER, "Normalized power", supportsSmoothing = false, supportsZones = true, listOf(220.0, 225.0, 230.0, 235.0, 228.0))
+    val AVG_POWER = KustomFieldDefinition("avg-power", "Avg Power", FieldCategory.POWER, "Average ride power", supportsSmoothing = false, supportsZones = true, listOf(210.0, 215.0, 218.0, 220.0, 216.0))
+    val MAX_POWER = KustomFieldDefinition("max-power", "Max Power", FieldCategory.POWER, "Maximum ride power", supportsSmoothing = false, supportsZones = true, listOf(450.0, 520.0, 680.0, 710.0, 690.0))
+    val POWER_20M = KustomFieldDefinition("power-20m", "20m Power", FieldCategory.POWER, "20-minute rolling avg power", supportsSmoothing = false, supportsZones = true, listOf(240.0, 245.0, 250.0, 255.0, 248.0))
+    val POWER_1HR = KustomFieldDefinition("power-1hr", "1hr Power", FieldCategory.POWER, "1-hour rolling avg power", supportsSmoothing = false, supportsZones = true, listOf(225.0, 230.0, 232.0, 235.0, 228.0))
+    val POWER_BALANCE = KustomFieldDefinition("power-balance", "Power Balance", FieldCategory.POWER, "L/R power balance %", supportsSmoothing = true, supportsZones = false, listOf(50.0, 51.0, 49.0, 52.0, 50.0))
+    val PERCENT_FTP = KustomFieldDefinition("percent-ftp", "% FTP", FieldCategory.POWER, "Percentage of FTP", supportsSmoothing = false, supportsZones = false, listOf(82.0, 85.0, 88.0, 92.0, 87.0))
+    val POWER_TO_WEIGHT = KustomFieldDefinition("power-to-weight", "W/kg", FieldCategory.POWER, "Power output in W/kg", supportsSmoothing = false, supportsZones = false, listOf(3.2, 3.4, 3.6, 3.8, 3.5))
+    val POWER_ZONE = KustomFieldDefinition("power-zone", "Power Zone", FieldCategory.POWER, "Current power zone", supportsSmoothing = false, supportsZones = false, listOf(3.0, 3.5, 4.0, 4.2, 3.8))
+    val INTENSITY_FACTOR = KustomFieldDefinition("intensity-factor", "IF", FieldCategory.POWER, "Intensity factor", supportsSmoothing = false, supportsZones = false, listOf(0.82, 0.85, 0.88, 0.90, 0.86))
+    val TSS = KustomFieldDefinition("tss", "TSS", FieldCategory.POWER, "Training stress score", supportsSmoothing = false, supportsZones = false, listOf(110.0, 115.0, 122.0, 130.0, 125.0))
+    val POWER_VI = KustomFieldDefinition("power-vi", "VI", FieldCategory.POWER, "Variability Index", supportsSmoothing = false, supportsZones = false, listOf(1.05, 1.08, 1.10, 1.12, 1.06))
+    val POWER_KJ = KustomFieldDefinition("power-kj", "kJ", FieldCategory.POWER, "Energy output in kilojoules", supportsSmoothing = false, supportsZones = false, listOf(850.0, 900.0, 950.0, 1000.0, 920.0))
+    val POWER_CAL = KustomFieldDefinition("power-cal", "Calories", FieldCategory.POWER, "Calories burned", supportsSmoothing = false, supportsZones = false, listOf(820.0, 880.0, 930.0, 980.0, 900.0))
+    val POWER_CAL_HR = KustomFieldDefinition("power-cal-hr", "Cal/hr", FieldCategory.POWER, "Calorie burn rate per hour", supportsSmoothing = false, supportsZones = false, listOf(650.0, 680.0, 720.0, 750.0, 700.0))
+    val POWER_SMOOTHNESS = KustomFieldDefinition("power-smoothness", "Pedal Smoothness", FieldCategory.POWER, "Pedal smoothness %", supportsSmoothing = false, supportsZones = false, listOf(22.0, 24.0, 26.0, 28.0, 25.0))
+    val POWER_TE = KustomFieldDefinition("power-te", "Torque Effectiveness", FieldCategory.POWER, "Torque effectiveness %", supportsSmoothing = false, supportsZones = false, listOf(78.0, 80.0, 82.0, 85.0, 81.0))
+    val AVG_POWER_BALANCE = KustomFieldDefinition("avg-power-balance", "Avg Balance", FieldCategory.POWER, "Average L/R power balance", supportsSmoothing = false, supportsZones = false, listOf(50.0, 51.0, 50.0, 50.0, 50.0))
 
-    // CADENCE
+    // HEART RATE (FieldCategory.HEART_RATE)
+    val HR = KustomFieldDefinition("hr", "Heart Rate", FieldCategory.HEART_RATE, "Current heart rate", supportsSmoothing = true, supportsZones = true, listOf(145.0, 148.0, 152.0, 156.0, 150.0))
+    val AVG_HR = KustomFieldDefinition("avg-hr", "Avg HR", FieldCategory.HEART_RATE, "Average heart rate", supportsSmoothing = false, supportsZones = true, listOf(140.0, 142.0, 145.0, 147.0, 144.0))
+    val MAX_HR = KustomFieldDefinition("max-hr", "Max HR", FieldCategory.HEART_RATE, "Maximum heart rate", supportsSmoothing = false, supportsZones = true, listOf(172.0, 175.0, 178.0, 180.0, 177.0))
+    val HR_ZONE = KustomFieldDefinition("hr-zone", "HR Zone", FieldCategory.HEART_RATE, "Current HR zone", supportsSmoothing = false, supportsZones = false, listOf(3.0, 3.2, 4.1, 4.5, 3.8))
+    val PERCENT_MAX_HR = KustomFieldDefinition("percent-max-hr", "% Max HR", FieldCategory.HEART_RATE, "% of maximum heart rate", supportsSmoothing = false, supportsZones = false, listOf(78.0, 80.0, 82.0, 85.0, 81.0))
+    val PERCENT_HRR = KustomFieldDefinition("percent-hrr", "% HRR", FieldCategory.HEART_RATE, "% of heart rate reserve", supportsSmoothing = false, supportsZones = false, listOf(70.0, 72.0, 75.0, 78.0, 74.0))
+    val AVG_PERCENT_HRR = KustomFieldDefinition("avg-percent-hrr", "Avg % HRR", FieldCategory.HEART_RATE, "Average % of HR reserve", supportsSmoothing = false, supportsZones = false, listOf(68.0, 70.0, 72.0, 74.0, 71.0))
+
+    // SPEED (FieldCategory.SPEED)
+    val SPEED = KustomFieldDefinition("speed", "Speed", FieldCategory.SPEED, "Current riding speed", supportsSmoothing = true, supportsZones = false, listOf(8.4, 8.8, 9.2, 9.5, 9.0))
+    val AVG_SPEED = KustomFieldDefinition("avg-speed", "Avg Speed", FieldCategory.SPEED, "Average riding speed", supportsSmoothing = false, supportsZones = false, listOf(8.1, 8.3, 8.5, 8.6, 8.4))
+    val MAX_SPEED = KustomFieldDefinition("max-speed", "Max Speed", FieldCategory.SPEED, "Maximum riding speed", supportsSmoothing = false, supportsZones = false, listOf(12.5, 13.8, 14.2, 15.1, 14.0))
+    val DISTANCE = KustomFieldDefinition("distance", "Distance", FieldCategory.SPEED, "Distance traveled", supportsSmoothing = false, supportsZones = false, listOf(12400.0, 12800.0, 13200.0, 13600.0, 14100.0))
+
+    // CADENCE (FieldCategory.CADENCE)
     val CADENCE = KustomFieldDefinition("cadence", "Cadence", FieldCategory.CADENCE, "Current pedaling cadence", supportsSmoothing = true, supportsZones = false, listOf(85.0, 88.0, 92.0, 95.0, 90.0))
-    val AVG_CADENCE = KustomFieldDefinition("avg-cadence", "Avg", FieldCategory.CADENCE, "Average ride cadence", supportsSmoothing = true, supportsZones = false, listOf(84.0, 86.0, 88.0, 89.0, 87.0))
-    val MAX_CADENCE = KustomFieldDefinition("max-cadence", "Max", FieldCategory.CADENCE, "Maximum ride cadence", supportsSmoothing = true, supportsZones = false, listOf(115.0, 120.0, 125.0, 128.0, 122.0))
+    val TORQUE = KustomFieldDefinition("torque", "Torque", FieldCategory.CADENCE, "Current crank torque", supportsSmoothing = true, supportsZones = false, listOf(18.0, 22.0, 25.0, 28.0, 24.0))
+    val AVG_CADENCE = KustomFieldDefinition("avg-cadence", "Avg Cadence", FieldCategory.CADENCE, "Average pedaling cadence", supportsSmoothing = false, supportsZones = false, listOf(84.0, 86.0, 88.0, 89.0, 87.0))
+    val MAX_CADENCE = KustomFieldDefinition("max-cadence", "Max Cadence", FieldCategory.CADENCE, "Maximum pedaling cadence", supportsSmoothing = false, supportsZones = false, listOf(115.0, 120.0, 125.0, 128.0, 122.0))
+    val AVG_TORQUE = KustomFieldDefinition("avg-torque", "Avg Torque", FieldCategory.CADENCE, "Average crank torque", supportsSmoothing = false, supportsZones = false, listOf(18.0, 20.0, 22.0, 24.0, 21.0))
+    val MAX_TORQUE = KustomFieldDefinition("max-torque", "Max Torque", FieldCategory.CADENCE, "Maximum crank torque", supportsSmoothing = false, supportsZones = false, listOf(45.0, 50.0, 55.0, 60.0, 52.0))
 
-    // DISTANCE
-    val DISTANCE = KustomFieldDefinition("distance", "Distance", FieldCategory.DISTANCE, "Distance traveled", supportsSmoothing = false, supportsZones = false, listOf(12400.0, 12800.0, 13200.0, 13600.0, 14100.0))
-    val DISTANCE_REMAINING = KustomFieldDefinition("distance-remaining", "Remaining", FieldCategory.DISTANCE, "Distance left on route", supportsSmoothing = false, supportsZones = false, listOf(8500.0, 8100.0, 7700.0, 7300.0, 6800.0))
-    val LAP_DISTANCE = KustomFieldDefinition("lap-distance", "Lap Distance", FieldCategory.DISTANCE, "Distance traveled this lap", supportsSmoothing = false, supportsZones = false, listOf(3200.0, 3600.0, 4000.0, 4400.0, 4800.0))
-    val ODOMETER = KustomFieldDefinition("odometer", "Odometer", FieldCategory.DISTANCE, "Total lifetime distance", supportsSmoothing = false, supportsZones = false, listOf(452000.0, 452005.0, 452010.0, 452015.0, 452020.0))
+    // CLIMB (FieldCategory.CLIMB)
+    val GRADE = KustomFieldDefinition("grade", "Grade", FieldCategory.CLIMB, "Current road gradient", supportsSmoothing = true, supportsZones = true, listOf(4.2, 5.5, 6.8, 7.4, 5.1))
+    val VAM = KustomFieldDefinition("vam", "VAM", FieldCategory.CLIMB, "30s vertical ascent speed", supportsSmoothing = true, supportsZones = false, listOf(850.0, 920.0, 1050.0, 1100.0, 980.0))
+    val ELEVATION = KustomFieldDefinition("elevation", "Elevation", FieldCategory.CLIMB, "Current altitude", supportsSmoothing = false, supportsZones = false, listOf(320.0, 325.0, 332.0, 340.0, 345.0))
+    val ASCENT = KustomFieldDefinition("ascent", "Ascent", FieldCategory.CLIMB, "Total elevation gained", supportsSmoothing = false, supportsZones = false, listOf(450.0, 455.0, 462.0, 470.0, 475.0))
+    val DESCENT = KustomFieldDefinition("descent", "Descent", FieldCategory.CLIMB, "Total elevation descended", supportsSmoothing = false, supportsZones = false, listOf(310.0, 315.0, 320.0, 328.0, 322.0))
+    val AVG_VAM = KustomFieldDefinition("avg-vam", "Avg VAM", FieldCategory.CLIMB, "Average vertical ascent speed", supportsSmoothing = false, supportsZones = false, listOf(800.0, 840.0, 880.0, 900.0, 860.0))
+    val DIST_TO_TOP = KustomFieldDefinition("dist-to-top", "Dist To Top", FieldCategory.CLIMB, "Distance to top of climb", supportsSmoothing = false, supportsZones = false, listOf(1200.0, 1000.0, 800.0, 600.0, 400.0))
+    val ELEV_TO_TOP = KustomFieldDefinition("elev-to-top", "Elev To Top", FieldCategory.CLIMB, "Elevation remaining on climb", supportsSmoothing = false, supportsZones = false, listOf(120.0, 100.0, 80.0, 60.0, 40.0))
+    val CLIMB_NUMBER = KustomFieldDefinition("climb-number", "Climb Number", FieldCategory.CLIMB, "Current climb counter", supportsSmoothing = false, supportsZones = false, listOf(1.0, 1.0, 2.0, 2.0, 3.0))
 
-    // ELEVATION
-    val ELEVATION = KustomFieldDefinition("elevation", "Elevation", FieldCategory.ELEVATION, "Current altitude", supportsSmoothing = true, supportsZones = false, listOf(320.0, 325.0, 332.0, 340.0, 345.0))
-    val ASCENT = KustomFieldDefinition("ascent", "Ascent", FieldCategory.ELEVATION, "Total elevation gained", supportsSmoothing = false, supportsZones = false, listOf(450.0, 455.0, 462.0, 470.0, 475.0))
-    val DESCENT = KustomFieldDefinition("descent", "Descent", FieldCategory.ELEVATION, "Total elevation descended", supportsSmoothing = false, supportsZones = false, listOf(310.0, 315.0, 320.0, 328.0, 322.0))
-    val GRADE = KustomFieldDefinition("grade", "Grade", FieldCategory.ELEVATION, "Current road gradient", supportsSmoothing = true, supportsZones = false, listOf(4.2, 5.5, 6.8, 7.4, 5.1))
-    val VAM = KustomFieldDefinition("vam", "VAM", FieldCategory.ELEVATION, "Vertical ascent speed", supportsSmoothing = true, supportsZones = false, listOf(850.0, 920.0, 1050.0, 1100.0, 980.0))
-
-    // TIME
-    val ELAPSED_TIME = KustomFieldDefinition("elapsed-time", "Elapsed Time", FieldCategory.TIME, "Total elapsed duration", supportsSmoothing = false, supportsZones = false, listOf(3600.0, 3605.0, 3610.0, 3615.0, 3620.0))
-    val RIDE_TIME = KustomFieldDefinition("ride-time", "Riding Time", FieldCategory.TIME, "Active riding duration", supportsSmoothing = false, supportsZones = false, listOf(3400.0, 3405.0, 3410.0, 3415.0, 3420.0))
-    val CLOCK_TIME = KustomFieldDefinition("clock-time", "Clock Time", FieldCategory.TIME, "Current time of day", supportsSmoothing = false, supportsZones = false, listOf(34920.0, 34980.0, 35040.0, 35100.0, 35160.0))
-    val LAP_TIME = KustomFieldDefinition("lap-time", "Lap Time", FieldCategory.TIME, "Duration of current lap", supportsSmoothing = false, supportsZones = false, listOf(450.0, 455.0, 460.0, 465.0, 470.0))
-    val TIME_AHEAD_BEHIND = KustomFieldDefinition("time-ahead-behind", "Time Ahead/Behind", FieldCategory.TIME, "Delta against target time", supportsSmoothing = false, supportsZones = false, listOf(12.0, 15.0, 18.0, 14.0, 10.0))
-
-    // BATTERY
-    val BATTERY_SINGLE = KustomFieldDefinition("battery-single", "Single", FieldCategory.BATTERY, "Karoo battery level", supportsSmoothing = false, supportsZones = false, listOf(88.0, 87.0, 86.0, 85.0, 84.0))
-    val BATTERY_SHIFTING = KustomFieldDefinition("battery-shifting", "Shifting Battery", FieldCategory.BATTERY, "Drivetrain battery level", supportsSmoothing = false, supportsZones = false, listOf(100.0, 95.0, 90.0, 85.0, 80.0))
-    val BATTERY_PHONE = KustomFieldDefinition("battery-phone", "Phone Battery", FieldCategory.BATTERY, "Connected phone battery", supportsSmoothing = false, supportsZones = false, listOf(72.0, 71.0, 70.0, 69.0, 68.0))
-
-    // GEAR RATIO
-    val FRONT_GEAR = KustomFieldDefinition("front-gear", "Front Gear", FieldCategory.GEAR_RATIO, "Current chainring teeth", supportsSmoothing = false, supportsZones = false, listOf(50.0, 50.0, 34.0, 34.0, 50.0))
-    val REAR_GEAR = KustomFieldDefinition("rear-gear", "Rear Gear", FieldCategory.GEAR_RATIO, "Current cassette sprocket", supportsSmoothing = false, supportsZones = false, listOf(14.0, 16.0, 18.0, 21.0, 15.0))
-    val GEAR_RATIO = KustomFieldDefinition("gear-ratio", "Gear Ratio", FieldCategory.GEAR_RATIO, "Front to rear gear ratio", supportsSmoothing = false, supportsZones = false, listOf(3.57, 3.12, 1.88, 1.62, 3.33))
-    val GEAR_COMBINATION = KustomFieldDefinition("gear-combination", "Gear Combination", FieldCategory.GEAR_RATIO, "Current gear selection", supportsSmoothing = false, supportsZones = false, listOf(2.1, 2.2, 1.5, 1.4, 2.3))
-
-    // ENVIRONMENT
-    val TEMPERATURE = KustomFieldDefinition("temperature", "Temperature", FieldCategory.ENVIRONMENT, "Ambient air temperature", supportsSmoothing = false, supportsZones = false, listOf(22.0, 22.5, 23.0, 23.5, 22.8))
-    val WIND_SPEED = KustomFieldDefinition("wind-speed", "Wind Speed", FieldCategory.ENVIRONMENT, "Current wind speed", supportsSmoothing = false, supportsZones = false, listOf(12.0, 14.0, 16.0, 18.0, 15.0))
-    val WIND_DIRECTION = KustomFieldDefinition("wind-direction", "Wind Direction", FieldCategory.ENVIRONMENT, "Current wind bearing", supportsSmoothing = false, supportsZones = false, listOf(180.0, 190.0, 200.0, 210.0, 195.0))
-
-    // RADAR
-    val RADAR_VEHICLE_COUNT = KustomFieldDefinition("radar-vehicle-count", "Vehicle Count", FieldCategory.RADAR, "Approaching vehicles count", supportsSmoothing = false, supportsZones = false, listOf(0.0, 1.0, 2.0, 0.0, 1.0))
-    val RADAR_THREAT_LEVEL = KustomFieldDefinition("radar-threat-level", "Threat Level", FieldCategory.RADAR, "Radar threat alert level", supportsSmoothing = false, supportsZones = false, listOf(0.0, 1.0, 2.0, 1.0, 0.0))
-    val RADAR_VEHICLE_SPEED = KustomFieldDefinition("radar-vehicle-speed", "Vehicle Speed", FieldCategory.RADAR, "Fastest vehicle speed", supportsSmoothing = false, supportsZones = false, listOf(45.0, 52.0, 60.0, 48.0, 50.0))
-
-    // LAP
+    // LAP (FieldCategory.LAP)
+    val LAP_POWER = KustomFieldDefinition("lap-power", "Lap Power", FieldCategory.LAP, "Average power this lap", supportsSmoothing = false, supportsZones = true, listOf(220.0, 225.0, 228.0, 232.0, 226.0))
+    val LAP_NP = KustomFieldDefinition("lap-np", "Lap NP", FieldCategory.LAP, "Normalized power this lap", supportsSmoothing = false, supportsZones = true, listOf(225.0, 230.0, 235.0, 240.0, 232.0))
+    val LAP_HR = KustomFieldDefinition("lap-hr", "Lap HR", FieldCategory.LAP, "Average HR this lap", supportsSmoothing = false, supportsZones = true, listOf(146.0, 149.0, 151.0, 153.0, 150.0))
+    val LAST_LAP_POWER = KustomFieldDefinition("last-lap-power", "Last Lap Power", FieldCategory.LAP, "Average power last lap", supportsSmoothing = false, supportsZones = true, listOf(215.0, 218.0, 222.0, 225.0, 220.0))
+    val LAST_LAP_NP = KustomFieldDefinition("last-lap-np", "Last Lap NP", FieldCategory.LAP, "Normalized power last lap", supportsSmoothing = false, supportsZones = true, listOf(220.0, 222.0, 226.0, 230.0, 224.0))
+    val LAST_LAP_HR = KustomFieldDefinition("last-lap-hr", "Last Lap HR", FieldCategory.LAP, "Average HR last lap", supportsSmoothing = false, supportsZones = true, listOf(144.0, 146.0, 148.0, 150.0, 147.0))
     val LAP_NUMBER = KustomFieldDefinition("lap-number", "Lap Number", FieldCategory.LAP, "Current lap counter", supportsSmoothing = false, supportsZones = false, listOf(1.0, 2.0, 3.0, 4.0, 5.0))
+    val LAP_TIME = KustomFieldDefinition("lap-time", "Lap Time", FieldCategory.LAP, "Duration of current lap", supportsSmoothing = false, supportsZones = false, listOf(450.0, 455.0, 460.0, 465.0, 470.0))
+    val LAP_DIST = KustomFieldDefinition("lap-dist", "Lap Distance", FieldCategory.LAP, "Distance traveled this lap", supportsSmoothing = false, supportsZones = false, listOf(3200.0, 3600.0, 4000.0, 4400.0, 4800.0))
+    val LAP_SPEED = KustomFieldDefinition("lap-speed", "Lap Speed", FieldCategory.LAP, "Average speed this lap", supportsSmoothing = false, supportsZones = false, listOf(8.5, 8.7, 8.9, 9.1, 8.8))
+    val LAP_CADENCE = KustomFieldDefinition("lap-cadence", "Lap Cadence", FieldCategory.LAP, "Average cadence this lap", supportsSmoothing = false, supportsZones = false, listOf(86.0, 88.0, 90.0, 91.0, 89.0))
+    val LAP_ASCENT = KustomFieldDefinition("lap-ascent", "Lap Ascent", FieldCategory.LAP, "Elevation gained this lap", supportsSmoothing = false, supportsZones = false, listOf(80.0, 85.0, 90.0, 95.0, 88.0))
     val LAST_LAP_TIME = KustomFieldDefinition("last-lap-time", "Last Lap Time", FieldCategory.LAP, "Duration of previous lap", supportsSmoothing = false, supportsZones = false, listOf(420.0, 425.0, 430.0, 435.0, 428.0))
+    val LAST_LAP_DIST = KustomFieldDefinition("last-lap-dist", "Last Lap Dist", FieldCategory.LAP, "Distance of previous lap", supportsSmoothing = false, supportsZones = false, listOf(3100.0, 3500.0, 3900.0, 4300.0, 4700.0))
     val LAST_LAP_SPEED = KustomFieldDefinition("last-lap-speed", "Last Lap Speed", FieldCategory.LAP, "Average speed of previous lap", supportsSmoothing = false, supportsZones = false, listOf(8.8, 9.1, 9.3, 9.5, 9.2))
 
-    // WORKOUT
-    val WORKOUT_POWER = KustomFieldDefinition("workout-target-power", "Workout Power", FieldCategory.WORKOUT, "Target power label with current power value", supportsSmoothing = true, supportsZones = true, listOf(215.0, 228.0, 242.0, 260.0, 235.0))
-    val WORKOUT_TARGET_HR = KustomFieldDefinition("workout-target-hr", "Workout Target HR", FieldCategory.WORKOUT, "Target HR label with current HR value", supportsSmoothing = false, supportsZones = true, listOf(145.0, 148.0, 152.0, 156.0, 150.0))
-    val WORKOUT_TARGET_CADENCE = KustomFieldDefinition("workout-target-cadence", "Workout Target Cadence", FieldCategory.WORKOUT, "Target cadence label with current cadence value", supportsSmoothing = true, supportsZones = false, listOf(85.0, 88.0, 92.0, 95.0, 90.0))
-    val WORKOUT_PRIMARY_TARGET = KustomFieldDefinition("workout-primary-target", "Workout Primary Target", FieldCategory.WORKOUT, "Target power or heart rate", supportsSmoothing = false, supportsZones = true, listOf(250.0, 260.0, 270.0, 280.0, 265.0))
-    val WORKOUT_INTERVAL_TIME = KustomFieldDefinition("workout-interval-time-remaining", "INT REM", FieldCategory.WORKOUT, "Time remaining in current interval", supportsSmoothing = false, supportsZones = false, listOf(185.0, 180.0, 175.0, 170.0, 165.0))
-    val WORKOUT_DURATION_REMAINING = KustomFieldDefinition("workout-duration-remaining", "WRK REM", FieldCategory.WORKOUT, "Remaining workout time", supportsSmoothing = false, supportsZones = false, listOf(1800.0, 1740.0, 1680.0, 1620.0, 1560.0))
-    val WORKOUT_INTERVAL_COUNT = KustomFieldDefinition("workout-interval-count", "Interval Count", FieldCategory.WORKOUT, "Current interval step count", supportsSmoothing = false, supportsZones = false, listOf(3.0, 3.0, 4.0, 4.0, 5.0))
-    val WORKOUT_NEXT_TARGET = KustomFieldDefinition("workout-next-target", "Workout Next Target", FieldCategory.WORKOUT, "Upcoming interval target", supportsSmoothing = false, supportsZones = false, listOf(180.0, 180.0, 280.0, 280.0, 180.0))
+    // TIME (FieldCategory.TIME)
+    val RIDE_TIME = KustomFieldDefinition("ride-time", "Riding Time", FieldCategory.TIME, "Active riding duration", supportsSmoothing = false, supportsZones = false, listOf(3400.0, 3405.0, 3410.0, 3415.0, 3420.0))
+    val ELAPSED_TIME = KustomFieldDefinition("elapsed-time", "Elapsed Time", FieldCategory.TIME, "Total elapsed duration", supportsSmoothing = false, supportsZones = false, listOf(3600.0, 3605.0, 3610.0, 3615.0, 3620.0))
+    val PAUSED_TIME = KustomFieldDefinition("paused-time", "Paused Time", FieldCategory.TIME, "Total paused duration", supportsSmoothing = false, supportsZones = false, listOf(200.0, 200.0, 200.0, 200.0, 200.0))
+    val CLOCK_TIME = KustomFieldDefinition("clock-time", "Clock Time", FieldCategory.TIME, "Current time of day", supportsSmoothing = false, supportsZones = false, listOf(34920.0, 34980.0, 35040.0, 35100.0, 35160.0))
+    val SUNRISE = KustomFieldDefinition("sunrise", "Sunrise", FieldCategory.TIME, "Local sunrise time", supportsSmoothing = false, supportsZones = false, listOf(23400.0, 23400.0, 23400.0, 23400.0, 23400.0))
+    val SUNSET = KustomFieldDefinition("sunset", "Sunset", FieldCategory.TIME, "Local sunset time", supportsSmoothing = false, supportsZones = false, listOf(72000.0, 72000.0, 72000.0, 72000.0, 72000.0))
 
-    // NAVIGATION
+    // NAVIGATION (FieldCategory.NAVIGATION)
+    val NAV_DIST_DEST = KustomFieldDefinition("nav-dist-dest", "Dist To Dest", FieldCategory.NAVIGATION, "Distance to route destination", supportsSmoothing = false, supportsZones = false, listOf(15400.0, 15000.0, 14600.0, 14200.0, 13800.0))
+    val NAV_DIST_TURN = KustomFieldDefinition("nav-dist-turn", "Dist To Turn", FieldCategory.NAVIGATION, "Distance to next turn", supportsSmoothing = false, supportsZones = false, listOf(450.0, 400.0, 350.0, 300.0, 250.0))
+    val NAV_ELEV_REM = KustomFieldDefinition("nav-elev-rem", "Elev Remaining", FieldCategory.NAVIGATION, "Ascent remaining on route", supportsSmoothing = false, supportsZones = false, listOf(350.0, 340.0, 330.0, 320.0, 310.0))
+    val NAV_TIME_DEST = KustomFieldDefinition("nav-time-dest", "Time To Dest", FieldCategory.NAVIGATION, "Estimated time to destination", supportsSmoothing = false, supportsZones = false, listOf(2400.0, 2340.0, 2280.0, 2220.0, 2160.0))
     val NAV_ETA = KustomFieldDefinition("nav-eta", "ETA", FieldCategory.NAVIGATION, "Estimated arrival time", supportsSmoothing = false, supportsZones = false, listOf(36000.0, 36060.0, 36120.0, 36180.0, 36240.0))
-    val NAV_DISTANCE_TO_NEXT_TURN = KustomFieldDefinition("nav-distance-to-next-turn", "Distance To Next Turn", FieldCategory.NAVIGATION, "Distance until next maneuver", supportsSmoothing = false, supportsZones = false, listOf(450.0, 400.0, 350.0, 300.0, 250.0))
     val NAV_HEADING = KustomFieldDefinition("nav-heading", "Heading", FieldCategory.NAVIGATION, "Compass heading direction", supportsSmoothing = false, supportsZones = false, listOf(90.0, 95.0, 100.0, 105.0, 98.0))
 
-    /** Complete list of all registered data fields. */
+    // GENERAL (FieldCategory.GENERAL)
+    val SHIFT_GEARS = KustomFieldDefinition("shift-gears", "Gears", FieldCategory.GENERAL, "Current front & rear gear", supportsSmoothing = false, supportsZones = false, listOf(5014.0, 5016.0, 3418.0, 3421.0, 5015.0))
+    val SHIFT_FRONT = KustomFieldDefinition("shift-front", "Front Gear", FieldCategory.GENERAL, "Front chainring teeth", supportsSmoothing = false, supportsZones = false, listOf(50.0, 50.0, 34.0, 34.0, 50.0))
+    val SHIFT_REAR = KustomFieldDefinition("shift-rear", "Rear Gear", FieldCategory.GENERAL, "Rear sprocket teeth", supportsSmoothing = false, supportsZones = false, listOf(14.0, 16.0, 18.0, 21.0, 15.0))
+    val SHIFT_BATT = KustomFieldDefinition("shift-batt", "Drivetrain Battery", FieldCategory.GENERAL, "Shifting battery level %", supportsSmoothing = false, supportsZones = false, listOf(100.0, 95.0, 90.0, 85.0, 80.0))
+    val WO_POWER_TARGET = KustomFieldDefinition("wo-power-target", "Target Power", FieldCategory.GENERAL, "Workout target power", supportsSmoothing = false, supportsZones = false, listOf(250.0, 260.0, 270.0, 280.0, 265.0))
+    val WO_REM_INTERVAL = KustomFieldDefinition("wo-rem-interval", "INT REM", FieldCategory.GENERAL, "Time remaining in interval", supportsSmoothing = false, supportsZones = false, listOf(185.0, 180.0, 175.0, 170.0, 165.0))
+    val WO_REM_TOTAL = KustomFieldDefinition("wo-rem-total", "WRK REM", FieldCategory.GENERAL, "Remaining workout time", supportsSmoothing = false, supportsZones = false, listOf(1800.0, 1740.0, 1680.0, 1620.0, 1560.0))
+    val BATTERY_PCT = KustomFieldDefinition("battery-pct", "Karoo Battery", FieldCategory.GENERAL, "Karoo battery level %", supportsSmoothing = false, supportsZones = false, listOf(88.0, 87.0, 86.0, 85.0, 84.0))
+    val TEMPERATURE = KustomFieldDefinition("temperature", "Temperature", FieldCategory.GENERAL, "Ambient air temperature", supportsSmoothing = false, supportsZones = false, listOf(22.0, 22.5, 23.0, 23.5, 22.8))
+    val PSI_FRONT = KustomFieldDefinition("psi-front", "Front Tire PSI", FieldCategory.GENERAL, "Front tire pressure", supportsSmoothing = false, supportsZones = false, listOf(82.0, 81.5, 81.0, 80.5, 81.2))
+    val PSI_REAR = KustomFieldDefinition("psi-rear", "Rear Tire PSI", FieldCategory.GENERAL, "Rear tire pressure", supportsSmoothing = false, supportsZones = false, listOf(85.0, 84.5, 84.0, 83.5, 84.2))
+    val CORE_TEMP = KustomFieldDefinition("core-temp", "Core Temp", FieldCategory.GENERAL, "Core body temperature", supportsSmoothing = false, supportsZones = false, listOf(37.2, 37.4, 37.6, 37.8, 37.5))
+    val EBIKE_BATT = KustomFieldDefinition("ebike-batt", "eBike Battery", FieldCategory.GENERAL, "eBike battery level %", supportsSmoothing = false, supportsZones = false, listOf(92.0, 90.0, 88.0, 85.0, 82.0))
+    val EBIKE_RANGE = KustomFieldDefinition("ebike-range", "eBike Range", FieldCategory.GENERAL, "Estimated eBike range", supportsSmoothing = false, supportsZones = false, listOf(45.0, 43.0, 41.0, 39.0, 37.0))
+
+    /** Complete list of all 75 registered data fields. */
     val allFields: List<KustomFieldDefinition> = listOf(
-        SPEED, AVG_SPEED, MAX_SPEED,
-        HR, AVG_HR, MAX_HR, HR_ZONE,
-        POWER, AVG_POWER, MAX_POWER, NORM_POWER, IF, TSS, POWER_BALANCE, POWER_ZONE, KICKR_RESISTANCE,
-        CADENCE, AVG_CADENCE, MAX_CADENCE,
-        DISTANCE, DISTANCE_REMAINING, LAP_DISTANCE, ODOMETER,
-        ELEVATION, ASCENT, DESCENT, GRADE, VAM,
-        ELAPSED_TIME, RIDE_TIME, CLOCK_TIME, LAP_TIME, TIME_AHEAD_BEHIND,
-        BATTERY_SINGLE, BATTERY_SHIFTING, BATTERY_PHONE,
-        FRONT_GEAR, REAR_GEAR, GEAR_RATIO, GEAR_COMBINATION,
-        TEMPERATURE, WIND_SPEED, WIND_DIRECTION,
-        RADAR_VEHICLE_COUNT, RADAR_THREAT_LEVEL, RADAR_VEHICLE_SPEED,
-        LAP_NUMBER, LAST_LAP_TIME, LAST_LAP_SPEED,
-        WORKOUT_POWER, WORKOUT_TARGET_HR, WORKOUT_TARGET_CADENCE, WORKOUT_PRIMARY_TARGET, WORKOUT_INTERVAL_TIME, WORKOUT_DURATION_REMAINING, WORKOUT_INTERVAL_COUNT, WORKOUT_NEXT_TARGET,
-        NAV_ETA, NAV_DISTANCE_TO_NEXT_TURN, NAV_HEADING,
+        // POWER
+        POWER, NP, AVG_POWER, MAX_POWER, POWER_20M, POWER_1HR, POWER_BALANCE, PERCENT_FTP, POWER_TO_WEIGHT,
+        POWER_ZONE, INTENSITY_FACTOR, TSS, POWER_VI, POWER_KJ, POWER_CAL, POWER_CAL_HR, POWER_SMOOTHNESS, POWER_TE, AVG_POWER_BALANCE,
+        // HEART RATE
+        HR, AVG_HR, MAX_HR, HR_ZONE, PERCENT_MAX_HR, PERCENT_HRR, AVG_PERCENT_HRR,
+        // SPEED
+        SPEED, AVG_SPEED, MAX_SPEED, DISTANCE,
+        // CADENCE
+        CADENCE, TORQUE, AVG_CADENCE, MAX_CADENCE, AVG_TORQUE, MAX_TORQUE,
+        // CLIMB
+        GRADE, VAM, ELEVATION, ASCENT, DESCENT, AVG_VAM, DIST_TO_TOP, ELEV_TO_TOP, CLIMB_NUMBER,
+        // LAP
+        LAP_POWER, LAP_NP, LAP_HR, LAST_LAP_POWER, LAST_LAP_NP, LAST_LAP_HR,
+        LAP_NUMBER, LAP_TIME, LAP_DIST, LAP_SPEED, LAP_CADENCE, LAP_ASCENT, LAST_LAP_TIME, LAST_LAP_DIST, LAST_LAP_SPEED,
+        // TIME
+        RIDE_TIME, ELAPSED_TIME, PAUSED_TIME, CLOCK_TIME, SUNRISE, SUNSET,
+        // NAVIGATION
+        NAV_DIST_DEST, NAV_DIST_TURN, NAV_ELEV_REM, NAV_TIME_DEST, NAV_ETA, NAV_HEADING,
+        // GENERAL
+        SHIFT_GEARS, SHIFT_FRONT, SHIFT_REAR, SHIFT_BATT, WO_POWER_TARGET, WO_REM_INTERVAL, WO_REM_TOTAL,
+        BATTERY_PCT, TEMPERATURE, PSI_FRONT, PSI_REAR, CORE_TEMP, EBIKE_BATT, EBIKE_RANGE,
     )
 
     /** Configurable data fields with smoothing or zone capabilities. */

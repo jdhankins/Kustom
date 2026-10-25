@@ -1,34 +1,39 @@
-# Project Rules: Kustom — Hammerhead Karoo Data Fields Extension
+# Project Rules: Kustom (`com.hank.kustom`) — Hammerhead Karoo Data Fields Extension
 
-## 1. Project Identity & Target Hardware
-- You are an expert Kotlin and Android developer building **Kustom**, a custom data fields extension for Hammerhead Karoo cycling computers (Karoo 2 and Karoo 3).
-- Extension ID: `"kustom"`. Primary extension service class: `KustomExtension : KarooExtension("kustom", "1")`.
-- Target devices have 480x800 px displays. Minimum SDK is API 26. Write 100% idiomatic Kotlin using Coroutines and Flow.
+## 1. Project Identity, Package Structure & Gradle SDK Alignment
+- Package namespace: `com.hank.kustom`. Extension ID: `"kustom"`.
+- Primary extension service: `com.hank.kustom.extension.KustomExtension : KarooExtension("kustom", "1")`.
+- **CRITICAL `app/build.gradle.kts` SDK Levels**:
+  - Karoo 2 runs Android 8.1 (API 27) and Karoo 3 runs Android 12 (API 31/32).
+  - Always set `compileSdk = 35`, `minSdk = 26`, and `targetSdk = 34` in `app/build.gradle.kts`. Do NOT use preview `compileSdk = release(37)` or `targetSdk = 37`, which generates AAPT2 binary XML chunks that Karoo OS fails to parse for `extension_info.xml`.
 
-## 2. Strict Karoo Page Setup (`extension_info.xml`) Rules
-- ALWAYS use `io.hammerhead:karoo-ext:1.1.9` (`io.hammerhead.karooext.*`).
-- **CRITICAL XML FORMAT FOR `res/xml/extension_info.xml`**:
-    - Do NOT put `android:` or `app:` namespace prefixes on `<ExtensionInfo>` or `<DataType>` attributes! Karoo OS parses bare attribute names (`id`, `displayName`, `icon`, `scansDevices`, `typeId`, `description`, `graphical`).
-    - Every `displayName` and `description` MUST be a `@string/...` reference, and `icon` MUST be a `@drawable/...` vector drawable reference.
-    - Title every field's `@string/` display name in `strings.xml` using **`Parent - Child`** format (e.g., `"Power - Power"`, `"Power - Normalized Power"`, `"Heart Rate - Heart Rate"`, `"Speed - Speed"`, `"Cadence - Cadence"`, `"Climb - Grade"`, `"Climb - VAM"`) so they are easy to find under the **Kustom** dropdown in Karoo Page Setup.
+## 2. Strict Karoo Page Setup (`extension_info.xml` & `ic_kustom_field.xml`) Rules
+- Every field in `KustomFieldCatalog.allFields` (covering both configurable and raw native `DataType.Type` metrics) MUST have a matching `<DataType>` entry in `app/src/main/res/xml/extension_info.xml` and `@string/...` entry in `app/src/main/res/values/strings.xml`.
+- In `res/xml/extension_info.xml`, use bare attributes ONLY (`id="kustom"`, `typeId`, `displayName="@string/..."`, `description="@string/..."`, `graphical="true"`, `icon="@drawable/ic_kustom_field"`). Never use `android:` prefixes.
+- In `res/drawable/ic_kustom_field.xml`, use a clean `24dp x 24dp` monochrome vector icon with a transparent background (no full-bleed `108x108` background rectangle) so Karoo OS tints the icon cleanly in `Select Data`.
+- Title every `@string/field_*_name` in `strings.xml` using `"Parent - Child"` format (e.g., `"Power - Power"`, `"Climb - Grade"`, `"Time - Ride Time"`).
 
-## 3. Field Value & Dynamic Label Formatting Rules
-- **NUMBERS ONLY (No Units/Verbiage After Numbers)**:
-    - NEVER append unit strings (`"W"`, `"km/h"`, `"mph"`, `"bpm"`, `"rpm"`, `"%"`, `"m"`) after a metric value number! Display **ONLY the number** (e.g., `"228"`, `"152"`, `"32.4"`, `"92"`, `"6.5"`).
-- **Dynamic Smoothing Label**:
-    - When a field supports smoothing and its configured smoothing is `3s`, `5s`, `10s`, or `30s`, dynamically prefix the field's display label with the smoothing window: e.g., if `3s` is selected for `Power`, the label rendered inside the field MUST say **`3s Power`** (or **`5s Power`**, **`10s Power`**, **`30s Power`**). If `0s` is selected, the label says **`Power`**.
+## 3. Field Value Formatting, Dynamic Labels & Auto-Fit Layout Constraints
+- **Numbers Only (No Units)**: NEVER append units (`"W"`, `"km/h"`, `"mph"`, `"bpm"`, `"rpm"`, `"%"`, `"m"`) to numeric values. Render only the formatted number or time string (e.g., `"260"`, `"32.4"`, `"1:24:05"`).
+- **Dynamic Smoothing Label**: When smoothing (`3s`, `5s`, `10s`, `30s`) is active on a field that supports smoothing, prefix its rendered header label with the smoothing window (e.g., `"3S POWER"`, `"5S POWER"`, `"10S SPEED"`; `"POWER"` when `0s`).
+- **Auto-Fitting Large Font Scales (`KustomFieldRenderer.kt`)**:
+  - Reserve the top `26%` of the bitmap for the label and the bottom `74%` for the main value.
+  - Before drawing, iteratively step down `labelPaint.textSize` and `valuePaint.textSize` in a `while` loop until `paint.measureText(text) <= width * 0.90f` AND `(paint.fontMetrics.descent - paint.fontMetrics.ascent)` fits within its vertical band (`height * 0.22f` for label, `height * 0.66f` for value). This prevents any clipping or label-value collision when `56sp`, `64sp`, or `72sp` is selected.
 
-## 4. UI Layout & Navigation Rules (`MainActivity`)
-- **Keep the Karoo Slate Color Palette**:
-    - Screen background: `#DCE1E3`, Card surface: `#F4F6F7`, Primary text: `#1E2225`, Secondary text: `#4A5258`, Slate accent: `#91A6B0`, Visible slider track: `#CFD8DC`, Pill container: `#EEF1F2`.
+## 4. Modernized Configuration Controls UI/UX (`MainActivity.kt`)
 - **Top Navigation Bar**:
-    - Must contain **EXACTLY TWO** choices: **`Global`** and **`Fields`** (in that exact order). Remove `"Logs"` and any other buttons from the top bar.
-- **Preview Placement & Narrower Preview Size (`132.dp x 68.dp`)**:
-    - **`Global` Tab**: This is the ONLY tab with a high-level preview card at the top of the page.
-    - **`Fields` Tab**: Do NOT show a global preview at the top of the `Fields` page. Instead, inside the `Fields` category accordion, **each configurable child metric card** has its own side-by-side header row with the metric's Title + Description on the left (`Modifier.weight(1f).padding(end = 12.dp)`) and its own narrow live preview box (`width = 132.dp, height = 68.dp`) on the right so the description text never wraps mid-word.
-- **`Fields` Accordion Filtering & Controls**:
-    - List **ALL configurable fields** grouped by category (`Power`, `Heart Rate`, `Speed`, `Cadence`, `Climb`).
-    - **Exclude non-configurable fields** from the `Fields` configuration accordion. Never show `"No additional parameters required."`
-    - **Working Stepped Smoothing Slider**: Build `KarooSteppedSlider` using an explicit `Row` of 5 clickable/draggable `44.dp` step targets over a visible `#CFD8DC` track so tapping or dragging `0s`, `3s`, `5s`, `10s`, `30s` always updates the smoothing state and the dynamic label (`"3s Power"`) immediately.
-    - **Zone Formatting Pill (`None` | `Text` | `Background`)**: Use exact labels **`None`**, **`Text`**, and **`Background`** with proportional weights (`0.85f`, `0.85f`, `1.35f`) and `softWrap = false` so **`Background`** is never truncated to `"Back"`.
-```
+  - Strictly two tabs: **`Global`** and **`Fields`** (in that exact order). Remove `"Logs 📋"` and any other buttons from the top bar.
+- **Preview Placement**:
+  - **`Global` Tab**: Has a single preview card at the top, followed by `FONT FAMILY` and the 4 typography sliders inside a scrollable column with `bottom = 32.dp` padding.
+  - **`Fields` Tab**: Has NO top-level global preview card. Instead, only `KustomFieldCatalog.configurableFields` (`supportsSmoothing || supportsZones`) are shown in the category accordion, and each child metric card displays its own `132.dp x 68.dp` live preview box alongside its title and description.
+- **Modern Sleek Stepped Slider (`KarooSteppedSlider`)**:
+  - Do NOT use the oversized 44dp grey circle with the lightning bolt emoji (`⚡`).
+  - Render a clean, modern stepped slider matching `Screenshot 2026-10-20 at 1.59.26 PM.png`:
+    - Horizontal container with `padding(horizontal = 14.dp)` so edge step labels (`36sp` and `72sp`, or `0s` and `30s`) never clip at the right margin.
+    - A crisp `3.dp` horizontal track (`#CBD5E1` inactive background) with an active progress bar filled in **Teal (`#00C4B4`)** from the left edge up to the selected step.
+    - A solid **`20.dp` Teal circle thumb (`#00C4B4`)** centered on the active step (inside a `44.dp` touch/drag target).
+    - Step labels underneath where the **selected step label is bold Teal (`#00897B`)** and unselected labels are medium Slate (`#475569`), with `maxLines = 1` and `softWrap = false`.
+- **Modern Segmented Zone Toggle (`KarooSegmentedPill`)**:
+  - A crisp white pill container (`#FFFFFF`, `height = 46.dp`, `RoundedCornerShape(50)`, `1.dp` border `#CBD5E1`, `padding(4.dp)`).
+  - Three segments: **`None`**, **`Text`**, and **`Background`** (with proportional weights `0.9f`, `0.9f`, `1.2f` so `"Background"` never truncates).
+  - The selected segment is filled with a vibrant **Gold/Amber pill (`#F4C414`)** and bold `#1E2225` text; unselected segments have transparent background and `#475569` medium text.
