@@ -251,6 +251,7 @@ fun KustomStickyHeaderSection(
     }
 
     val sampleValueText = genericMockValues.getOrElse(mockStepIndex) { "123" }
+    var previewIsDark by remember { mutableStateOf(colors.isDark) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -309,13 +310,14 @@ fun KustomStickyHeaderSection(
                 }
             }
 
-            // 2. Sticky Live Field Preview Box Centered (GLOBAL TAB ONLY)
+            // 2. Sticky Live Field Preview Box Centered with Circular Theme Toggle Icon (GLOBAL TAB ONLY)
             if (selectedTab == 0) {
-                Box(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 2.dp),
-                    contentAlignment = Alignment.Center,
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     BoxWithConstraints(
                         modifier = Modifier
@@ -355,7 +357,7 @@ fun KustomStickyHeaderSection(
                             ),
                             colorMode = ColorMode.NONE,
                             mappedColor = null,
-                            isDarkTheme = colors.isDark,
+                            isDarkTheme = previewIsDark,
                         )
 
                         Image(
@@ -363,6 +365,24 @@ fun KustomStickyHeaderSection(
                             contentDescription = "Live Preview",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Fit,
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // Small Circular Theme Toggle Icon Button
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .background(colors.trackBg)
+                            .border(BorderStroke(1.dp, colors.border), CircleShape)
+                            .clickable { previewIsDark = !previewIsDark },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = if (previewIsDark) "🌙" else "☀️",
+                            fontSize = 15.sp,
                         )
                     }
                 }
