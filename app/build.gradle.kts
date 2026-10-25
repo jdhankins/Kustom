@@ -45,6 +45,9 @@ dependencies {
     // Hammerhead Karoo Extensions SDK
     implementation("io.hammerhead:karoo-ext:1.1.9")
 
+    // Dhaval2404 Material ColorPicker library
+    implementation("com.github.Dhaval2404:ColorPicker:2.3")
+
     // Preferences DataStore for live mid-ride configuration updates in Kustom
     implementation("androidx.datastore:datastore-preferences:1.3.0")
 

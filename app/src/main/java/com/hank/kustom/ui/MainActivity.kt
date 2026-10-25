@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import com.github.dhaval2404.colorpicker.MaterialColorPickerDialog
+import com.github.dhaval2404.colorpicker.model.ColorShape
+import com.github.dhaval2404.colorpicker.model.ColorSwatch
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -500,6 +503,84 @@ fun GlobalFontsTab(
                                     viewModel.updateLabelFontWeight(newWeight)
                                 },
                             )
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- ACCORDION 2: FIELD BACKGROUND ---
+        item {
+            var isFieldBackgroundExpanded by remember { mutableStateOf(false) }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = colors.cardBg),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isFieldBackgroundExpanded = !isFieldBackgroundExpanded }
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "FIELD BACKGROUND",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textPrimary,
+                        )
+                        Text(
+                            text = if (isFieldBackgroundExpanded) "▲" else "▼",
+                            fontSize = 14.sp,
+                            color = colors.textSecondary,
+                        )
+                    }
+
+                    AnimatedVisibility(visible = isFieldBackgroundExpanded) {
+                        val localContext = LocalContext.current
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp, bottom = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(44.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(colors.accent)
+                                    .clickable {
+                                        (localContext as? ComponentActivity)?.let { activity ->
+                                            MaterialColorPickerDialog
+                                                .Builder(activity)
+                                                .setTitle("Select Field Background Color")
+                                                .setColorShape(ColorShape.SQAURE)
+                                                .setColorSwatch(ColorSwatch._500)
+                                                .setColorListener { _, _ ->
+                                                    // Popup only - no saving per request
+                                                }
+                                                .show()
+                                        }
+                                    },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = "Select Background Color",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                )
+                            }
                         }
                     }
                 }

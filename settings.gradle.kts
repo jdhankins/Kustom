@@ -1,4 +1,3 @@
-
 import java.util.Properties
 
 val localProperties = Properties().apply {
@@ -40,6 +39,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://jitpack.io") }
         maven {
             url = uri("https://maven.pkg.github.com/hammerheadnav/karoo-ext")
             if (!gprUser.isNullOrBlank() && !gprKey.isNullOrBlank()) {
