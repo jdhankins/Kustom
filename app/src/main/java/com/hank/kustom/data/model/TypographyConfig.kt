@@ -9,7 +9,7 @@ package com.hank.kustom.data.model
  */
 data class TypographyConfig(
     /** Selected [KustomFont] option. */
-    val font: KustomFont = KustomFont.KAROO_RBNO2,
+    val font: KustomFont = KustomFont.KAROO,
 
     /** Font weight value. */
     val fontWeight: Int = 700,
