@@ -345,7 +345,7 @@ object KustomFieldCatalog {
     val PERCENT_MAX_HR = KustomFieldDefinition("percent-max-hr", "% Max HR", FieldCategory.HEART_RATE, "% of maximum heart rate", supportsSmoothing = false, supportsZones = false, listOf(78.0, 80.0, 82.0, 85.0, 81.0))
     val AVG_PERCENT_HRR = KustomFieldDefinition("avg-percent-hrr", "Avg % HRR", FieldCategory.HEART_RATE, "Average % of HR reserve", supportsSmoothing = false, supportsZones = false, listOf(68.0, 70.0, 72.0, 74.0, 71.0))
     val AVG_HR = KustomFieldDefinition("avg-hr", "Avg HR", FieldCategory.HEART_RATE, "Average heart rate", supportsSmoothing = false, supportsZones = true, listOf(140.0, 142.0, 145.0, 147.0, 144.0))
-    val HR = KustomFieldDefinition("hr", "HR", FieldCategory.HEART_RATE, "Current heart rate", supportsSmoothing = true, supportsZones = true, listOf(145.0, 148.0, 152.0, 156.0, 150.0))
+    val HR = KustomFieldDefinition("hr", "HR", FieldCategory.HEART_RATE, "Current heart rate", supportsSmoothing = false, supportsZones = true, listOf(145.0, 148.0, 152.0, 156.0, 150.0))
     val HR_ZONE = KustomFieldDefinition("hr-zone", "HR Zone", FieldCategory.HEART_RATE, "Current HR zone", supportsSmoothing = false, supportsZones = false, listOf(3.0, 3.2, 4.1, 4.5, 3.8))
     val MAX_HR = KustomFieldDefinition("max-hr", "Max HR", FieldCategory.HEART_RATE, "Maximum heart rate", supportsSmoothing = false, supportsZones = true, listOf(172.0, 175.0, 178.0, 180.0, 177.0))
 
