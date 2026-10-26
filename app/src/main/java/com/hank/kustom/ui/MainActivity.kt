@@ -43,8 +43,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.painterResource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -442,38 +444,52 @@ fun GlobalFontsTab(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        // --- ACCORDION 1: TYPOGRAPHY ---
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = colors.cardBg),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(10.dp),
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { isTypographyExpanded = !isTypographyExpanded }
-                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(id = com.hank.kustom.R.drawable.ic_category_typography),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = colors.textPrimary,
+                            )
+                            Text(
+                                text = "TYPOGRAPHY",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = colors.textPrimary,
+                            )
+                        }
+
                         Text(
-                            text = "TYPOGRAPHY",
-                            fontSize = 15.sp,
+                            text = if (isTypographyExpanded) "▼" else "◀",
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = colors.textPrimary,
-                        )
-                        Text(
-                            text = if (isTypographyExpanded) "▲" else "▼",
-                            fontSize = 14.sp,
-                            color = colors.textSecondary,
                         )
                     }
 
@@ -563,32 +579,45 @@ fun GlobalFontsTab(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = colors.cardBg),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(10.dp),
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { isFieldBackgroundExpanded = !isFieldBackgroundExpanded }
-                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(id = com.hank.kustom.R.drawable.ic_category_palette),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = colors.textPrimary,
+                            )
+                            Text(
+                                text = "FIELD BACKGROUND",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = colors.textPrimary,
+                            )
+                        }
+
                         Text(
-                            text = "FIELD BACKGROUND",
-                            fontSize = 15.sp,
+                            text = if (isFieldBackgroundExpanded) "▼" else "◀",
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = colors.textPrimary,
-                        )
-                        Text(
-                            text = if (isFieldBackgroundExpanded) "▲" else "▼",
-                            fontSize = 14.sp,
-                            color = colors.textSecondary,
                         )
                     }
 
@@ -807,7 +836,7 @@ fun FieldsTab(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         configurableGrouped.forEach { (category, fields) ->
             item {
@@ -816,32 +845,45 @@ fun FieldsTab(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = colors.cardBg),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(10.dp),
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                            .padding(horizontal = 8.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onCategoryToggled(category) }
-                                .padding(horizontal = 4.dp, vertical = 2.dp),
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = category.iconResId),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = colors.textPrimary,
+                                )
+                                Text(
+                                    text = "${category.displayName.uppercase()} FIELDS",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colors.textPrimary,
+                                )
+                            }
+
                             Text(
-                                text = "${category.displayName.uppercase()} FIELDS",
-                                fontSize = 15.sp,
+                                text = if (isExpanded) "▼" else "◀",
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = colors.textPrimary,
-                            )
-                            Text(
-                                text = if (isExpanded) "▲" else "▼",
-                                fontSize = 14.sp,
-                                color = colors.textSecondary,
                             )
                         }
 
@@ -1250,8 +1292,8 @@ fun KarooSegmentedPill(
                 .fillMaxWidth()
                 .height(46.dp)
                 .clip(RoundedCornerShape(50))
-                .background(Color.White)
-                .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(50))
+                .background(colors.trackBg)
+                .border(1.dp, colors.border, RoundedCornerShape(50))
                 .padding(4.dp),
         ) {
             Row(
@@ -1264,9 +1306,9 @@ fun KarooSegmentedPill(
                     Triple(ZoneFormat.BACKGROUND, "Fill", 1.2f),
                 )
 
-                val activeGold = Color(0xFFF4C414)
-                val activeDarkText = Color(0xFF1E2225)
-                val unselectedSlate = Color(0xFF475569)
+                val activeBg = Color(0xFF00C4B4) // Same teal accent as the slider
+                val activeText = Color.White
+                val unselectedSlate = colors.textSecondary
 
                 options.forEach { (format, labelText, weight) ->
                     val isSelected = selectedZoneFormat == format
@@ -1276,7 +1318,7 @@ fun KarooSegmentedPill(
                             .weight(weight)
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(50))
-                            .background(if (isSelected) activeGold else Color.Transparent)
+                            .background(if (isSelected) activeBg else Color.Transparent)
                             .clickable { currentOnOptionSelected(format) }
                             .padding(horizontal = 8.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center,
@@ -1285,7 +1327,7 @@ fun KarooSegmentedPill(
                             text = labelText,
                             fontSize = 13.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) activeDarkText else unselectedSlate,
+                            color = if (isSelected) activeText else unselectedSlate,
                             textAlign = TextAlign.Center,
                             maxLines = 1,
                             softWrap = false,

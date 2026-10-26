@@ -3,17 +3,17 @@ package com.hank.kustom.data.model
 import io.hammerhead.karooext.models.DataType
 import java.util.Locale
 
-enum class FieldCategory(val displayName: String) {
-    CADENCE("Cadence"),
-    CLIMB("Climb"),
-    GENERAL("General"),
-    HEART_RATE("Heart Rate"),
-    LAP("Lap"),
-    NAVIGATION("Navigation"),
-    POWER("Power"),
-    SPEED("Speed"),
-    TIME("Time"),
-    WORKOUT("Workout"),
+enum class FieldCategory(val displayName: String, val iconResId: Int) {
+    CADENCE("Cadence", com.hank.kustom.R.drawable.ic_category_cadence),
+    CLIMB("Climb", com.hank.kustom.R.drawable.ic_category_climb),
+    GENERAL("General", com.hank.kustom.R.drawable.ic_category_general),
+    HEART_RATE("Heart Rate", com.hank.kustom.R.drawable.ic_category_hr),
+    LAP("Lap", com.hank.kustom.R.drawable.ic_category_lap),
+    NAVIGATION("Navigation", com.hank.kustom.R.drawable.ic_category_nav),
+    POWER("Power", com.hank.kustom.R.drawable.ic_category_power),
+    SPEED("Speed", com.hank.kustom.R.drawable.ic_category_speed),
+    TIME("Time", com.hank.kustom.R.drawable.ic_category_time),
+    WORKOUT("Workout", com.hank.kustom.R.drawable.ic_category_workout),
 }
 
 data class KustomFieldDefinition(

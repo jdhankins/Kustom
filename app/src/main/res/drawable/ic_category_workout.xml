@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Dumbbell matching native Karoo Workout icon -->
+    <path
+        android:fillColor="#1E2225"
+        android:pathData="M5,8V16H7V8H5ZM2,10V14H4V10H2ZM17,8V16H19V8H17ZM20,10V14H22V10H20ZM8,11V13H16V11H8Z" />
+</vector>
