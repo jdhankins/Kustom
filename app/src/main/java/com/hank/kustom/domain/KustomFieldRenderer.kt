@@ -82,18 +82,26 @@ object KustomFieldRenderer {
                 }
             }
 
-            // Draw Background (Karoo OS draws the outer bounding box/border)
+            // Draw Background (100% edge-to-edge fill with zero margins or corner rounding)
             if (boundaries) {
-                val rect = RectF(0f, 0f, width.toFloat(), height.toFloat())
-                val cornerRadius = height * 0.12f
-
                 val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = if (backgroundColor != 0x00000000) backgroundColor else defaultBgColor
                     style = Paint.Style.FILL
                 }
-                canvas.drawRoundRect(rect, cornerRadius, cornerRadius, bgPaint)
-            } else if (backgroundColor != 0x00000000) {
-                canvas.drawColor(backgroundColor)
+                canvas.drawRect(RectF(0f, 0f, width.toFloat(), height.toFloat()), bgPaint)
+            } else {
+                if (backgroundColor != 0x00000000) {
+                    canvas.drawColor(backgroundColor)
+                }
+                // When Data Boundaries is OFF: Draw 100% width bottom border line, 5.5px thick, dark shade of gray
+                val darkGreyBorder = if (isDarkTheme) 0xFF475569.toInt() else 0xFF64748B.toInt()
+                val bottomLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = darkGreyBorder
+                    style = Paint.Style.STROKE
+                    strokeWidth = 5.5f
+                }
+                val lineY = height.toFloat() - 2.75f
+                canvas.drawLine(0f, lineY, width.toFloat(), lineY, bottomLinePaint)
             }
 
             // Text Alignment & Horizontal Position
