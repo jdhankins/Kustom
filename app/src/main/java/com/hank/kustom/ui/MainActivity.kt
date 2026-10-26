@@ -190,12 +190,66 @@ fun KustomKarooNativeScreen(
     var selectedTopNavTab by remember { mutableIntStateOf(0) } // 0 = Global, 1 = Fields
     var selectedField by remember { mutableStateOf(KustomFieldCatalog.POWER) }
     var expandedCategory by remember { mutableStateOf<FieldCategory?>(null) }
+    var showHelpDialog by remember { mutableStateOf(false) }
+
+    if (showHelpDialog) {
+        KustomHelpDialog(
+            colors = colors,
+            onDismiss = { showHelpDialog = false },
+        )
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(colors.bg),
     ) {
+        // 1. Sleek Compact App Title Header (Logo + "Kustom" + Right Help Circle)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    painter = painterResource(id = com.hank.kustom.R.drawable.ic_kustom_field),
+                    contentDescription = "Kustom Logo",
+                    modifier = Modifier.size(22.dp),
+                    tint = colors.textPrimary,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Kustom",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.textPrimary,
+                    letterSpacing = 0.5.sp,
+                )
+            }
+
+            // Right-aligned Circular Help Icon Button
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(colors.trackBg)
+                    .border(BorderStroke(1.dp, colors.border), CircleShape)
+                    .clickable { showHelpDialog = true },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "?",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.textPrimary,
+                )
+            }
+        }
+
         // Sticky Header Section: Pill Navigation + Live Field Preview (Global Only)
         KustomStickyHeaderSection(
             settings = settings,
@@ -351,7 +405,7 @@ fun KustomStickyHeaderSection(
                         val bitmap = KustomFieldRenderer.render(
                             context = context,
                             config = previewViewConfig,
-                            label = "LABEL",
+                            label = "PREVIEW",
                             valueText = sampleValueText,
                             labelTypography = TypographyConfig(
                                 font = globalTypo.fontFamily,
@@ -398,6 +452,124 @@ fun KustomStickyHeaderSection(
             }
         }
     }
+}
+
+/**
+ * Detailed cyclist onboarding and quick-start guide popup dialog.
+ */
+@Composable
+fun KustomHelpDialog(
+    colors: KustomColorScheme,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = colors.cardBg,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = com.hank.kustom.R.drawable.ic_kustom_field),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = colors.accent,
+                )
+                Text(
+                    text = "Kustom Cyclist Guide",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.textPrimary,
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 320.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = "Kustom gives you total control over how data metrics appear on your Hammerhead Karoo screen.",
+                    fontSize = 13.sp,
+                    color = colors.textSecondary,
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "1. Global Typography",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.textPrimary,
+                    )
+                    Text(
+                        text = "Under the Global tab, pick your preferred font family (Karoo, Wahoo, Garmin, Coros, etc.) and adjust Value/Label size and weight sliders for maximum readability on the bike.",
+                        fontSize = 13.sp,
+                        color = colors.textSecondary,
+                    )
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "2. Field Background Colors",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.textPrimary,
+                    )
+                    Text(
+                        text = "In Field Background, select custom colors for Light Mode and Dark Mode. Toggle the sun/moon icon next to the preview box to test both themes.",
+                        fontSize = 13.sp,
+                        color = colors.textSecondary,
+                    )
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "3. Smoothing & Zone Colors",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.textPrimary,
+                    )
+                    Text(
+                        text = "In the Fields tab, set smoothing (0s to 30s) to stabilize fluctuating power or cadence numbers, and choose Zone Color (Text or Fill) for colored zone highlights.",
+                        fontSize = 13.sp,
+                        color = colors.textSecondary,
+                    )
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "4. Add Fields to Ride Profile",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.textPrimary,
+                    )
+                    Text(
+                        text = "Select a profile (Profiles -> Choose Profile) and tap a page or add a new page to edit. Tap Add Field, scroll down to the Kustom category, and select your customized metrics for your ride screens!",
+                        fontSize = 13.sp,
+                        color = colors.textSecondary,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Box(
+                modifier = Modifier
+                    .clickable { onDismiss() }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = "GOT IT",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.accent,
+                )
+            }
+        },
+    )
 }
 
 /**
