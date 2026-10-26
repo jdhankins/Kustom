@@ -77,7 +77,7 @@ class KustomDataType(
                 val isMockMode = config.preview && !isInRide
 
                 if (isMockMode) {
-                    // Page Setup / Profile Design Mode: Loop animated mock values
+                    // Page Setup / Profile Design Mode Only (when not in ride): Loop animated mock values
                     flow {
                         var i = 0
                         while (true) {
@@ -169,6 +169,17 @@ class KustomDataType(
                     definition.resolveDynamicLabel(fieldConfig.smoothingOption)
                 }
 
+                val isSensorField = when (definition.typeId) {
+                    "power", "np", "avg-power", "max-power", "power-20m", "power-1hr", "power-balance",
+                    "percent-ftp", "power-to-weight", "power-zone", "intensity-factor", "tss", "power-vi",
+                    "power-kj", "power-cal", "power-cal-hr", "power-smoothness", "power-te", "avg-power-balance",
+                    "hr", "avg-hr", "max-hr", "hr-zone", "percent-max-hr", "percent-hrr", "avg-percent-hrr",
+                    "cadence", "torque", "avg-cadence", "max-cadence", "avg-torque", "max-torque",
+                    "psi-front", "psi-rear", "core-temp", "shift-gears", "shift-front", "shift-rear", "shift-batt",
+                    "ebike-batt", "ebike-range", "workout-target-power", "workout-target-hr", "workout-target-cadence" -> true
+                    else -> false
+                }
+
                 val valueText = when {
                     isMock -> {
                         val v = dynamicValue ?: 228.0
@@ -176,11 +187,23 @@ class KustomDataType(
                     }
                     streamState is StreamState.Streaming -> {
                         val v = dynamicValue
-                        if (v != null) definition.formatNumericValueOnly(v, isImperial) else "--"
+                        if (v != null) {
+                            definition.formatNumericValueOnly(v, isImperial)
+                        } else if (isSensorField) {
+                            "Searching..."
+                        } else {
+                            definition.formatNumericValueOnly(0.0, isImperial)
+                        }
                     }
-                    streamState is StreamState.Searching -> "Searching..."
-                    streamState is StreamState.NotAvailable -> "No Sensor"
-                    else -> "--"
+                    streamState is StreamState.Searching -> {
+                        if (isSensorField) "Searching..." else definition.formatNumericValueOnly(0.0, isImperial)
+                    }
+                    streamState is StreamState.NotAvailable || streamState is StreamState.Idle -> {
+                        if (isSensorField) "No Sensor" else definition.formatNumericValueOnly(0.0, isImperial)
+                    }
+                    else -> {
+                        if (isSensorField) "No Sensor" else "--"
+                    }
                 }
 
                 val mappedColor = computeMappedColor(

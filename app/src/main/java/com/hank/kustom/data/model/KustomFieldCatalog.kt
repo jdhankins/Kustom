@@ -153,15 +153,15 @@ data class KustomFieldDefinition(
             "speed", "avg-speed", "max-speed", "lap-speed", "last-lap-speed" -> {
                 val multiplier = if (isImperial) 2.23694 else 3.6
                 val converted = rawValue * multiplier
-                String.format(Locale.US, "%.1f", converted)
+                if (converted < 0.1) "0" else String.format(Locale.US, "%.1f", converted)
             }
             "distance", "lap-dist", "last-lap-dist", "nav-dist-dest", "nav-dist-turn", "dist-to-top" -> {
                 val multiplier = if (isImperial) 0.000621371 else 0.001
                 val converted = rawValue * multiplier
-                String.format(Locale.US, "%.1f", converted)
+                if (converted < 0.05) "0.0" else String.format(Locale.US, "%.1f", converted)
             }
             "grade" -> {
-                String.format(Locale.US, "%.1f", rawValue)
+                if (kotlin.math.abs(rawValue) < 0.1) "0" else String.format(Locale.US, "%.1f", rawValue)
             }
             "elevation", "ascent", "descent", "lap-ascent", "elev-to-top", "nav-elev-rem" -> {
                 val multiplier = if (isImperial) 3.28084 else 1.0
@@ -170,7 +170,8 @@ data class KustomFieldDefinition(
             }
             "temperature", "core-temp" -> {
                 val converted = if (isImperial) (rawValue * 9.0 / 5.0 + 32.0) else rawValue
-                String.format(Locale.US, "%.1f", converted)
+                val rounded = converted.toInt()
+                if (kotlin.math.abs(converted - rounded) < 0.1) rounded.toString() else String.format(Locale.US, "%.1f", converted)
             }
             "psi-front", "psi-rear" -> {
                 val converted = if (isImperial) rawValue else (rawValue * 0.0689476)

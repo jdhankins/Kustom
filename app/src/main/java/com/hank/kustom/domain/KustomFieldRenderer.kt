@@ -41,6 +41,10 @@ object KustomFieldRenderer {
 
             val boundaries = config.boundariesEnabled
 
+            // Sensor Searching / No Sensor status text detection for live ride UX matching native Karoo OS
+            val isSensorStatusText = valueText == "Searching..." || valueText == "No Sensor" || valueText == "Searching"
+            val sensorStatusColor = if (isDarkTheme) 0xFFFF5252.toInt() else 0xFFD32F2F.toInt()
+
             // Default colors based on theme and custom background preferences
             val defaultBgColor = if (isDarkTheme) {
                 globalColors.getDarkColorInt()
@@ -59,22 +63,22 @@ object KustomFieldRenderer {
                 ColorMode.NONE -> {
                     backgroundColor = defaultBgColor
                     labelColor = mutedLabelColor
-                    valueColor = defaultTextColor
+                    valueColor = if (isSensorStatusText) sensorStatusColor else defaultTextColor
                 }
                 ColorMode.TEXT_COLOR -> {
                     backgroundColor = defaultBgColor
                     labelColor = mutedLabelColor
-                    valueColor = mappedColor ?: defaultTextColor
+                    valueColor = if (isSensorStatusText) sensorStatusColor else (mappedColor ?: defaultTextColor)
                 }
                 ColorMode.BACKGROUND_COLOR -> {
-                    backgroundColor = mappedColor ?: defaultBgColor
-                    val contrastColor = if (mappedColor != null) {
+                    backgroundColor = if (isSensorStatusText) defaultBgColor else (mappedColor ?: defaultBgColor)
+                    val contrastColor = if (mappedColor != null && !isSensorStatusText) {
                         KustomColorGradeMapper.getContrastingTextColor(mappedColor)
                     } else {
                         defaultTextColor
                     }
                     labelColor = contrastColor
-                    valueColor = contrastColor
+                    valueColor = if (isSensorStatusText) sensorStatusColor else contrastColor
                 }
             }
 
@@ -137,7 +141,8 @@ object KustomFieldRenderer {
             // --- ZONE 2: BOTTOM 74% ZONE FOR VALUE (0.26 * height .. height) ---
             val valueZoneTop = height * 0.26f
             val valueZoneHeight = height * 0.74f
-            val valuePx = (height * (valueTypography.fontSizeSp / 86f)).coerceAtLeast(18f)
+            val rawValuePx = (height * (valueTypography.fontSizeSp / 86f)).coerceAtLeast(18f)
+            val valuePx = if (isSensorStatusText) rawValuePx * 0.52f else rawValuePx
 
             val valuePaint = TextPaint().apply {
                 color = valueColor
@@ -147,13 +152,13 @@ object KustomFieldRenderer {
             KustomTypefaceResolver.applyTypography(
                 paint = valuePaint,
                 font = valueTypography.font,
-                weight = valueTypography.fontWeight,
+                weight = if (isSensorStatusText) 700 else valueTypography.fontWeight,
                 textSizePx = valuePx,
             )
 
             // Auto-scale value font size only if text width exceeds canvas width
-            val (primaryPart, secondaryPart) = parsePrimaryAndSecondary(valueText)
-            val minValueTextSize = 12f
+            val (primaryPart, secondaryPart) = if (isSensorStatusText) Pair(valueText, "") else parsePrimaryAndSecondary(valueText)
+            val minValueTextSize = 10f
 
             fun getMeasuredValueWidth(): Float {
                 return if (secondaryPart.isNotEmpty()) {
@@ -175,7 +180,7 @@ object KustomFieldRenderer {
 
             // Draw Label & Value Text (Wahoo Superscript Style for Decimals/Time)
             canvas.drawText(upperLabel, textX, labelY, labelPaint)
-            drawWahooValueText(canvas, valueText, textX, valueY, valuePaint, align)
+            drawWahooValueText(canvas, valueText, textX, valueY, valuePaint, align, isSensorStatusText)
 
             bitmap
         }.getOrElse { throwable ->
@@ -198,7 +203,13 @@ object KustomFieldRenderer {
         baseY: Float,
         primaryPaint: TextPaint,
         align: Paint.Align,
+        isSensorStatusText: Boolean = false,
     ) {
+        if (isSensorStatusText) {
+            canvas.drawText(valueText, primaryX, baseY, primaryPaint)
+            return
+        }
+
         val (primaryPart, secondaryPart) = parsePrimaryAndSecondary(valueText)
 
         if (secondaryPart.isEmpty()) {
