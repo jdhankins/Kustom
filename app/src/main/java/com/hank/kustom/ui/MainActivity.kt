@@ -922,37 +922,25 @@ fun FieldCardItem(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            // Top Row: Left Column (Title + Desc) & Right Column (Live Preview Box)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = field.childTitle,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colors.textPrimary,
-                    )
-                    Text(
-                        text = field.description,
-                        fontSize = 13.sp,
-                        color = colors.textSecondary,
-                    )
-                }
+            // 1. Bold Detailed Title Header Above Preview Box
+            Text(
+                text = field.cardHeaderTitle,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.textPrimary,
+            )
 
+            // 2. Centered Live Preview Box
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
                 BoxWithConstraints(
                     modifier = Modifier
-                        .size(width = 132.dp, height = 68.dp)
+                        .size(width = 150.dp, height = 70.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(12.dp)),
                 ) {
@@ -1021,7 +1009,6 @@ fun FieldCardItem(
             if (field.supportsZones) {
                 KarooSegmentedPill(
                     selectedZoneFormat = fieldConfig.zoneFormat,
-                    fieldName = field.childTitle,
                     colors = colors,
                     onZoneFormatSelected = { format ->
                         viewModel.updateFieldColorMode(field.typeId, format.toColorMode())
@@ -1241,7 +1228,6 @@ fun KarooSteppedSlider(
 @Composable
 fun KarooSegmentedPill(
     selectedZoneFormat: ZoneFormat,
-    fieldName: String,
     colors: KustomColorScheme,
     onZoneFormatSelected: (ZoneFormat) -> Unit,
     modifier: Modifier = Modifier,
@@ -1257,18 +1243,6 @@ fun KarooSegmentedPill(
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = colors.headerText,
-        )
-
-        val descriptionText = when (selectedZoneFormat) {
-            ZoneFormat.NONE -> "Your ${fieldName.lowercase()} will display in numbers only."
-            ZoneFormat.TEXT -> "Your ${fieldName.lowercase()} will display in numbers with the corresponding zone as the text color."
-            ZoneFormat.BACKGROUND -> "Your ${fieldName.lowercase()} will display in numbers with the corresponding zone as the background color."
-        }
-
-        Text(
-            text = descriptionText,
-            fontSize = 13.sp,
-            color = colors.textSecondary,
         )
 
         Box(
