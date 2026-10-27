@@ -94,6 +94,7 @@
 
     <!-- 8. SPECIAL -->
     <DataType typeId="power-combo" displayName="@string/field_power_combo_name" description="@string/field_power_combo_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="custom-combo" displayName="@string/field_custom_combo_name" description="@string/field_custom_combo_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
     <!-- 9. SPEED -->
     <DataType typeId="avg-speed" displayName="@string/field_avg_speed_name" description="@string/field_avg_speed_desc" graphical="true" icon="@drawable/ic_kustom_field" />

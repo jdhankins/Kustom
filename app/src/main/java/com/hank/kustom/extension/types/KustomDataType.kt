@@ -9,6 +9,7 @@ import com.hank.kustom.data.model.KustomFieldDefinition
 import com.hank.kustom.data.model.KustomSettings
 import com.hank.kustom.data.model.SmoothingOption
 import com.hank.kustom.data.model.TypographyConfig
+import com.hank.kustom.data.model.ZoneFormat
 import com.hank.kustom.data.model.ZonePalette
 import com.hank.kustom.data.repository.KarooSystemRepository
 import com.hank.kustom.data.repository.KustomSettingsRepository
@@ -219,29 +220,71 @@ class KustomDataType(
 
                 val isDarkTheme = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
 
-                val bitmap = if (definition.typeId == "power-combo") {
-                    val pWatts = dynamicValue ?: 214.0
-                    val primaryValText = "${pWatts.toInt()}"
-                    val smoothLabel = if (fieldConfig.smoothingOption != SmoothingOption.NONE) fieldConfig.smoothingOption.label else ""
+                val bitmap = if (definition.typeId == "power-combo" || definition.typeId == "custom-combo") {
+                    val centerDef = if (definition.typeId == "custom-combo") {
+                        KustomFieldCatalog.findByTypeId(fieldConfig.comboCenterMetric) ?: KustomFieldCatalog.POWER
+                    } else {
+                        KustomFieldCatalog.POWER
+                    }
 
-                    val leftDef = KustomFieldCatalog.findByTypeId(fieldConfig.comboLeftMetric) ?: KustomFieldCatalog.AVG_POWER
-                    val rightDef = KustomFieldCatalog.findByTypeId(fieldConfig.comboRightMetric) ?: KustomFieldCatalog.NP
+                    val pWatts = dynamicValue ?: 214.0
+                    val primaryValText = if (centerDef.typeId.contains("hr") || centerDef.typeId.contains("cadence") || centerDef.typeId.contains("power")) "${pWatts.toInt()}" else centerDef.formatNumericValueOnly(pWatts, isImperial)
+                    val dynamicCenterLabel = centerDef.resolveDynamicLabel(fieldConfig.smoothingOption)
+
+                    val leftDef = KustomFieldCatalog.findByTypeId(fieldConfig.comboLeftMetric) ?: KustomFieldCatalog.NP
+                    val rightDef = KustomFieldCatalog.findByTypeId(fieldConfig.comboRightMetric) ?: KustomFieldCatalog.MAX_POWER
+
+                    val comboMappedColor = if (centerDef.supportsZones) {
+                        computeMappedColor(
+                            definition = centerDef,
+                            rawVal = pWatts,
+                            fieldConfig = fieldConfig,
+                            userProfile = userProfile,
+                            palette = settings.globalColors.globalZonePalette,
+                        )
+                    } else null
+
+                    val leftZoneFormat = fieldConfig.comboLeftZoneFormat
+                    val leftMappedColor = if (leftDef.supportsZones && leftZoneFormat != ZoneFormat.NONE) {
+                        computeMappedColor(
+                            definition = leftDef,
+                            rawVal = pWatts * 0.95,
+                            fieldConfig = fieldConfig.copy(zoneFormat = leftZoneFormat),
+                            userProfile = userProfile,
+                            palette = settings.globalColors.globalZonePalette,
+                        )
+                    } else null
+
+                    val rightZoneFormat = fieldConfig.comboRightZoneFormat
+                    val rightMappedColor = if (rightDef.supportsZones && rightZoneFormat != ZoneFormat.NONE) {
+                        computeMappedColor(
+                            definition = rightDef,
+                            rawVal = pWatts * 1.05,
+                            fieldConfig = fieldConfig.copy(zoneFormat = rightZoneFormat),
+                            userProfile = userProfile,
+                            palette = settings.globalColors.globalZonePalette,
+                        )
+                    } else null
 
                     KustomFieldRenderer.renderComboBlock(
                         context = context,
                         config = config,
-                        label = dynamicLabel,
+                        label = dynamicCenterLabel,
                         primaryValueText = primaryValText,
-                        smoothingLabel = smoothLabel,
+                        smoothingLabel = "",
                         leftLabel = if (fieldConfig.comboLeftMetric == "none") "" else leftDef.childTitle,
                         leftValueText = if (fieldConfig.comboLeftMetric == "none") "" else leftDef.formatNumericValueOnly(pWatts * 0.95, isImperial),
                         rightLabel = if (fieldConfig.comboRightMetric == "none") "" else rightDef.childTitle,
-                        rightValueText = if (fieldConfig.comboRightMetric == "none") "" else rightDef.formatNumericValueOnly(pWatts * 1.03, isImperial),
+                        rightValueText = if (fieldConfig.comboRightMetric == "none") "" else rightDef.formatNumericValueOnly(pWatts * 1.05, isImperial),
                         powerValueWatts = pWatts,
                         ftpWatts = userProfile?.ftp?.toDouble() ?: 250.0,
-                        zoneCount = fieldConfig.comboZoneCount,
-                        zoneFormat = fieldConfig.zoneFormat,
-                        mappedColor = mappedColor,
+                        zoneCount = settings.globalColors.globalPowerZoneCount,
+                        zoneFormat = if (centerDef.supportsZones) fieldConfig.zoneFormat else ZoneFormat.NONE,
+                        mappedColor = comboMappedColor,
+                        leftZoneFormat = leftZoneFormat,
+                        leftMappedColor = leftMappedColor,
+                        rightZoneFormat = rightZoneFormat,
+                        rightMappedColor = rightMappedColor,
                         labelTypography = TypographyConfig(
                             font = settings.globalTypography.fontFamily,
                             fontWeight = settings.globalTypography.labelWeight,

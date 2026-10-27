@@ -69,17 +69,28 @@ class KustomSettingsRepository(context: Context) {
                 val smoothingSec = prefs[intPreferencesKey("${typeId}_smoothing")] ?: 3
                 val zoneFormatRaw = prefs[stringPreferencesKey("${typeId}_zone_format")]
                 val showUnit = prefs[booleanPreferencesKey("${typeId}_show_unit")] ?: true
-                val defaultZoneFormat = if (typeId == "power-combo") ZoneFormat.BAR else (if (fieldDef.supportsZones) ZoneFormat.BACKGROUND else ZoneFormat.NONE)
-                val leftMetric = prefs[stringPreferencesKey("${typeId}_combo_left")] ?: if (typeId == "power-combo") "np" else "avg-power"
-                val rightMetric = prefs[stringPreferencesKey("${typeId}_combo_right")] ?: if (typeId == "power-combo") "max-power" else "np"
+                val defaultZoneFormat = if (typeId == "power-combo" || typeId == "custom-combo") ZoneFormat.BAR else (if (fieldDef.supportsZones) ZoneFormat.BACKGROUND else ZoneFormat.NONE)
+                val centerMetric = prefs[stringPreferencesKey("${typeId}_combo_center")] ?: "power"
+                val leftMetric = prefs[stringPreferencesKey("${typeId}_combo_left")] ?: if (typeId == "power-combo" || typeId == "custom-combo") "np" else "avg-power"
+                val rightMetric = prefs[stringPreferencesKey("${typeId}_combo_right")] ?: if (typeId == "power-combo" || typeId == "custom-combo") "max-power" else "np"
                 val zoneCount = prefs[intPreferencesKey("${typeId}_combo_zones")] ?: 7
+
+                val leftSmoothSec = prefs[intPreferencesKey("${typeId}_combo_left_smoothing")] ?: 0
+                val rightSmoothSec = prefs[intPreferencesKey("${typeId}_combo_right_smoothing")] ?: 0
+                val leftZoneRaw = prefs[stringPreferencesKey("${typeId}_combo_left_zone")]
+                val rightZoneRaw = prefs[stringPreferencesKey("${typeId}_combo_right_zone")]
 
                 val fieldConfig = KustomFieldConfig(
                     smoothingOption = SmoothingOption.fromSeconds(smoothingSec),
                     zoneFormat = parseEnum(zoneFormatRaw, defaultZoneFormat),
                     showUnit = showUnit,
+                    comboCenterMetric = centerMetric,
                     comboLeftMetric = leftMetric,
                     comboRightMetric = rightMetric,
+                    comboLeftSmoothing = SmoothingOption.fromSeconds(leftSmoothSec),
+                    comboRightSmoothing = SmoothingOption.fromSeconds(rightSmoothSec),
+                    comboLeftZoneFormat = parseEnum(leftZoneRaw, ZoneFormat.NONE),
+                    comboRightZoneFormat = parseEnum(rightZoneRaw, ZoneFormat.NONE),
                     comboZoneCount = zoneCount,
                 )
                 configs[typeId] = fieldConfig
@@ -166,6 +177,12 @@ class KustomSettingsRepository(context: Context) {
         }
     }
 
+    suspend fun updateComboCenterMetric(typeId: String, metric: String) {
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey("${typeId}_combo_center")] = metric
+        }
+    }
+
     suspend fun updateComboLeftMetric(typeId: String, metric: String) {
         dataStore.edit { prefs ->
             prefs[stringPreferencesKey("${typeId}_combo_left")] = metric
@@ -175,6 +192,30 @@ class KustomSettingsRepository(context: Context) {
     suspend fun updateComboRightMetric(typeId: String, metric: String) {
         dataStore.edit { prefs ->
             prefs[stringPreferencesKey("${typeId}_combo_right")] = metric
+        }
+    }
+
+    suspend fun updateComboLeftSmoothing(typeId: String, smoothing: SmoothingOption) {
+        dataStore.edit { prefs ->
+            prefs[intPreferencesKey("${typeId}_combo_left_smoothing")] = smoothing.seconds
+        }
+    }
+
+    suspend fun updateComboRightSmoothing(typeId: String, smoothing: SmoothingOption) {
+        dataStore.edit { prefs ->
+            prefs[intPreferencesKey("${typeId}_combo_right_smoothing")] = smoothing.seconds
+        }
+    }
+
+    suspend fun updateComboLeftZoneFormat(typeId: String, zoneFormat: ZoneFormat) {
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey("${typeId}_combo_left_zone")] = zoneFormat.name
+        }
+    }
+
+    suspend fun updateComboRightZoneFormat(typeId: String, zoneFormat: ZoneFormat) {
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey("${typeId}_combo_right_zone")] = zoneFormat.name
         }
     }
 

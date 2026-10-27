@@ -39,6 +39,7 @@ data class KustomFieldDefinition(
         get() = when (typeId) {
             "power" -> "Power"
             "power-combo" -> "Power Combo Block"
+            "custom-combo" -> "3-in-1 Custom Block"
             "np" -> "Normalized Power (NP)"
             "avg-power" -> "Average Power"
             "max-power" -> "Maximum Power"
@@ -432,8 +433,17 @@ object KustomFieldCatalog {
         supportsZones = true,
         mockValues = listOf(214.0, 235.0, 250.0, 220.0, 205.0),
     )
+    val CUSTOM_COMBO = KustomFieldDefinition(
+        typeId = "custom-combo",
+        childTitle = "3-in-1 Block",
+        category = FieldCategory.SPECIAL,
+        description = "Universal 3-in-1 composite block with customizable center and corner metrics",
+        supportsSmoothing = true,
+        supportsZones = true,
+        mockValues = listOf(214.0, 235.0, 250.0, 220.0, 205.0),
+    )
 
-    /** Complete list of all 76 registered data fields sorted in alphabetical order by parent and child. */
+    /** Complete list of all 77 registered data fields sorted in alphabetical order by parent and child. */
     val allFields: List<KustomFieldDefinition> = listOf(
         // 1. CADENCE
         AVG_CADENCE, AVG_TORQUE, CADENCE, MAX_CADENCE, MAX_TORQUE, TORQUE,
@@ -450,7 +460,7 @@ object KustomFieldCatalog {
         // 7. POWER
         PERCENT_FTP, POWER_1HR, POWER_20M, AVG_POWER_BALANCE, AVG_POWER, POWER_CAL_HR, POWER_CAL, INTENSITY_FACTOR, POWER_KJ, MAX_POWER, NP, POWER_SMOOTHNESS, POWER, POWER_BALANCE, POWER_ZONE, POWER_TE, TSS, POWER_VI, POWER_TO_WEIGHT,
         // 8. SPECIAL
-        POWER_COMBO,
+        POWER_COMBO, CUSTOM_COMBO,
         // 9. SPEED
         AVG_SPEED, DISTANCE, MAX_SPEED, SPEED,
         // 10. TIME

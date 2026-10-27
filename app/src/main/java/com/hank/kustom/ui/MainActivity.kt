@@ -1345,6 +1345,467 @@ fun FieldBackgroundColorDialog(
 }
 
 /**
+ * Dynamic configuration controls for Universal 3-in-1 Custom Combo field (typeId = "custom-combo").
+ * Automatically adapts controls (Center Metric, Left Metric, Right Metric, Zone Mode, Smoothing)
+ * based on the capabilities of the selected metrics.
+ */
+@Composable
+fun UniversalFieldComboControls(
+    fieldConfig: KustomFieldConfig,
+    colors: KustomColorScheme,
+    viewModel: KustomSettingsViewModel,
+    typeId: String,
+) {
+    val centerOptions = remember {
+        listOf(
+            "power" to "Power",
+            "hr" to "Heart Rate",
+            "cadence" to "Cadence",
+            "speed" to "Speed",
+            "grade" to "Road Grade %",
+            "vam" to "VAM Ascent",
+            "np" to "Normalized Power",
+            "avg-power" to "Avg Power",
+            "avg-speed" to "Avg Speed",
+            "avg-hr" to "Avg HR",
+            "distance" to "Distance",
+            "ride-time" to "Ride Time",
+            "clock-time" to "Clock Time",
+        )
+    }
+
+    val cornerOptions = remember {
+        listOf(
+            "np" to "NP",
+            "max-power" to "Max Power",
+            "avg-power" to "Avg Power",
+            "power-to-weight" to "W/kg",
+            "power-kj" to "kJ",
+            "percent-ftp" to "% FTP",
+            "avg-hr" to "Avg HR",
+            "max-hr" to "Max HR",
+            "hr-zone" to "HR Zone",
+            "avg-cadence" to "Avg Cadence",
+            "max-cadence" to "Max Cadence",
+            "avg-torque" to "Avg Torque",
+            "max-torque" to "Max Torque",
+            "avg-speed" to "Avg Speed",
+            "max-speed" to "Max Speed",
+            "distance" to "Distance",
+            "ascent" to "Ascent",
+            "grade" to "Grade %",
+            "none" to "None",
+        )
+    }
+
+    val selectedCenterId = fieldConfig.comboCenterMetric.ifEmpty { "power" }
+    val centerDef = remember(selectedCenterId) { KustomFieldCatalog.findByTypeId(selectedCenterId) ?: KustomFieldCatalog.POWER }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        // --- SECTION 1: CENTER METRIC (PRIMARY) ---
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(colors.trackBg)
+                .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(10.dp))
+                .padding(12.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                var centerExpanded by remember { mutableStateOf(false) }
+                val currentCenterLabel = centerOptions.firstOrNull { it.first == selectedCenterId }?.second ?: centerDef.childTitle
+
+                Text(
+                    text = "CENTER METRIC (PRIMARY)",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.headerText,
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(50))
+                        .background(colors.cardBg)
+                        .clickable { centerExpanded = true }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = currentCenterLabel,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textPrimary,
+                        )
+                        Text(
+                            text = if (centerExpanded) "▲" else "▼",
+                            fontSize = 12.sp,
+                            color = colors.textSecondary,
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = centerExpanded,
+                        onDismissRequest = { centerExpanded = false },
+                        modifier = Modifier.background(colors.cardBg),
+                    ) {
+                        centerOptions.forEach { (id, name) ->
+                            DropdownMenuItem(
+                                text = { Text(text = name, fontSize = 13.sp, color = colors.textPrimary) },
+                                onClick = {
+                                    viewModel.updateComboCenterMetric(typeId, id)
+                                    centerExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+
+                // Dynamic Zone Format Controls for Center Metric
+                if (centerDef.supportsZones) {
+                    val supportedFormats = if (selectedCenterId == "power" || selectedCenterId == "power-combo" || selectedCenterId == "custom-combo") {
+                        listOf(ZoneFormat.NONE, ZoneFormat.TEXT, ZoneFormat.BACKGROUND, ZoneFormat.BAR)
+                    } else {
+                        listOf(ZoneFormat.NONE, ZoneFormat.TEXT, ZoneFormat.BACKGROUND)
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "ZONE FORMAT",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textSecondary,
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(colors.cardBg)
+                                .border(1.dp, colors.border, RoundedCornerShape(50))
+                                .padding(3.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                supportedFormats.forEach { format ->
+                                    val isSelected = fieldConfig.zoneFormat == format
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                            .clip(RoundedCornerShape(50))
+                                            .background(if (isSelected) Color(0xFF00C4B4) else Color.Transparent)
+                                            .clickable { viewModel.updateFieldZoneFormat(typeId, format) },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = format.displayLabel,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) Color.White else colors.textSecondary,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Dynamic Smoothing Controls for Center Metric
+                if (centerDef.supportsSmoothing) {
+                    val smoothingSteps = listOf("0s", "3s", "5s", "10s", "30s")
+                    val currentSmoothIdx = SmoothingOption.entries.indexOf(fieldConfig.smoothingOption).coerceAtLeast(0)
+                    KarooSteppedSlider(
+                        label = "Smoothing",
+                        steps = smoothingSteps,
+                        selectedIndex = currentSmoothIdx,
+                        colors = colors,
+                        onStepSelected = { idx ->
+                            val option = SmoothingOption.entries.getOrElse(idx) { SmoothingOption.THREE_SEC }
+                            viewModel.updateFieldSmoothing(typeId, option)
+                        },
+                    )
+                }
+            }
+        }
+
+        // --- SECTION 2: LEFT METRIC ---
+        val selectedLeftId = fieldConfig.comboLeftMetric.ifEmpty { "np" }
+        val leftDef = remember(selectedLeftId) { KustomFieldCatalog.findByTypeId(selectedLeftId) }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(colors.trackBg)
+                .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(10.dp))
+                .padding(12.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                var leftExpanded by remember { mutableStateOf(false) }
+                val currentLeftLabel = cornerOptions.firstOrNull { it.first == selectedLeftId }?.second ?: (leftDef?.childTitle ?: "NP")
+
+                Text(
+                    text = "LEFT METRIC",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.headerText,
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(50))
+                        .background(colors.cardBg)
+                        .clickable { leftExpanded = true }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = currentLeftLabel,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textPrimary,
+                        )
+                        Text(
+                            text = if (leftExpanded) "▲" else "▼",
+                            fontSize = 12.sp,
+                            color = colors.textSecondary,
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = leftExpanded,
+                        onDismissRequest = { leftExpanded = false },
+                        modifier = Modifier.background(colors.cardBg),
+                    ) {
+                        cornerOptions.forEach { (id, name) ->
+                            DropdownMenuItem(
+                                text = { Text(text = name, fontSize = 13.sp, color = colors.textPrimary) },
+                                onClick = {
+                                    viewModel.updateComboLeftMetric(typeId, id)
+                                    leftExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+
+                // Dynamic Zone Format Controls if Left Metric supports zones
+                if (leftDef?.supportsZones == true) {
+                    val supportedFormats = listOf(ZoneFormat.NONE, ZoneFormat.TEXT, ZoneFormat.BACKGROUND)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "LEFT ZONE FORMAT",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textSecondary,
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(colors.cardBg)
+                                .border(1.dp, colors.border, RoundedCornerShape(50))
+                                .padding(3.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                supportedFormats.forEach { format ->
+                                    val isSelected = fieldConfig.comboLeftZoneFormat == format
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                            .clip(RoundedCornerShape(50))
+                                            .background(if (isSelected) Color(0xFF00C4B4) else Color.Transparent)
+                                            .clickable { viewModel.updateComboLeftZoneFormat(typeId, format) },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = format.displayLabel,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) Color.White else colors.textSecondary,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Dynamic Left Smoothing Controls if Left Metric supports smoothing
+                if (leftDef?.supportsSmoothing == true) {
+                    val smoothingSteps = listOf("0s", "3s", "5s", "10s", "30s")
+                    val currentSmoothIdx = SmoothingOption.entries.indexOf(fieldConfig.comboLeftSmoothing).coerceAtLeast(0)
+                    KarooSteppedSlider(
+                        label = "Left Smoothing",
+                        steps = smoothingSteps,
+                        selectedIndex = currentSmoothIdx,
+                        colors = colors,
+                        onStepSelected = { idx ->
+                            val option = SmoothingOption.entries.getOrElse(idx) { SmoothingOption.NONE }
+                            viewModel.updateComboLeftSmoothing(typeId, option)
+                        },
+                    )
+                }
+            }
+        }
+
+        // --- SECTION 3: RIGHT METRIC ---
+        val selectedRightId = fieldConfig.comboRightMetric.ifEmpty { "max-power" }
+        val rightDef = remember(selectedRightId) { KustomFieldCatalog.findByTypeId(selectedRightId) }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(colors.trackBg)
+                .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(10.dp))
+                .padding(12.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                var rightExpanded by remember { mutableStateOf(false) }
+                val currentRightLabel = cornerOptions.firstOrNull { it.first == selectedRightId }?.second ?: (rightDef?.childTitle ?: "Max Power")
+
+                Text(
+                    text = "RIGHT METRIC",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.headerText,
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(50))
+                        .background(colors.cardBg)
+                        .clickable { rightExpanded = true }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = currentRightLabel,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textPrimary,
+                        )
+                        Text(
+                            text = if (rightExpanded) "▲" else "▼",
+                            fontSize = 12.sp,
+                            color = colors.textSecondary,
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = rightExpanded,
+                        onDismissRequest = { rightExpanded = false },
+                        modifier = Modifier.background(colors.cardBg),
+                    ) {
+                        cornerOptions.forEach { (id, name) ->
+                            DropdownMenuItem(
+                                text = { Text(text = name, fontSize = 13.sp, color = colors.textPrimary) },
+                                onClick = {
+                                    viewModel.updateComboRightMetric(typeId, id)
+                                    rightExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+
+                // Dynamic Zone Format Controls if Right Metric supports zones
+                if (rightDef?.supportsZones == true) {
+                    val supportedFormats = listOf(ZoneFormat.NONE, ZoneFormat.TEXT, ZoneFormat.BACKGROUND)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "RIGHT ZONE FORMAT",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textSecondary,
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(colors.cardBg)
+                                .border(1.dp, colors.border, RoundedCornerShape(50))
+                                .padding(3.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                supportedFormats.forEach { format ->
+                                    val isSelected = fieldConfig.comboRightZoneFormat == format
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                            .clip(RoundedCornerShape(50))
+                                            .background(if (isSelected) Color(0xFF00C4B4) else Color.Transparent)
+                                            .clickable { viewModel.updateComboRightZoneFormat(typeId, format) },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = format.displayLabel,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) Color.White else colors.textSecondary,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Dynamic Right Smoothing Controls if Right Metric supports smoothing
+                if (rightDef?.supportsSmoothing == true) {
+                    val smoothingSteps = listOf("0s", "3s", "5s", "10s", "30s")
+                    val currentSmoothIdx = SmoothingOption.entries.indexOf(fieldConfig.comboRightSmoothing).coerceAtLeast(0)
+                    KarooSteppedSlider(
+                        label = "Right Smoothing",
+                        steps = smoothingSteps,
+                        selectedIndex = currentSmoothIdx,
+                        colors = colors,
+                        onStepSelected = { idx ->
+                            val option = SmoothingOption.entries.getOrElse(idx) { SmoothingOption.NONE }
+                            viewModel.updateComboRightSmoothing(typeId, option)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
  * Configuration controls for Special Field combo blocks (corner metric dropdowns and 5/7 zone count selector).
  */
 @Composable
@@ -1681,29 +2142,71 @@ fun FieldCardItem(
                         )
                     }
 
-                    val bitmap = if (field.typeId == "power-combo") {
-                        val pWatts = currentMockVal
-                        val primaryValText = "${pWatts.toInt()}"
-                        val smoothLabel = if (fieldConfig.smoothingOption != SmoothingOption.NONE) fieldConfig.smoothingOption.label else ""
+                    val bitmap = if (field.typeId == "power-combo" || field.typeId == "custom-combo") {
+                        val centerDef = if (field.typeId == "custom-combo") {
+                            KustomFieldCatalog.findByTypeId(fieldConfig.comboCenterMetric) ?: KustomFieldCatalog.POWER
+                        } else {
+                            KustomFieldCatalog.POWER
+                        }
 
-                        val leftDef = KustomFieldCatalog.findByTypeId(fieldConfig.comboLeftMetric) ?: KustomFieldCatalog.AVG_POWER
-                        val rightDef = KustomFieldCatalog.findByTypeId(fieldConfig.comboRightMetric) ?: KustomFieldCatalog.NP
+                        val centerVal = centerDef.mockValues.getOrElse(mockStepIndex) { centerDef.mockValues.first() }
+                        val primaryValText = centerDef.formatNumericValueOnly(centerVal)
+                        val dynamicCenterLabel = centerDef.resolveDynamicLabel(fieldConfig.smoothingOption)
+
+                        val leftDef = KustomFieldCatalog.findByTypeId(fieldConfig.comboLeftMetric) ?: KustomFieldCatalog.NP
+                        val rightDef = KustomFieldCatalog.findByTypeId(fieldConfig.comboRightMetric) ?: KustomFieldCatalog.MAX_POWER
+
+                        val leftMock = leftDef.mockValues.firstOrNull() ?: (centerVal * 0.95)
+                        val rightMock = rightDef.mockValues.firstOrNull() ?: (centerVal * 1.05)
+
+                        val comboMappedColor = if (centerDef.supportsZones) {
+                            when (centerDef.typeId) {
+                                "power", "power-combo", "custom-combo", "np", "avg-power", "max-power", "percent-ftp" -> KustomColorGradeMapper.getPowerZoneColor(centerVal, null, fieldConfig.colorMode, palette = activePalette)
+                                "hr", "avg-hr", "max-hr", "percent-max-hr" -> KustomColorGradeMapper.getHeartRateZoneColor(centerVal, null, fieldConfig.colorMode, palette = activePalette)
+                                "grade" -> KustomColorGradeMapper.getGradeColor(centerVal, fieldConfig.colorMode)
+                                else -> null
+                            }
+                        } else null
+
+                        val leftZoneFormat = fieldConfig.comboLeftZoneFormat
+                        val leftMappedColor = if (leftDef.supportsZones && leftZoneFormat != ZoneFormat.NONE) {
+                            when (leftDef.typeId) {
+                                "power", "power-combo", "custom-combo", "np", "avg-power", "max-power", "percent-ftp" -> KustomColorGradeMapper.getPowerZoneColor(leftMock, null, leftZoneFormat.toColorMode(), palette = activePalette)
+                                "hr", "avg-hr", "max-hr", "percent-max-hr" -> KustomColorGradeMapper.getHeartRateZoneColor(leftMock, null, leftZoneFormat.toColorMode(), palette = activePalette)
+                                "grade" -> KustomColorGradeMapper.getGradeColor(leftMock, leftZoneFormat.toColorMode())
+                                else -> null
+                            }
+                        } else null
+
+                        val rightZoneFormat = fieldConfig.comboRightZoneFormat
+                        val rightMappedColor = if (rightDef.supportsZones && rightZoneFormat != ZoneFormat.NONE) {
+                            when (rightDef.typeId) {
+                                "power", "power-combo", "custom-combo", "np", "avg-power", "max-power", "percent-ftp" -> KustomColorGradeMapper.getPowerZoneColor(rightMock, null, rightZoneFormat.toColorMode(), palette = activePalette)
+                                "hr", "avg-hr", "max-hr", "percent-max-hr" -> KustomColorGradeMapper.getHeartRateZoneColor(rightMock, null, rightZoneFormat.toColorMode(), palette = activePalette)
+                                "grade" -> KustomColorGradeMapper.getGradeColor(rightMock, rightZoneFormat.toColorMode())
+                                else -> null
+                            }
+                        } else null
 
                         KustomFieldRenderer.renderComboBlock(
                             context = context,
                             config = previewViewConfig,
-                            label = dynamicLabel,
+                            label = dynamicCenterLabel,
                             primaryValueText = primaryValText,
-                            smoothingLabel = smoothLabel,
+                            smoothingLabel = "",
                             leftLabel = if (fieldConfig.comboLeftMetric == "none") "" else leftDef.childTitle,
-                            leftValueText = if (fieldConfig.comboLeftMetric == "none") "" else leftDef.formatNumericValueOnly(pWatts * 0.95),
+                            leftValueText = if (fieldConfig.comboLeftMetric == "none") "" else leftDef.formatNumericValueOnly(leftMock),
                             rightLabel = if (fieldConfig.comboRightMetric == "none") "" else rightDef.childTitle,
-                            rightValueText = if (fieldConfig.comboRightMetric == "none") "" else rightDef.formatNumericValueOnly(pWatts * 1.03),
-                            powerValueWatts = pWatts,
+                            rightValueText = if (fieldConfig.comboRightMetric == "none") "" else rightDef.formatNumericValueOnly(rightMock),
+                            powerValueWatts = centerVal,
                             ftpWatts = 250.0,
                             zoneCount = settings.globalColors.globalPowerZoneCount,
-                            zoneFormat = fieldConfig.zoneFormat,
-                            mappedColor = mappedColor,
+                            zoneFormat = if (centerDef.supportsZones) fieldConfig.zoneFormat else ZoneFormat.NONE,
+                            mappedColor = comboMappedColor,
+                            leftZoneFormat = leftZoneFormat,
+                            leftMappedColor = leftMappedColor,
+                            rightZoneFormat = rightZoneFormat,
+                            rightMappedColor = rightMappedColor,
                             labelTypography = TypographyConfig(
                                 font = globalTypography.fontFamily,
                                 fontWeight = globalTypography.labelWeight,
@@ -1771,7 +2274,14 @@ fun FieldCardItem(
             }
 
             // Controls Below
-            if (field.category == FieldCategory.SPECIAL) {
+            if (field.typeId == "custom-combo") {
+                UniversalFieldComboControls(
+                    fieldConfig = fieldConfig,
+                    colors = colors,
+                    viewModel = viewModel,
+                    typeId = field.typeId,
+                )
+            } else if (field.category == FieldCategory.SPECIAL) {
                 SpecialFieldComboControls(
                     fieldConfig = fieldConfig,
                     colors = colors,
@@ -1780,8 +2290,8 @@ fun FieldCardItem(
                 )
             }
 
-            // Controls Below
-            if (field.supportsSmoothing) {
+            // Controls Below (For standard fields, not for 3-in-1 custom-combo which has per-slot smoothing)
+            if (field.supportsSmoothing && field.typeId != "custom-combo") {
                 val smoothingSteps = listOf("0s", "3s", "5s", "10s", "30s")
                 val currentSmoothIdx = SmoothingOption.entries.indexOf(fieldConfig.smoothingOption).coerceAtLeast(0)
                 KarooSteppedSlider(
@@ -1796,7 +2306,8 @@ fun FieldCardItem(
                 )
             }
 
-            if (field.supportsZones) {
+            // Zone Color Controls (For standard fields and power-combo, NOT for custom-combo which has per-slot zone formatting)
+            if (field.supportsZones && field.typeId != "custom-combo") {
                 KarooSegmentedPill(
                     selectedZoneFormat = fieldConfig.zoneFormat,
                     colors = colors,

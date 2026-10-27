@@ -219,6 +219,21 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /** Updates center primary metric for universal 3-in-1 combo fields. */
+    fun updateComboCenterMetric(typeId: String, metric: String) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        updatedConfigs[typeId] = currentConfig.copy(comboCenterMetric = metric)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateComboCenterMetric(typeId, metric)
+        }
+    }
+
     /** Updates top-left corner metric for combo block fields. */
     fun updateComboLeftMetric(typeId: String, metric: String) {
         val current = _settingsState.value
@@ -231,6 +246,66 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
         saveFieldJobs[typeId] = viewModelScope.launch {
             delay(300L)
             repository.updateComboLeftMetric(typeId, metric)
+        }
+    }
+
+    /** Updates independent rolling smoothing duration for left corner metric. */
+    fun updateComboLeftSmoothing(typeId: String, smoothing: SmoothingOption) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        updatedConfigs[typeId] = currentConfig.copy(comboLeftSmoothing = smoothing)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateComboLeftSmoothing(typeId, smoothing)
+        }
+    }
+
+    /** Updates independent rolling smoothing duration for right corner metric. */
+    fun updateComboRightSmoothing(typeId: String, smoothing: SmoothingOption) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        updatedConfigs[typeId] = currentConfig.copy(comboRightSmoothing = smoothing)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateComboRightSmoothing(typeId, smoothing)
+        }
+    }
+
+    /** Updates independent zone format for left corner metric. */
+    fun updateComboLeftZoneFormat(typeId: String, zoneFormat: ZoneFormat) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        updatedConfigs[typeId] = currentConfig.copy(comboLeftZoneFormat = zoneFormat)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateComboLeftZoneFormat(typeId, zoneFormat)
+        }
+    }
+
+    /** Updates independent zone format for right corner metric. */
+    fun updateComboRightZoneFormat(typeId: String, zoneFormat: ZoneFormat) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        updatedConfigs[typeId] = currentConfig.copy(comboRightZoneFormat = zoneFormat)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateComboRightZoneFormat(typeId, zoneFormat)
         }
     }
 

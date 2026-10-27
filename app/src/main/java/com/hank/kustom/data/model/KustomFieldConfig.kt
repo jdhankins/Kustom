@@ -6,16 +6,26 @@ package com.hank.kustom.data.model
  * @property smoothingOption Selected rolling smoothing duration ([SmoothingOption]).
  * @property zoneFormat Selected zone color formatting mode ([ZoneFormat]).
  * @property showUnit Whether unit label verbiage is enabled.
+ * @property comboCenterMetric Center primary metric identifier for universal 3-in-1 combo fields.
  * @property comboLeftMetric Top-left corner metric identifier for combo block fields.
  * @property comboRightMetric Top-right corner metric identifier for combo block fields.
+ * @property comboLeftSmoothing Independent rolling smoothing duration for left corner metric.
+ * @property comboRightSmoothing Independent rolling smoothing duration for right corner metric.
+ * @property comboLeftZoneFormat Independent zone color format for left corner metric.
+ * @property comboRightZoneFormat Independent zone color format for right corner metric.
  * @property comboZoneCount Zone bar count (5 or 7 zones) for combo block fields.
  */
 data class KustomFieldConfig(
     val smoothingOption: SmoothingOption = SmoothingOption.THREE_SEC,
     val zoneFormat: ZoneFormat = ZoneFormat.BAR,
     val showUnit: Boolean = true,
+    val comboCenterMetric: String = "power",
     val comboLeftMetric: String = "np",
     val comboRightMetric: String = "max-power",
+    val comboLeftSmoothing: SmoothingOption = SmoothingOption.NONE,
+    val comboRightSmoothing: SmoothingOption = SmoothingOption.NONE,
+    val comboLeftZoneFormat: ZoneFormat = ZoneFormat.NONE,
+    val comboRightZoneFormat: ZoneFormat = ZoneFormat.NONE,
     val comboZoneCount: Int = 7,
 ) {
     val colorMode: ColorMode

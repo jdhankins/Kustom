@@ -220,6 +220,10 @@ object KustomFieldRenderer {
         zoneCount: Int = 7,
         zoneFormat: ZoneFormat = ZoneFormat.BAR,
         mappedColor: Int? = null,
+        leftZoneFormat: ZoneFormat = ZoneFormat.NONE,
+        leftMappedColor: Int? = null,
+        rightZoneFormat: ZoneFormat = ZoneFormat.NONE,
+        rightMappedColor: Int? = null,
         labelTypography: TypographyConfig,
         valueTypography: TypographyConfig,
         isDarkTheme: Boolean = false,
@@ -251,13 +255,13 @@ object KustomFieldRenderer {
                 else -> defaultTextColor
             }
 
-            // Corner values color: stays defaultTextColor in TEXT mode, and contrasting text in FILL mode
-            val cornerValueColor: Int = when {
+            // Corner default values color
+            val defaultCornerValueColor: Int = when {
                 zoneFormat == ZoneFormat.BACKGROUND && activeZoneColor != null -> KustomColorGradeMapper.getContrastingTextColor(activeZoneColor)
                 else -> defaultTextColor
             }
 
-            val mutedTextColor = if (zoneFormat == ZoneFormat.BACKGROUND && activeZoneColor != null) cornerValueColor else defaultTextColor
+            val mutedTextColor = if (zoneFormat == ZoneFormat.BACKGROUND && activeZoneColor != null) defaultCornerValueColor else defaultTextColor
 
             // Draw Background (Identical fill logic to standard fields with 1.5px inset)
             if (config.boundariesEnabled) {
@@ -315,40 +319,109 @@ object KustomFieldRenderer {
             canvas.drawText(primaryLabelText, width / 2f, labelY, centerLabelPaint)
 
             // 1. Top-Left Corner Metric
-            val cornerLabelPaint = TextPaint().apply {
-                color = mutedTextColor
-                textAlign = Paint.Align.LEFT
-                textSize = cornerLabelSize
-            }
-            KustomTypefaceResolver.applyTypography(cornerLabelPaint, labelTypography.font, 700, cornerLabelSize)
-
-            val cornerValuePaint = TextPaint().apply {
-                color = cornerValueColor
-                textAlign = Paint.Align.LEFT
-                textSize = cornerValueSize
-            }
-            KustomTypefaceResolver.applyTypography(cornerValuePaint, valueTypography.font, valueTypography.fontWeight, cornerValueSize)
-
             var leftMaxX = marginX
             if (cleanLeft.isNotEmpty()) {
-                canvas.drawText(cleanLeft, marginX, labelY, cornerLabelPaint)
-                canvas.drawText(leftValueText, marginX, labelY + height * 0.28f, cornerValuePaint)
-                val w1 = cornerLabelPaint.measureText(cleanLeft)
-                val w2 = cornerValuePaint.measureText(leftValueText)
-                leftMaxX = marginX + maxOf(w1, w2)
+                val leftValColor = when {
+                    leftZoneFormat == ZoneFormat.TEXT && leftMappedColor != null -> leftMappedColor
+                    leftZoneFormat == ZoneFormat.BACKGROUND && leftMappedColor != null -> KustomColorGradeMapper.getContrastingTextColor(leftMappedColor)
+                    else -> defaultCornerValueColor
+                }
+
+                val leftLabelColor = if (leftZoneFormat == ZoneFormat.BACKGROUND && leftMappedColor != null) {
+                    leftValColor
+                } else {
+                    mutedTextColor
+                }
+
+                val leftCornerLabelPaint = TextPaint().apply {
+                    color = leftLabelColor
+                    textAlign = Paint.Align.LEFT
+                    textSize = cornerLabelSize
+                }
+                KustomTypefaceResolver.applyTypography(leftCornerLabelPaint, labelTypography.font, 700, cornerLabelSize)
+
+                val leftCornerValuePaint = TextPaint().apply {
+                    color = leftValColor
+                    textAlign = Paint.Align.LEFT
+                    textSize = cornerValueSize
+                }
+                KustomTypefaceResolver.applyTypography(leftCornerValuePaint, valueTypography.font, valueTypography.fontWeight, cornerValueSize)
+
+                val w1 = leftCornerLabelPaint.measureText(cleanLeft)
+                val w2 = leftCornerValuePaint.measureText(leftValueText)
+                val lWidth = maxOf(w1, w2)
+
+                // Fill mode: draw compact rounded pill behind corner metric
+                if (leftZoneFormat == ZoneFormat.BACKGROUND && leftMappedColor != null) {
+                    val lPillRect = RectF(
+                        marginX - width * 0.015f,
+                        topY + height * 0.02f,
+                        marginX + lWidth + width * 0.025f,
+                        labelY + height * 0.30f
+                    )
+                    val lPillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = leftMappedColor
+                        style = Paint.Style.FILL
+                    }
+                    canvas.drawRoundRect(lPillRect, 8f, 8f, lPillPaint)
+                }
+
+                canvas.drawText(cleanLeft, marginX, labelY, leftCornerLabelPaint)
+                canvas.drawText(leftValueText, marginX, labelY + height * 0.28f, leftCornerValuePaint)
+                leftMaxX = marginX + lWidth
             }
 
             // 2. Top-Right Corner Metric
-            val rightLabelPaint = TextPaint(cornerLabelPaint).apply { textAlign = Paint.Align.RIGHT }
-            val rightValuePaint = TextPaint(cornerValuePaint).apply { textAlign = Paint.Align.RIGHT }
-
             var rightMinX = width - marginX
             if (cleanRight.isNotEmpty()) {
-                canvas.drawText(cleanRight, width - marginX, labelY, rightLabelPaint)
-                canvas.drawText(rightValueText, width - marginX, labelY + height * 0.28f, rightValuePaint)
-                val w1 = rightLabelPaint.measureText(cleanRight)
-                val w2 = rightValuePaint.measureText(rightValueText)
-                rightMinX = width - marginX - maxOf(w1, w2)
+                val rightValColor = when {
+                    rightZoneFormat == ZoneFormat.TEXT && rightMappedColor != null -> rightMappedColor
+                    rightZoneFormat == ZoneFormat.BACKGROUND && rightMappedColor != null -> KustomColorGradeMapper.getContrastingTextColor(rightMappedColor)
+                    else -> defaultCornerValueColor
+                }
+
+                val rightLabelColor = if (rightZoneFormat == ZoneFormat.BACKGROUND && rightMappedColor != null) {
+                    rightValColor
+                } else {
+                    mutedTextColor
+                }
+
+                val rightCornerLabelPaint = TextPaint().apply {
+                    color = rightLabelColor
+                    textAlign = Paint.Align.RIGHT
+                    textSize = cornerLabelSize
+                }
+                KustomTypefaceResolver.applyTypography(rightCornerLabelPaint, labelTypography.font, 700, cornerLabelSize)
+
+                val rightCornerValuePaint = TextPaint().apply {
+                    color = rightValColor
+                    textAlign = Paint.Align.RIGHT
+                    textSize = cornerValueSize
+                }
+                KustomTypefaceResolver.applyTypography(rightCornerValuePaint, valueTypography.font, valueTypography.fontWeight, cornerValueSize)
+
+                val w1 = rightCornerLabelPaint.measureText(cleanRight)
+                val w2 = rightCornerValuePaint.measureText(rightValueText)
+                val rWidth = maxOf(w1, w2)
+
+                // Fill mode: draw compact rounded pill behind corner metric
+                if (rightZoneFormat == ZoneFormat.BACKGROUND && rightMappedColor != null) {
+                    val rPillRect = RectF(
+                        width - marginX - rWidth - width * 0.025f,
+                        topY + height * 0.02f,
+                        width - marginX + width * 0.015f,
+                        labelY + height * 0.30f
+                    )
+                    val rPillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = rightMappedColor
+                        style = Paint.Style.FILL
+                    }
+                    canvas.drawRoundRect(rPillRect, 8f, 8f, rPillPaint)
+                }
+
+                canvas.drawText(cleanRight, width - marginX, labelY, rightCornerLabelPaint)
+                canvas.drawText(rightValueText, width - marginX, labelY + height * 0.28f, rightCornerValuePaint)
+                rightMinX = width - marginX - rWidth
             }
 
             // 3. Center Primary Power Metric
