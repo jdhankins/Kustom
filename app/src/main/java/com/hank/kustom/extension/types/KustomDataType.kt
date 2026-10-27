@@ -34,12 +34,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
 /**
- * Unified [DataTypeImpl] supporting both Page Design / Idle mock animations and active in-ride telemetry.
+ * Unified [DataTypeImpl] supporting both Page Design / Idle mock animations and active in-ride telemetry with multi-stream corner metrics.
  */
 class KustomDataType(
     val definition: KustomFieldDefinition,
@@ -67,6 +68,9 @@ class KustomDataType(
 
         val job = CoroutineScope(Dispatchers.Default).launch {
             var gradeSmoother = RollingTimeSmoother(3)
+            var centerGradeSmoother = RollingTimeSmoother(3)
+            var leftGradeSmoother = RollingTimeSmoother(3)
+            var rightGradeSmoother = RollingTimeSmoother(3)
             var lastSmoothingSec = -1
 
             combine(
@@ -79,6 +83,9 @@ class KustomDataType(
                 val fieldConfig = settings.getFieldConfig(definition.typeId)
                 val isInRide = rideState is RideState.Recording || rideState is RideState.Paused
                 val isMockMode = config.preview && !isInRide
+
+                val customComboInst = settings.customComboInstances.firstOrNull { it.id == definition.typeId }
+                val isComboBlock = customComboInst != null || definition.typeId.startsWith("combo-block-") || definition.typeId == "power-combo" || definition.typeId == "custom-combo"
 
                 if (isMockMode) {
                     // Page Setup / Profile Design Mode Only (when not in ride): Loop animated mock values
@@ -110,6 +117,47 @@ class KustomDataType(
                             delay(1200L)
                         }
                     }
+                } else if (isComboBlock) {
+                    // 3-in-1 Combo Block Mode: Concurrently stream live telemetry for Center, Left, and Right metrics
+                    val resolvedConfig = if (customComboInst != null) {
+                        KustomFieldConfig(
+                            smoothingOption = customComboInst.centerSmoothing,
+                            zoneFormat = customComboInst.centerZoneFormat,
+                            comboCenterMetric = customComboInst.centerMetric,
+                            comboLeftMetric = customComboInst.leftMetric,
+                            comboRightMetric = customComboInst.rightMetric,
+                            comboLeftSmoothing = customComboInst.leftSmoothing,
+                            comboRightSmoothing = customComboInst.rightSmoothing,
+                            comboLeftZoneFormat = customComboInst.leftZoneFormat,
+                            comboRightZoneFormat = customComboInst.rightZoneFormat,
+                        )
+                    } else {
+                        fieldConfig
+                    }
+
+                    val centerDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboCenterMetric) ?: KustomFieldCatalog.POWER
+                    val leftDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboLeftMetric) ?: KustomFieldCatalog.NP
+                    val rightDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboRightMetric) ?: KustomFieldCatalog.MAX_POWER
+
+                    val centerSdkId = centerDef.resolveSdkDataTypeId(resolvedConfig.smoothingOption)
+                    val leftSdkId = leftDef.resolveSdkDataTypeId(resolvedConfig.comboLeftSmoothing)
+                    val rightSdkId = rightDef.resolveSdkDataTypeId(resolvedConfig.comboRightSmoothing)
+
+                    val centerFlow = karooSystemRepository.streamDataFlow(centerSdkId)
+                    val leftFlow = if (resolvedConfig.comboLeftMetric == "none") flowOf(StreamState.NotAvailable) else karooSystemRepository.streamDataFlow(leftSdkId)
+                    val rightFlow = if (resolvedConfig.comboRightMetric == "none") flowOf(StreamState.NotAvailable) else karooSystemRepository.streamDataFlow(rightSdkId)
+
+                    combine(centerFlow, leftFlow, rightFlow) { centerState, leftState, rightState ->
+                        RenderPayload(
+                            streamState = centerState,
+                            leftStreamState = leftState,
+                            rightStreamState = rightState,
+                            userProfile = userProfile,
+                            settings = settings,
+                            fieldConfig = resolvedConfig,
+                            isMock = false,
+                        )
+                    }
                 } else if (definition.typeId == "workout-target-power") {
                     // Workout Power: Stream live current power AND live workout target streams
                     val sdkTypeId = definition.resolveSdkDataTypeId(fieldConfig.smoothingOption)
@@ -131,7 +179,7 @@ class KustomDataType(
                         )
                     }
                 } else {
-                    // Active Ride Page Mode: Stream live sensor telemetry states from Karoo OS
+                    // Active Ride Page Mode: Stream live sensor telemetry states from Karoo OS for standard single-metric fields
                     val sdkTypeId = definition.resolveSdkDataTypeId(fieldConfig.smoothingOption)
                     karooSystemRepository.streamDataFlow(sdkTypeId).map { streamState ->
                         RenderPayload(
@@ -144,11 +192,14 @@ class KustomDataType(
                     }
                 }
             }.collect { payload ->
-                val (streamState, userProfile, settings, fieldConfig, isMock, mockValue, targetDataPoint) = payload
+                val (streamState, leftStreamState, rightStreamState, userProfile, settings, fieldConfig, isMock, mockValue, targetDataPoint) = payload
 
                 if (fieldConfig.smoothingOption.seconds != lastSmoothingSec) {
                     lastSmoothingSec = fieldConfig.smoothingOption.seconds
                     gradeSmoother = RollingTimeSmoother(lastSmoothingSec)
+                    centerGradeSmoother = RollingTimeSmoother(lastSmoothingSec)
+                    leftGradeSmoother = RollingTimeSmoother(fieldConfig.comboLeftSmoothing.seconds)
+                    rightGradeSmoother = RollingTimeSmoother(fieldConfig.comboRightSmoothing.seconds)
                 }
 
                 val isImperial = userProfile?.preferredUnit?.distance == UserProfile.PreferredUnit.UnitType.IMPERIAL
@@ -221,8 +272,9 @@ class KustomDataType(
                 val isDarkTheme = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
 
                 val customComboInst = settings.customComboInstances.firstOrNull { it.id == definition.typeId }
+                val isComboBlock = customComboInst != null || definition.typeId.startsWith("combo-block-") || definition.typeId == "power-combo" || definition.typeId == "custom-combo"
 
-                val bitmap = if (definition.typeId == "power-combo" || definition.typeId == "custom-combo" || customComboInst != null) {
+                val bitmap = if (isComboBlock) {
                     val resolvedConfig = if (customComboInst != null) {
                         KustomFieldConfig(
                             smoothingOption = customComboInst.centerSmoothing,
@@ -243,23 +295,44 @@ class KustomDataType(
                     val leftDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboLeftMetric) ?: KustomFieldCatalog.NP
                     val rightDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboRightMetric) ?: KustomFieldCatalog.MAX_POWER
 
-                    // Real live stream value or mock value ONLY if isMock
+                    // Real live multi-stream values for Center, Left, and Right slots
                     val centerVal: Double? = if (isMock) {
                         centerDef.mockValues.first()
+                    } else if (streamState is StreamState.Streaming) {
+                        val rawVal = streamState.dataPoint.singleValue
+                        if (rawVal != null && centerDef.typeId == "grade") {
+                            centerGradeSmoother.addSample(rawVal)
+                        } else {
+                            rawVal
+                        }
                     } else {
-                        dynamicValue
+                        null
                     }
 
                     val leftVal: Double? = if (isMock) {
                         leftDef.mockValues.firstOrNull() ?: 203.0
+                    } else if (leftStreamState is StreamState.Streaming) {
+                        val rawVal = leftStreamState.dataPoint.singleValue
+                        if (rawVal != null && leftDef.typeId == "grade") {
+                            leftGradeSmoother.addSample(rawVal)
+                        } else {
+                            rawVal
+                        }
                     } else {
-                        if (leftDef.typeId == centerDef.typeId) dynamicValue else null
+                        null
                     }
 
                     val rightVal: Double? = if (isMock) {
                         rightDef.mockValues.firstOrNull() ?: 224.0
+                    } else if (rightStreamState is StreamState.Streaming) {
+                        val rawVal = rightStreamState.dataPoint.singleValue
+                        if (rawVal != null && rightDef.typeId == "grade") {
+                            rightGradeSmoother.addSample(rawVal)
+                        } else {
+                            rawVal
+                        }
                     } else {
-                        if (rightDef.typeId == centerDef.typeId) dynamicValue else null
+                        null
                     }
 
                     val primaryValText = if (centerVal == null) {
@@ -391,6 +464,8 @@ class KustomDataType(
 
     private data class RenderPayload(
         val streamState: StreamState?,
+        val leftStreamState: StreamState? = null,
+        val rightStreamState: StreamState? = null,
         val userProfile: UserProfile?,
         val settings: KustomSettings,
         val fieldConfig: KustomFieldConfig,
