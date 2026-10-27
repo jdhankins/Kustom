@@ -133,6 +133,19 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /** Updates global default power zone count (7 or 5 zones). */
+    fun updateGlobalPowerZoneCount(count: Int) {
+        val current = _settingsState.value
+        val updatedColors = current.globalColors.copy(globalPowerZoneCount = count)
+        _settingsState.value = current.copy(globalColors = updatedColors)
+
+        saveTypographyJob?.cancel()
+        saveTypographyJob = viewModelScope.launch {
+            delay(300L)
+            repository.updateGlobalPowerZoneCount(count)
+        }
+    }
+
     /** Updates whether custom field background color is enabled. */
     fun updateUseCustomBg(enabled: Boolean) {
         val current = _settingsState.value

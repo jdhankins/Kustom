@@ -573,6 +573,113 @@ fun KustomHelpDialog(
 }
 
 /**
+ * Detailed 7-Zone vs 5-Zone Power & HR training guide popup dialog.
+ */
+@Composable
+fun ZoneHelpDialog(
+    colors: KustomColorScheme,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = colors.cardBg,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = com.hank.kustom.R.drawable.ic_category_power),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = colors.accent,
+                )
+                Text(
+                    text = "Power & HR Zone Guide",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.textPrimary,
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 320.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = "Understanding 7-Zone vs 5-Zone models for Power & Heart Rate training on your bike computer:",
+                    fontSize = 13.sp,
+                    color = colors.textSecondary,
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "7-Zone Power Model (Default)",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.textPrimary,
+                    )
+                    Text(
+                        text = "Based on Dr. Andrew Coggan's training model used across Garmin, Wahoo, Karoo, TrainingPeaks, and Strava:\n• Z1 Active Recovery (<55% FTP)\n• Z2 Endurance (55-75% FTP)\n• Z3 Tempo (76-90% FTP)\n• Z4 Threshold (91-105% FTP)\n• Z5 VO2 Max (106-120% FTP)\n• Z6 Anaerobic (121-150% FTP)\n• Z7 Neuromuscular (>150% FTP)",
+                        fontSize = 12.sp,
+                        color = colors.textSecondary,
+                        lineHeight = 16.sp,
+                    )
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "5-Zone Power Model",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.textPrimary,
+                    )
+                    Text(
+                        text = "Used by simplified training systems (e.g. British Cycling / Joe Friel) to combine high-intensity VO2/Anaerobic efforts into a 5-zone structure:\n• Z1 Recovery (<60% FTP)\n• Z2 Endurance (60-75% FTP)\n• Z3 Tempo (76-90% FTP)\n• Z4 Threshold (91-105% FTP)\n• Z5 Max Effort (>105% FTP)",
+                        fontSize = 12.sp,
+                        color = colors.textSecondary,
+                        lineHeight = 16.sp,
+                    )
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "Heart Rate Zones (5-Zone Standard)",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.textPrimary,
+                    )
+                    Text(
+                        text = "Heart rate training is universally 5 zones across all devices (Z1 Easy, Z2 Fat Burn, Z3 Aerobic, Z4 Threshold, Z5 Redline).\n\nFTP & Max HR thresholds synchronize automatically from your Karoo Rider Profile.",
+                        fontSize = 12.sp,
+                        color = colors.textSecondary,
+                        lineHeight = 16.sp,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Box(
+                modifier = Modifier
+                    .clickable { onDismiss() }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = "GOT IT",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.accent,
+                )
+            }
+        },
+    )
+}
+
+/**
  * Global typography settings tab containing font family dropdown and typography sliders.
  */
 @Composable
@@ -584,8 +691,17 @@ fun GlobalFontsTab(
     val global = settings.globalTypography
     var isTypographyExpanded by remember { mutableStateOf(false) }
     var isFieldBackgroundExpanded by remember { mutableStateOf(false) }
+    var isZoneExpanded by remember { mutableStateOf(false) }
     var showLightColorDialog by remember { mutableStateOf(false) }
     var showDarkColorDialog by remember { mutableStateOf(false) }
+    var showZoneHelpDialog by remember { mutableStateOf(false) }
+
+    if (showZoneHelpDialog) {
+        ZoneHelpDialog(
+            colors = colors,
+            onDismiss = { showZoneHelpDialog = false },
+        )
+    }
 
     if (showLightColorDialog) {
         FieldBackgroundColorDialog(
@@ -888,6 +1004,198 @@ fun GlobalFontsTab(
             }
         }
 
+        // --- ACCORDION 3: ZONE ---
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = colors.cardBg),
+                shape = RoundedCornerShape(10.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isZoneExpanded = !isZoneExpanded }
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(id = com.hank.kustom.R.drawable.ic_category_power),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = colors.textPrimary,
+                            )
+                            Text(
+                                text = "ZONE",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = colors.textPrimary,
+                            )
+                        }
+
+                        Text(
+                            text = if (isZoneExpanded) "▼" else "◀",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textPrimary,
+                        )
+                    }
+
+                    AnimatedVisibility(visible = isZoneExpanded) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp, bottom = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "GLOBAL POWER ZONE MODEL",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colors.headerText,
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clip(CircleShape)
+                                        .background(colors.trackBg)
+                                        .border(BorderStroke(1.dp, colors.border), CircleShape)
+                                        .clickable { showZoneHelpDialog = true },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text = "?",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colors.textPrimary,
+                                    )
+                                }
+                            }
+
+                            val globalZoneCount = settings.globalColors.globalPowerZoneCount
+
+                            // 5 Zones vs 7 Zones Selector Pill
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(42.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(colors.trackBg)
+                                    .border(1.dp, colors.border, RoundedCornerShape(50))
+                                    .padding(3.dp),
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    val activeBg = Color(0xFF00C4B4)
+
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                            .clip(RoundedCornerShape(50))
+                                            .background(if (globalZoneCount == 7) activeBg else Color.Transparent)
+                                            .clickable { viewModel.updateGlobalPowerZoneCount(7) },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = "7 Zones",
+                                            fontSize = 13.sp,
+                                            fontWeight = if (globalZoneCount == 7) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (globalZoneCount == 7) Color.White else colors.textSecondary,
+                                        )
+                                    }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                            .clip(RoundedCornerShape(50))
+                                            .background(if (globalZoneCount == 5) activeBg else Color.Transparent)
+                                            .clickable { viewModel.updateGlobalPowerZoneCount(5) },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = "5 Zones",
+                                            fontSize = 13.sp,
+                                            fontWeight = if (globalZoneCount == 5) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (globalZoneCount == 5) Color.White else colors.textSecondary,
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Dynamic Live Swatch Preview (5 or 7 swatches)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(28.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(colors.trackBg)
+                                    .padding(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                            ) {
+                                val paletteColors = if (globalZoneCount == 5) {
+                                    listOf(
+                                        Color(0xFF718096), Color(0xFF2B6CB0), Color(0xFF2F855A),
+                                        Color(0xFFDD6B20), Color(0xFFE53E3E)
+                                    )
+                                } else {
+                                    listOf(
+                                        Color(0xFF718096), Color(0xFF2B6CB0), Color(0xFF2F855A),
+                                        Color(0xFFD69E2E), Color(0xFFDD6B20), Color(0xFFE53E3E), Color(0xFF805AD5)
+                                    )
+                                }
+                                paletteColors.forEach { zoneCol ->
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(zoneCol),
+                                    )
+                                }
+                            }
+
+                            // Zone Info Banner
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(colors.trackBg)
+                                    .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(8.dp))
+                                    .padding(10.dp),
+                            ) {
+                                Text(
+                                    text = "⚡ Zone thresholds (FTP & Max HR) are automatically synchronized in real-time from your Hammerhead Karoo Rider Profile.",
+                                    fontSize = 12.sp,
+                                    color = colors.textSecondary,
+                                    lineHeight = 16.sp,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Bottom padding to ensure bottom slider is never clipped at screen edge
         item {
             Spacer(modifier = Modifier.height(36.dp))
@@ -1020,7 +1328,7 @@ fun SpecialFieldComboControls(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             var leftExpanded by remember { mutableStateOf(false) }
-            val currentLeftLabel = options.firstOrNull { it.first == fieldConfig.comboLeftMetric }?.second ?: "Avg Power"
+            val currentLeftLabel = options.firstOrNull { it.first == fieldConfig.comboLeftMetric }?.second ?: "NP"
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -1075,7 +1383,7 @@ fun SpecialFieldComboControls(
             }
 
             var rightExpanded by remember { mutableStateOf(false) }
-            val currentRightLabel = options.firstOrNull { it.first == fieldConfig.comboRightMetric }?.second ?: "NP"
+            val currentRightLabel = options.firstOrNull { it.first == fieldConfig.comboRightMetric }?.second ?: "Max Power"
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -1128,86 +1436,6 @@ fun SpecialFieldComboControls(
                     }
                 }
             }
-        }
-
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = "ZONE BAR COUNT",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.headerText,
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(42.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(colors.trackBg)
-                    .border(1.dp, colors.border, RoundedCornerShape(50))
-                    .padding(3.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    val activeBg = Color(0xFF00C4B4)
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .clip(RoundedCornerShape(50))
-                            .background(if (fieldConfig.comboZoneCount == 5) activeBg else Color.Transparent)
-                            .clickable { viewModel.updateComboZoneCount(typeId, 5) },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "5 Zones",
-                            fontSize = 13.sp,
-                            fontWeight = if (fieldConfig.comboZoneCount == 5) FontWeight.Bold else FontWeight.Medium,
-                            color = if (fieldConfig.comboZoneCount == 5) Color.White else colors.textSecondary,
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .clip(RoundedCornerShape(50))
-                            .background(if (fieldConfig.comboZoneCount == 7) activeBg else Color.Transparent)
-                            .clickable { viewModel.updateComboZoneCount(typeId, 7) },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "7 Zones",
-                            fontSize = 13.sp,
-                            fontWeight = if (fieldConfig.comboZoneCount == 7) FontWeight.Bold else FontWeight.Medium,
-                            color = if (fieldConfig.comboZoneCount == 7) Color.White else colors.textSecondary,
-                        )
-                    }
-                }
-            }
-        }
-
-        // Recommendation Notice Disclaimer Box
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(colors.trackBg)
-                .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(8.dp))
-                .padding(10.dp),
-        ) {
-            Text(
-                text = "💡 Best Results: This composite block is designed to fill a full-width row on your Karoo ride screen.",
-                fontSize = 12.sp,
-                color = colors.textSecondary,
-                lineHeight = 16.sp,
-            )
         }
     }
 }
@@ -1425,7 +1653,7 @@ fun FieldCardItem(
                             rightValueText = if (fieldConfig.comboRightMetric == "none") "" else rightDef.formatNumericValueOnly(pWatts * 1.03),
                             powerValueWatts = pWatts,
                             ftpWatts = 250.0,
-                            zoneCount = fieldConfig.comboZoneCount,
+                            zoneCount = settings.globalColors.globalPowerZoneCount,
                             zoneFormat = fieldConfig.zoneFormat,
                             mappedColor = mappedColor,
                             labelTypography = TypographyConfig(
@@ -1474,6 +1702,25 @@ fun FieldCardItem(
             }
 
             Spacer(modifier = Modifier.height(2.dp))
+
+            // Recommendation Notice Disclaimer Box directly under the field preview
+            if (isFullWidthPreview) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(colors.trackBg)
+                        .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(8.dp))
+                        .padding(10.dp),
+                ) {
+                    Text(
+                        text = "💡 Best Results: This special field is designed to fill a full-width row on your Karoo ride screen.",
+                        fontSize = 12.sp,
+                        color = colors.textSecondary,
+                        lineHeight = 16.sp,
+                    )
+                }
+            }
 
             // Controls Below
             if (field.category == FieldCategory.SPECIAL) {

@@ -12,10 +12,10 @@ package com.hank.kustom.data.model
  */
 data class KustomFieldConfig(
     val smoothingOption: SmoothingOption = SmoothingOption.THREE_SEC,
-    val zoneFormat: ZoneFormat = ZoneFormat.NONE,
+    val zoneFormat: ZoneFormat = ZoneFormat.BAR,
     val showUnit: Boolean = true,
-    val comboLeftMetric: String = "avg-power",
-    val comboRightMetric: String = "np",
+    val comboLeftMetric: String = "np",
+    val comboRightMetric: String = "max-power",
     val comboZoneCount: Int = 7,
 ) {
     val colorMode: ColorMode

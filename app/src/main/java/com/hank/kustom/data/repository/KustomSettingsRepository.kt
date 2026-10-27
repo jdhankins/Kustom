@@ -58,6 +58,7 @@ class KustomSettingsRepository(context: Context) {
                 lightBgColorHex = prefs[Keys.GLOBAL_LIGHT_BG_COLOR] ?: "#FFFFFF",
                 darkBgColorHex = prefs[Keys.GLOBAL_DARK_BG_COLOR] ?: "#000000",
                 useCustomBg = prefs[Keys.GLOBAL_USE_CUSTOM_BG] ?: false,
+                globalPowerZoneCount = prefs[Keys.GLOBAL_POWER_ZONE_COUNT] ?: 7,
             )
 
             val configs = mutableMapOf<String, KustomFieldConfig>()
@@ -66,13 +67,14 @@ class KustomSettingsRepository(context: Context) {
                 val smoothingSec = prefs[intPreferencesKey("${typeId}_smoothing")] ?: 3
                 val zoneFormatRaw = prefs[stringPreferencesKey("${typeId}_zone_format")]
                 val showUnit = prefs[booleanPreferencesKey("${typeId}_show_unit")] ?: true
-                val leftMetric = prefs[stringPreferencesKey("${typeId}_combo_left")] ?: "avg-power"
-                val rightMetric = prefs[stringPreferencesKey("${typeId}_combo_right")] ?: "np"
+                val defaultZoneFormat = if (typeId == "power-combo") ZoneFormat.BAR else (if (fieldDef.supportsZones) ZoneFormat.BACKGROUND else ZoneFormat.NONE)
+                val leftMetric = prefs[stringPreferencesKey("${typeId}_combo_left")] ?: if (typeId == "power-combo") "np" else "avg-power"
+                val rightMetric = prefs[stringPreferencesKey("${typeId}_combo_right")] ?: if (typeId == "power-combo") "max-power" else "np"
                 val zoneCount = prefs[intPreferencesKey("${typeId}_combo_zones")] ?: 7
 
                 val fieldConfig = KustomFieldConfig(
                     smoothingOption = SmoothingOption.fromSeconds(smoothingSec),
-                    zoneFormat = parseEnum(zoneFormatRaw, if (fieldDef.supportsZones) ZoneFormat.BACKGROUND else ZoneFormat.NONE),
+                    zoneFormat = parseEnum(zoneFormatRaw, defaultZoneFormat),
                     showUnit = showUnit,
                     comboLeftMetric = leftMetric,
                     comboRightMetric = rightMetric,
@@ -237,6 +239,15 @@ class KustomSettingsRepository(context: Context) {
         return runCatching { java.lang.Enum.valueOf(T::class.java, savedString) }.getOrDefault(defaultValue)
     }
 
+    /**
+     * Atomically updates global power zone count (7 or 5 zones) in DataStore.
+     */
+    suspend fun updateGlobalPowerZoneCount(count: Int) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_POWER_ZONE_COUNT] = count
+        }
+    }
+
     private object Keys {
         val GLOBAL_FONT_FAMILY = stringPreferencesKey("global_font_family")
         val GLOBAL_LABEL_SIZE_SP = intPreferencesKey("global_label_size_sp")
@@ -246,5 +257,6 @@ class KustomSettingsRepository(context: Context) {
         val GLOBAL_LIGHT_BG_COLOR = stringPreferencesKey("global_light_bg_color")
         val GLOBAL_DARK_BG_COLOR = stringPreferencesKey("global_dark_bg_color")
         val GLOBAL_USE_CUSTOM_BG = booleanPreferencesKey("global_use_custom_bg")
+        val GLOBAL_POWER_ZONE_COUNT = intPreferencesKey("global_power_zone_count")
     }
 }
