@@ -306,12 +306,13 @@ object KustomFieldRenderer {
             val labelY = labelCenterY - ((labelMetrics.ascent + labelMetrics.descent) / 2f)
 
             // Auto-scale center label if it exceeds center space
-            while (centerLabelPaint.textSize > 10f && centerLabelPaint.measureText("POWER") > width * 0.45f) {
+            val primaryLabelText = label.uppercase()
+            while (centerLabelPaint.textSize > 10f && centerLabelPaint.measureText(primaryLabelText) > width * 0.45f) {
                 centerLabelPaint.textSize -= 1f
             }
 
-            // 0. Top-Center Primary Metric Label ("POWER" - exact same vertical baseline Y as all other fields)
-            canvas.drawText("POWER", width / 2f, labelY, centerLabelPaint)
+            // 0. Top-Center Primary Metric Label (e.g. "3S POWER" - exact same vertical baseline Y as all other fields)
+            canvas.drawText(primaryLabelText, width / 2f, labelY, centerLabelPaint)
 
             // 1. Top-Left Corner Metric
             val cornerLabelPaint = TextPaint().apply {
@@ -351,17 +352,6 @@ object KustomFieldRenderer {
             }
 
             // 3. Center Primary Power Metric
-            val smoothText = smoothingLabel.trim().uppercase()
-            val hasSmooth = smoothText.isNotEmpty() && smoothText != "0S"
-
-            val smoothPaint = TextPaint().apply {
-                color = if (zoneFormat == ZoneFormat.TEXT && activeZoneColor != null) activeZoneColor else (if (isDarkTheme) 0xFFFF5252.toInt() else 0xFFD32F2F.toInt())
-                textAlign = Paint.Align.RIGHT
-            }
-            if (hasSmooth) {
-                KustomTypefaceResolver.applyTypography(smoothPaint, labelTypography.font, 700, height * 0.15f)
-            }
-
             val isBarMode = zoneFormat == ZoneFormat.BAR
             val centerValuePaint = TextPaint().apply {
                 color = primaryValueColor
@@ -378,19 +368,13 @@ object KustomFieldRenderer {
                 val baseClearanceRadius = (minOf(leftGap, rightGap) - width * 0.03f).coerceAtLeast(width * 0.12f)
                 val maxCenterWidth = baseClearanceRadius * 2f
 
-                fun getMeasuredCenterWidth(): Float {
-                    val valW = centerValuePaint.measureText(primaryValueText)
-                    val smoothW = if (hasSmooth) smoothPaint.measureText(smoothText) + width * 0.02f else 0f
-                    return valW + smoothW
-                }
-
                 primaryY = height * 0.75f
 
                 fun isPrimaryTooLarge(): Boolean {
                     val bounds = Rect()
                     centerValuePaint.getTextBounds(primaryValueText, 0, primaryValueText.length, bounds)
                     val topEdgeY = primaryY + bounds.top
-                    return topEdgeY < (topY + height * 0.22f) || getMeasuredCenterWidth() > maxCenterWidth
+                    return topEdgeY < (topY + height * 0.22f) || centerValuePaint.measureText(primaryValueText) > maxCenterWidth
                 }
 
                 while (centerValuePaint.textSize > 14f && isPrimaryTooLarge()) {
@@ -414,12 +398,6 @@ object KustomFieldRenderer {
             }
 
             canvas.drawText(primaryValueText, width / 2f, primaryY, centerValuePaint)
-
-            if (hasSmooth) {
-                val valWidth = centerValuePaint.measureText(primaryValueText)
-                val smoothX = (width / 2f) - (valWidth / 2f) - (width * 0.02f)
-                canvas.drawText(smoothText, smoothX, primaryY - height * 0.02f, smoothPaint)
-            }
 
             // 4. Bottom 5-Zone or 7-Zone Gauge Bar (DRAWN ONLY WHEN zoneFormat == ZoneFormat.BAR)
             if (zoneFormat == ZoneFormat.BAR) {

@@ -38,6 +38,7 @@ data class KustomFieldDefinition(
     val cardHeaderTitle: String
         get() = when (typeId) {
             "power" -> "Power"
+            "power-combo" -> "Power Combo Block"
             "np" -> "Normalized Power (NP)"
             "avg-power" -> "Average Power"
             "max-power" -> "Maximum Power"
@@ -424,7 +425,7 @@ object KustomFieldCatalog {
     // SPECIAL (FieldCategory.SPECIAL)
     val POWER_COMBO = KustomFieldDefinition(
         typeId = "power-combo",
-        childTitle = "Power Combo Block",
+        childTitle = "Power",
         category = FieldCategory.SPECIAL,
         description = "Composite power block with corner metrics and zone gauge",
         supportsSmoothing = true,
