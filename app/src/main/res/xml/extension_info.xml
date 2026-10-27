@@ -92,8 +92,7 @@
     <DataType typeId="power-vi" displayName="@string/field_power_vi_name" description="@string/field_power_vi_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="power-to-weight" displayName="@string/field_power_to_weight_name" description="@string/field_power_to_weight_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
-    <!-- 8. SPECIAL & 3-IN-ONE BLOCKS -->
-    <DataType typeId="power-combo" displayName="@string/field_power_combo_name" description="@string/field_power_combo_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <!-- 8. 3-IN-ONE BLOCKS -->
     <DataType typeId="combo-block-1" displayName="@string/field_combo_block_1_name" description="@string/field_combo_block_1_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="combo-block-2" displayName="@string/field_combo_block_2_name" description="@string/field_combo_block_2_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="combo-block-3" displayName="@string/field_combo_block_3_name" description="@string/field_combo_block_3_desc" graphical="true" icon="@drawable/ic_kustom_field" />

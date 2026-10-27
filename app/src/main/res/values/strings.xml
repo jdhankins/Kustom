@@ -162,9 +162,7 @@
     <string name="field_power_to_weight_name">Power - W/kg</string>
     <string name="field_power_to_weight_desc">Power output in W/kg</string>
 
-    <!-- 8. SPECIAL & 3-IN-ONE BLOCKS -->
-    <string name="field_power_combo_name">Special - Power Combo Block</string>
-    <string name="field_power_combo_desc">Composite power block with corner metrics and zone gauge</string>
+    <!-- 8. 3-IN-ONE BLOCKS -->
     <string name="field_combo_block_1_name">3-in-1 - Block 1</string>
     <string name="field_combo_block_1_desc">3-in-1 block 1 (Power default)</string>
     <string name="field_combo_block_2_name">3-in-1 - Block 2</string>

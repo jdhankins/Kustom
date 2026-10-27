@@ -9,7 +9,6 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.hank.kustom.data.model.ColorMode
 import com.hank.kustom.data.model.CustomComboInstance
 import com.hank.kustom.data.model.GlobalColorConfig
 import com.hank.kustom.data.model.GlobalTypographyConfig
@@ -211,69 +210,11 @@ class KustomSettingsRepository(context: Context) {
     }
 
     /**
-     * Atomically updates field color mode / zone format in DataStore without touching smoothing.
-     */
-    suspend fun updateFieldColorMode(typeId: String, colorMode: ColorMode) {
-        val zoneFormat = ZoneFormat.fromColorMode(colorMode)
-        dataStore.edit { prefs ->
-            prefs[stringPreferencesKey("${typeId}_zone_format")] = zoneFormat.name
-        }
-    }
-
-    /**
      * Atomically updates field zone format in DataStore.
      */
     suspend fun updateFieldZoneFormat(typeId: String, zoneFormat: ZoneFormat) {
         dataStore.edit { prefs ->
             prefs[stringPreferencesKey("${typeId}_zone_format")] = zoneFormat.name
-        }
-    }
-
-    suspend fun updateComboCenterMetric(typeId: String, metric: String) {
-        dataStore.edit { prefs ->
-            prefs[stringPreferencesKey("${typeId}_combo_center")] = metric
-        }
-    }
-
-    suspend fun updateComboLeftMetric(typeId: String, metric: String) {
-        dataStore.edit { prefs ->
-            prefs[stringPreferencesKey("${typeId}_combo_left")] = metric
-        }
-    }
-
-    suspend fun updateComboRightMetric(typeId: String, metric: String) {
-        dataStore.edit { prefs ->
-            prefs[stringPreferencesKey("${typeId}_combo_right")] = metric
-        }
-    }
-
-    suspend fun updateComboLeftSmoothing(typeId: String, smoothing: SmoothingOption) {
-        dataStore.edit { prefs ->
-            prefs[intPreferencesKey("${typeId}_combo_left_smoothing")] = smoothing.seconds
-        }
-    }
-
-    suspend fun updateComboRightSmoothing(typeId: String, smoothing: SmoothingOption) {
-        dataStore.edit { prefs ->
-            prefs[intPreferencesKey("${typeId}_combo_right_smoothing")] = smoothing.seconds
-        }
-    }
-
-    suspend fun updateComboLeftZoneFormat(typeId: String, zoneFormat: ZoneFormat) {
-        dataStore.edit { prefs ->
-            prefs[stringPreferencesKey("${typeId}_combo_left_zone")] = zoneFormat.name
-        }
-    }
-
-    suspend fun updateComboRightZoneFormat(typeId: String, zoneFormat: ZoneFormat) {
-        dataStore.edit { prefs ->
-            prefs[stringPreferencesKey("${typeId}_combo_right_zone")] = zoneFormat.name
-        }
-    }
-
-    suspend fun updateComboZoneCount(typeId: String, count: Int) {
-        dataStore.edit { prefs ->
-            prefs[intPreferencesKey("${typeId}_combo_zones")] = count
         }
     }
 
