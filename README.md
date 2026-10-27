@@ -4,7 +4,7 @@
 [![SDK](https://img.shields.io/badge/Karoo_Ext-1.1.9-132B4C.svg)](https://hammerheadnav.github.io/karoo-ext/)
 [![Language](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF.svg)](https://kotlinlang.org/)
 
-**Kustom** is a native Karoo Extension (`io.hammerhead.karooext`) designed for Hammerhead Karoo 2 and Karoo 3 bike computers. It allows cyclists to design, customize, and display high-legibility telemetry fields with dynamic font scaling, custom typography (Karoo RBNo2.1a, Wahoo Barlow, Garmin DIN, Athletic Teko, Clean Roboto), rolling time-window smoothing (3s, 5s, 10s, 30s), and real-time zone color formatting.
+**Kustom** is a native Karoo Extension (`io.hammerhead.karooext`) designed for Hammerhead Karoo 2 and Karoo 3 bike computers. It allows cyclists to design, customize, and display high-legibility telemetry fields with dynamic font scaling, custom typography (Karoo RBNo2.1a, Wahoo Barlow, Garmin DIN, Athletic Teko, Clean Roboto), rolling time-window smoothing (3s, 5s, 10s, 30s), manufacturer zone color formatting (Karoo, Garmin, Wahoo, Zwift), and **5 customizable 3-In-One Blocks** with multi-stream corner telemetry, dynamic corner label abbreviations (`AVG CAD`, `MAX CAD`, `AVG TRQ`, `AVG HR`, `AVG SPD`, `DIST`, `ASC`, `DSC`), and unified red sensor status typography (`"No Sensor"` / `"Searching..."`).
 
 ---
 
@@ -22,6 +22,7 @@ The Kustom extension follows **Android Clean Architecture** principles, cleanly 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         VIEWMODEL & DATA LAYER                              │
 │  KustomSettingsViewModel ◄──► KustomSettingsRepository (Preferences DataStore)
+│  CustomComboInstance (5 Customizable 3-in-1 Composite Blocks)                │
 └──────────────────────────────────────┬──────────────────────────────────────┘
                                        │
                                        ▼
@@ -34,7 +35,7 @@ The Kustom extension follows **Android Clean Architecture** principles, cleanly 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                     KAROO EXTENSION IPC SERVICE                             │
 │  KustomExtension (KarooExtension) ──► KustomDataType (DataTypeImpl)         │
-│  ◄──► KarooSystemService (Telemetry Streams: Power, HR, Speed, Elevation)   │
+│  ◄──► KarooSystemService (Multi-Stream Telemetry: Power, HR, Speed, Elevation)│
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -65,7 +66,7 @@ graph TD
     subgraph Extension ["Karoo OS Extension IPC"]
         K[KustomExtension Service] --> L[KustomDataType]
         L -->|startView / Offscreen Bitmap| G
-        L -->|startStream| E
+        L -->|startStream / Multi-Stream Combine| E
         L -->|RemoteViews| M[Karoo OS Data Field Cell]
     end
 ```
@@ -87,12 +88,12 @@ sequenceDiagram
     alt config.preview == true (Page Setup)
         Type->>Type: Loop animated mock values (1200ms ticker)
     else config.preview == false (Active Ride)
-        Type->>Repo: streamDataFlow(sdkTypeId)
-        Repo-->>Type: StreamState (Streaming / Searching / No Sensor)
+        Type->>Repo: combine(centerStream, leftStream, rightStream)
+        Repo-->>Type: Multi-Stream State (Streaming / Searching / No Sensor)
     end
 
-    Type->>Render: render(config, label, valueText, typography, colorMode)
-    Render->>Render: Draw 25% Label Zone + 75% Value Zone on ARGB_8888 Canvas
+    Type->>Render: renderComboBlock(config, centerVal, leftVal, rightVal, zoneFormats)
+    Render->>Render: Draw Center Primary Zone + Top Left Corner + Top Right Corner + Bottom Gauge Bar
     Render-->>Type: Bitmap
     Type->>KarooOS: emitter.updateView(RemoteViews with Bitmap)
 ```
@@ -107,37 +108,40 @@ app/src/main/
 │   ├── data/
 │   │   ├── model/
 │   │   │   ├── ColorMode.kt           # Zone formatting color modes (NONE, BACKGROUND, TEXT)
-│   │   │   ├── FieldCategory.kt       # Parent telemetry categories (Power, Speed, HR, Climb, Time...)
+│   │   │   ├── CustomComboInstance.kt # User-configurable 3-in-1 combo block instance model
+│   │   │   ├── FieldCategory.kt       # Parent telemetry categories (Power, Speed, HR, Climb, Time, 3-In-One)
+│   │   │   ├── GlobalColorConfig.kt   # Global background colors, power zone count (5/7), & manufacturer palette
 │   │   │   ├── GlobalTypographyConfig.kt # Global typography configuration model
-│   │   │   ├── KustomFieldCatalog.kt  # Complete 54-field matrix definitions and SDK type mappings
+│   │   │   ├── KustomFieldCatalog.kt  # Complete 75-field matrix definitions and SDK type mappings
 │   │   │   ├── KustomFieldConfig.kt   # Per-field smoothing and zone color configurations
-│   │   │   ├── KustomFont.kt          # Top 5 cycling fonts (Karoo, Wahoo, Garmin, Teko, Roboto)
+│   │   │   ├── KustomFont.kt          # Top 9 cycling fonts (Karoo, Wahoo, Garmin, Coros, Teko, Roboto...)
 │   │   │   ├── KustomSettings.kt      # Root application settings state
 │   │   │   ├── SmoothingOption.kt     # Rolling average duration options (0s, 3s, 5s, 10s, 30s)
-│   │   │   └── ZoneFormat.kt          # Segmented pill option choices (None, Text, Fill)
+│   │   │   ├── TypographyConfig.kt    # Render-level typography parameters
+│   │   │   ├── ZoneFormat.kt          # Segmented pill option choices (None, Text, Fill, Bar)
+│   │   │   └── ZonePalette.kt         # Manufacturer color palettes (Karoo, Garmin, Wahoo, Zwift)
 │   │   └── repository/
 │   │       ├── KarooSystemRepository.kt   # Reactive flow wrapper for KarooSystemService
 │   │       └── KustomSettingsRepository.kt # Asynchronous Preferences DataStore persistence
 │   ├── domain/
 │   │   ├── KustomColorAndSmoothing.kt # Power/HR/Grade zone color mappers & RollingTimeSmoother
-│   │   ├── KustomFieldRenderer.kt    # Offscreen ARGB_8888 canvas renderer (25% top / 75% bottom)
-│   │   └── KustomTypefaceResolver.kt # Typeface loader & font weight application
+│   │   ├── KustomFieldRenderer.kt    # Offscreen ARGB_8888 canvas renderer (Single Fields & 3-in-1 Combo Blocks)
+│   │   └── KustomTypefaceResolver.kt # In-memory Typeface cache & font weight application
 │   ├── extension/
 │   │   ├── KustomExtension.kt        # Primary KarooExtension service entry point
 │   │   └── types/
-│   │       └── KustomDataType.kt     # Concrete DataTypeImpl handling IPC views and streams
+│   │       └── KustomDataType.kt     # Concrete DataTypeImpl handling IPC views and multi-stream flows
 │   ├── ui/
-│   │   ├── KustomSettingsViewModel.kt# ViewModel with 0ms in-memory state & debounced persistence
+│   │   ├── KustomSettingsViewModel.kt# ViewModel with 0ms in-memory state & DataStore persistence
 │   │   └── MainActivity.kt           # Configuration UI activity with adaptive Light/Dark theme
 │   └── util/
 │       └── KustomLogger.kt           # Logcat buffer and disk crash log persistence
 └── res/
     ├── drawable/
-    │   ├── ic_kustom_field.xml       # Vector logo & icon asset
-    │   ├── ic_launcher_background.xml# Launcher background asset
-    │   └── ic_launcher_foreground.xml# Launcher foreground asset
+    │   ├── ic_category_*.xml         # Category icons for fields accordion tabs
+    │   └── ic_kustom_field.xml       # Vector logo & icon asset
     ├── values/
-    │   └── strings.xml               # App string resources & "CATEGORY: FIELD" page setup titles
+    │   └── strings.xml               # App string resources & "Parent - Child" page setup titles
     └── xml/
         └── extension_info.xml        # Karoo OS metadata manifest declaring all extension data types
 ```
@@ -183,7 +187,7 @@ To add a new telemetry field (e.g. `TORQUE`):
    ```
 2. **Add String Resources to `res/values/strings.xml`**:
    ```xml
-   <string name="field_torque_name">POWER: TORQUE</string>
+   <string name="field_torque_name">Power - Torque</string>
    <string name="field_torque_desc">Current torque output</string>
    ```
 3. **Register Metadata in `res/xml/extension_info.xml`**:

@@ -648,6 +648,12 @@ object KustomFieldRenderer {
         return Pair(valueText, "")
     }
 
+    /**
+     * Abbreviates long corner metric labels to save space and prevent text crowding.
+     *
+     * @param rawLabel The original un-abbreviated metric title (e.g. "Average Cadence").
+     * @return Shortened uppercase label string (e.g. "AVG CAD").
+     */
     private fun abbreviateCornerLabel(rawLabel: String): String {
         val trimmed = rawLabel.replace("power", "", ignoreCase = true).trim().uppercase()
         return when {
