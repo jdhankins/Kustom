@@ -9,6 +9,7 @@ import com.hank.kustom.data.model.KustomFieldDefinition
 import com.hank.kustom.data.model.KustomSettings
 import com.hank.kustom.data.model.SmoothingOption
 import com.hank.kustom.data.model.TypographyConfig
+import com.hank.kustom.data.model.ZonePalette
 import com.hank.kustom.data.repository.KarooSystemRepository
 import com.hank.kustom.data.repository.KustomSettingsRepository
 import com.hank.kustom.domain.KustomColorGradeMapper
@@ -213,6 +214,7 @@ class KustomDataType(
                     rawVal = dynamicValue,
                     fieldConfig = fieldConfig,
                     userProfile = userProfile,
+                    palette = settings.globalColors.globalZonePalette,
                 )
 
                 val isDarkTheme = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
@@ -338,15 +340,16 @@ class KustomDataType(
         rawVal: Double?,
         fieldConfig: KustomFieldConfig,
         userProfile: UserProfile?,
+        palette: ZonePalette = ZonePalette.KAROO,
     ): Int? {
         if (rawVal == null || !definition.supportsZones) return null
 
         return when (definition.typeId) {
             "power", "power-combo", "np", "avg-power", "max-power", "lap-power", "last-lap-power", "percent-ftp", "power-balance", "power-zone", "power-to-weight", "workout-target-power", "workout-primary-target" -> {
-                KustomColorGradeMapper.getPowerZoneColor(rawVal, userProfile, fieldConfig.colorMode)
+                KustomColorGradeMapper.getPowerZoneColor(rawVal, userProfile, fieldConfig.colorMode, palette = palette)
             }
             "hr", "avg-hr", "max-hr", "lap-hr", "percent-max-hr", "hr-zone" -> {
-                KustomColorGradeMapper.getHeartRateZoneColor(rawVal, userProfile, fieldConfig.colorMode)
+                KustomColorGradeMapper.getHeartRateZoneColor(rawVal, userProfile, fieldConfig.colorMode, palette = palette)
             }
             "grade" -> {
                 KustomColorGradeMapper.getGradeColor(rawVal, fieldConfig.colorMode)

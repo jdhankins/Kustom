@@ -10,6 +10,7 @@ import com.hank.kustom.data.model.KustomFont
 import com.hank.kustom.data.model.KustomSettings
 import com.hank.kustom.data.model.SmoothingOption
 import com.hank.kustom.data.model.ZoneFormat
+import com.hank.kustom.data.model.ZonePalette
 import com.hank.kustom.data.repository.KustomSettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -143,6 +144,19 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
         saveTypographyJob = viewModelScope.launch {
             delay(300L)
             repository.updateGlobalPowerZoneCount(count)
+        }
+    }
+
+    /** Updates global zone color palette (Karoo, Garmin, Wahoo, Zwift). */
+    fun updateGlobalZonePalette(palette: ZonePalette) {
+        val current = _settingsState.value
+        val updatedColors = current.globalColors.copy(globalZonePalette = palette)
+        _settingsState.value = current.copy(globalColors = updatedColors)
+
+        saveTypographyJob?.cancel()
+        saveTypographyJob = viewModelScope.launch {
+            delay(300L)
+            repository.updateGlobalZonePalette(palette)
         }
     }
 

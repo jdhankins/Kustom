@@ -426,11 +426,8 @@ object KustomFieldRenderer {
                 val barBaseY = height * 0.82f
                 val baseBarHeight = height * 0.08f
 
-                val zones = if (zoneCount == 5) {
-                    listOf(0xFF718096.toInt(), 0xFF2B6CB0.toInt(), 0xFF2F855A.toInt(), 0xFFDD6B20.toInt(), 0xFFE53E3E.toInt())
-                } else {
-                    listOf(0xFF718096.toInt(), 0xFF2B6CB0.toInt(), 0xFF2F855A.toInt(), 0xFFD69E2E.toInt(), 0xFFDD6B20.toInt(), 0xFFE53E3E.toInt(), 0xFF805AD5.toInt())
-                }
+                val palette = globalColors.globalZonePalette
+                val zones = if (zoneCount == 5) palette.get5ZoneColors() else palette.get7ZoneColors()
 
                 val pWatts = powerValueWatts ?: 0.0
                 val pctFtp = pWatts / ftpWatts

@@ -18,6 +18,7 @@ import com.hank.kustom.data.model.KustomFont
 import com.hank.kustom.data.model.KustomSettings
 import com.hank.kustom.data.model.SmoothingOption
 import com.hank.kustom.data.model.ZoneFormat
+import com.hank.kustom.data.model.ZonePalette
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -59,6 +60,7 @@ class KustomSettingsRepository(context: Context) {
                 darkBgColorHex = prefs[Keys.GLOBAL_DARK_BG_COLOR] ?: "#000000",
                 useCustomBg = prefs[Keys.GLOBAL_USE_CUSTOM_BG] ?: false,
                 globalPowerZoneCount = prefs[Keys.GLOBAL_POWER_ZONE_COUNT] ?: 7,
+                globalZonePalette = parseEnum(prefs[Keys.GLOBAL_ZONE_PALETTE], ZonePalette.KAROO),
             )
 
             val configs = mutableMapOf<String, KustomFieldConfig>()
@@ -248,6 +250,15 @@ class KustomSettingsRepository(context: Context) {
         }
     }
 
+    /**
+     * Atomically updates global zone color palette (Karoo, Garmin, Wahoo, Zwift) in DataStore.
+     */
+    suspend fun updateGlobalZonePalette(palette: ZonePalette) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_ZONE_PALETTE] = palette.name
+        }
+    }
+
     private object Keys {
         val GLOBAL_FONT_FAMILY = stringPreferencesKey("global_font_family")
         val GLOBAL_LABEL_SIZE_SP = intPreferencesKey("global_label_size_sp")
@@ -258,5 +269,6 @@ class KustomSettingsRepository(context: Context) {
         val GLOBAL_DARK_BG_COLOR = stringPreferencesKey("global_dark_bg_color")
         val GLOBAL_USE_CUSTOM_BG = booleanPreferencesKey("global_use_custom_bg")
         val GLOBAL_POWER_ZONE_COUNT = intPreferencesKey("global_power_zone_count")
+        val GLOBAL_ZONE_PALETTE = stringPreferencesKey("global_zone_palette")
     }
 }

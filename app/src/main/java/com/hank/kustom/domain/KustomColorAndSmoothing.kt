@@ -1,6 +1,7 @@
 package com.hank.kustom.domain
 
 import com.hank.kustom.data.model.ColorMode
+import com.hank.kustom.data.model.ZonePalette
 import io.hammerhead.karooext.models.UserProfile
 import java.util.ArrayDeque
 import kotlin.math.pow
@@ -17,6 +18,7 @@ object KustomColorGradeMapper {
      * @param userProfile The rider's [UserProfile] containing custom power zones or FTP.
      * @param colorMode The active [ColorMode] (NONE, BACKGROUND_COLOR, or TEXT_COLOR).
      * @param isDarkTheme Whether dark theme is active.
+     * @param palette Selected manufacturer [ZonePalette].
      * @return Color Int for the zone, or null if [ColorMode.NONE].
      */
     fun getPowerZoneColor(
@@ -24,6 +26,7 @@ object KustomColorGradeMapper {
         userProfile: UserProfile?,
         colorMode: ColorMode,
         isDarkTheme: Boolean = false,
+        palette: ZonePalette = ZonePalette.KAROO,
     ): Int? {
         if (colorMode == ColorMode.NONE) return null
 
@@ -50,7 +53,8 @@ object KustomColorGradeMapper {
             }
         }
 
-        return getZoneColorByIndex(zoneIndex, isFill = colorMode == ColorMode.BACKGROUND_COLOR)
+        val colors7 = palette.get7ZoneColors()
+        return colors7.getOrElse(zoneIndex) { colors7.last() }
     }
 
     /**
@@ -60,6 +64,7 @@ object KustomColorGradeMapper {
      * @param userProfile The rider's [UserProfile] containing custom HR zones or Max HR.
      * @param colorMode The active [ColorMode] (NONE, BACKGROUND_COLOR, or TEXT_COLOR).
      * @param isDarkTheme Whether dark theme is active.
+     * @param palette Selected manufacturer [ZonePalette].
      * @return Color Int for the zone, or null if [ColorMode.NONE].
      */
     fun getHeartRateZoneColor(
@@ -67,6 +72,7 @@ object KustomColorGradeMapper {
         userProfile: UserProfile?,
         colorMode: ColorMode,
         isDarkTheme: Boolean = false,
+        palette: ZonePalette = ZonePalette.KAROO,
     ): Int? {
         if (colorMode == ColorMode.NONE) return null
 
@@ -92,7 +98,8 @@ object KustomColorGradeMapper {
             }
         }
 
-        return getZoneColorByIndex(zoneIndex, isFill = colorMode == ColorMode.BACKGROUND_COLOR)
+        val colors5 = palette.get5ZoneColors()
+        return colors5.getOrElse(zoneIndex) { colors5.last() }
     }
 
     /**
@@ -144,18 +151,6 @@ object KustomColorGradeMapper {
         val luminance = 0.2126 * rL + 0.7152 * gL + 0.0722 * bL
 
         return if (luminance > 0.30) 0xFF1E2225.toInt() else 0xFFFFFFFF.toInt()
-    }
-
-    private fun getZoneColorByIndex(index: Int, isFill: Boolean): Int {
-        return when (index) {
-            0 -> 0xFF78909C.toInt() // Zone 1 Slate
-            1 -> 0xFF29B6F6.toInt() // Zone 2 Sky Blue
-            2 -> if (isFill) 0xFF5AE0A0.toInt() else 0xFF66BB6A.toInt() // Zone 3 Mint Green
-            3 -> 0xFFFBC02D.toInt() // Zone 4 Amber/Gold
-            4 -> 0xFFFFA726.toInt() // Zone 5 Deep Orange
-            5 -> 0xFFEF5350.toInt() // Zone 6 Coral Red
-            else -> 0xFFAB47BC.toInt() // Zone 7 Purple
-        }
     }
 }
 

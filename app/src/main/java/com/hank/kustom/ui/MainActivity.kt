@@ -83,6 +83,7 @@ import com.hank.kustom.data.model.KustomSettings
 import com.hank.kustom.data.model.SmoothingOption
 import com.hank.kustom.data.model.TypographyConfig
 import com.hank.kustom.data.model.ZoneFormat
+import com.hank.kustom.data.model.ZonePalette
 import com.hank.kustom.domain.KustomColorGradeMapper
 import com.hank.kustom.domain.KustomFieldRenderer
 import com.hank.kustom.util.KustomLogger
@@ -654,7 +655,22 @@ fun ZoneHelpDialog(
                         color = colors.textPrimary,
                     )
                     Text(
-                        text = "Heart rate training is universally 5 zones across all devices (Z1 Easy, Z2 Fat Burn, Z3 Aerobic, Z4 Threshold, Z5 Redline).\n\nFTP & Max HR thresholds synchronize automatically from your Karoo Rider Profile.",
+                        text = "Heart rate training is universally 5 zones across all devices (Z1 Easy, Z2 Fat Burn, Z3 Aerobic, Z4 Threshold, Z5 Redline).",
+                        fontSize = 12.sp,
+                        color = colors.textSecondary,
+                        lineHeight = 16.sp,
+                    )
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "Automatic Rider Profile Sync",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.textPrimary,
+                    )
+                    Text(
+                        text = "⚡ Zone thresholds (FTP & Max HR) are automatically synchronized in real-time from your Hammerhead Karoo Rider Profile.",
                         fontSize = 12.sp,
                         color = colors.textSecondary,
                         lineHeight = 16.sp,
@@ -1142,7 +1158,61 @@ fun GlobalFontsTab(
                                 }
                             }
 
-                            // Dynamic Live Swatch Preview (5 or 7 swatches)
+                            // PALETTE STYLE DROPDOWN
+                            Text(
+                                text = "PALETTE STYLE",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = colors.headerText,
+                            )
+
+                            var paletteExpanded by remember { mutableStateOf(false) }
+                            val currentPalette = settings.globalColors.globalZonePalette
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(50))
+                                    .background(colors.trackBg)
+                                    .clickable { paletteExpanded = true }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = currentPalette.displayName,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colors.textPrimary,
+                                    )
+                                    Text(
+                                        text = if (paletteExpanded) "▲" else "▼",
+                                        fontSize = 13.sp,
+                                        color = colors.textSecondary,
+                                    )
+                                }
+
+                                DropdownMenu(
+                                    expanded = paletteExpanded,
+                                    onDismissRequest = { paletteExpanded = false },
+                                    modifier = Modifier.background(colors.cardBg),
+                                ) {
+                                    ZonePalette.entries.forEach { palette ->
+                                        DropdownMenuItem(
+                                            text = { Text(text = palette.displayName, fontSize = 14.sp, color = colors.textPrimary) },
+                                            onClick = {
+                                                viewModel.updateGlobalZonePalette(palette)
+                                                paletteExpanded = false
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Dynamic Live Swatch Preview (5 or 7 swatches matching selected Palette)
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -1153,15 +1223,9 @@ fun GlobalFontsTab(
                                 horizontalArrangement = Arrangement.spacedBy(3.dp),
                             ) {
                                 val paletteColors = if (globalZoneCount == 5) {
-                                    listOf(
-                                        Color(0xFF718096), Color(0xFF2B6CB0), Color(0xFF2F855A),
-                                        Color(0xFFDD6B20), Color(0xFFE53E3E)
-                                    )
+                                    currentPalette.get5ZoneColors().map { Color(it) }
                                 } else {
-                                    listOf(
-                                        Color(0xFF718096), Color(0xFF2B6CB0), Color(0xFF2F855A),
-                                        Color(0xFFD69E2E), Color(0xFFDD6B20), Color(0xFFE53E3E), Color(0xFF805AD5)
-                                    )
+                                    currentPalette.get7ZoneColors().map { Color(it) }
                                 }
                                 paletteColors.forEach { zoneCol ->
                                     Box(
@@ -1172,23 +1236,6 @@ fun GlobalFontsTab(
                                             .background(zoneCol),
                                     )
                                 }
-                            }
-
-                            // Zone Info Banner
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(colors.trackBg)
-                                    .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(8.dp))
-                                    .padding(10.dp),
-                            ) {
-                                Text(
-                                    text = "⚡ Zone thresholds (FTP & Max HR) are automatically synchronized in real-time from your Hammerhead Karoo Rider Profile.",
-                                    fontSize = 12.sp,
-                                    color = colors.textSecondary,
-                                    lineHeight = 16.sp,
-                                )
                             }
                         }
                     }
@@ -1567,10 +1614,11 @@ fun FieldCardItem(
     val sampleValueText = field.formatNumericValueOnly(currentMockVal)
     val dynamicLabel = field.resolveDynamicLabel(fieldConfig.smoothingOption)
 
+    val activePalette = settings.globalColors.globalZonePalette
     val mappedColor = if (field.supportsZones) {
         when (field.typeId) {
-            "power", "power-combo", "np", "avg-power", "max-power", "power-20m", "power-1hr", "lap-power", "lap-np", "last-lap-power", "last-lap-np", "percent-ftp", "power-balance", "power-zone", "power-to-weight", "workout-target-power", "workout-primary-target" -> KustomColorGradeMapper.getPowerZoneColor(currentMockVal, null, fieldConfig.colorMode)
-            "hr", "avg-hr", "max-hr", "lap-hr", "last-lap-hr", "percent-max-hr", "hr-zone" -> KustomColorGradeMapper.getHeartRateZoneColor(currentMockVal, null, fieldConfig.colorMode)
+            "power", "power-combo", "np", "avg-power", "max-power", "power-20m", "power-1hr", "lap-power", "lap-np", "last-lap-power", "last-lap-np", "percent-ftp", "power-balance", "power-zone", "power-to-weight", "workout-target-power", "workout-primary-target" -> KustomColorGradeMapper.getPowerZoneColor(currentMockVal, null, fieldConfig.colorMode, palette = activePalette)
+            "hr", "avg-hr", "max-hr", "lap-hr", "last-lap-hr", "percent-max-hr", "hr-zone" -> KustomColorGradeMapper.getHeartRateZoneColor(currentMockVal, null, fieldConfig.colorMode, palette = activePalette)
             "grade" -> KustomColorGradeMapper.getGradeColor(currentMockVal, fieldConfig.colorMode)
             else -> null
         }

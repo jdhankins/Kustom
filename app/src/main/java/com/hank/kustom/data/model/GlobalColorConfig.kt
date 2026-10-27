@@ -7,12 +7,14 @@ package com.hank.kustom.data.model
  * @property darkBgColorHex Hex string for Dark Mode field background color (default #000000).
  * @property useCustomBg Whether custom background colors are active.
  * @property globalPowerZoneCount Global default power zone count (7 or 5 zones).
+ * @property globalZonePalette Selected manufacturer zone color palette ([ZonePalette]).
  */
 data class GlobalColorConfig(
     val lightBgColorHex: String = "#FFFFFF",
     val darkBgColorHex: String = "#000000",
     val useCustomBg: Boolean = false,
     val globalPowerZoneCount: Int = 7,
+    val globalZonePalette: ZonePalette = ZonePalette.KAROO,
 ) {
     fun getLightColorInt(): Int {
         return runCatching { android.graphics.Color.parseColor(lightBgColorHex) }.getOrDefault(0xFFFFFFFF.toInt())
