@@ -673,11 +673,9 @@ object KustomFieldRenderer {
 
             // 1. Power Trace Line (White with black border in Dark Mode; Black with white border in Light Mode)
             if (showPowerTrace) {
-                val powerPath = android.graphics.Path()
                 val steps = if (powerHistory.isNotEmpty()) powerHistory.size else 30
                 val stepW = (dividerX - marginX) / (steps - 1).coerceAtLeast(1)
-
-                for (idx in 0 until steps) {
+                val points = (0 until steps).map { idx ->
                     val px = marginX + (idx * stepW)
                     val rawVal = if (powerHistory.isNotEmpty()) {
                         (powerHistory[idx] / 350f).coerceIn(0.1f, 1.0f)
@@ -685,9 +683,10 @@ object KustomFieldRenderer {
                         (0.35f + (idx * 0.015f) + (Math.sin(idx * 0.4).toFloat() * 0.06f)).coerceIn(0.1f, 1.0f)
                     }
                     val py = graphBottom - (graphHeight * rawVal)
-                    if (idx == 0) powerPath.moveTo(px, py) else powerPath.lineTo(px, py)
+                    Pair(px, py)
                 }
 
+                val powerPath = buildSmoothTracePath(points)
                 val powerBorderColor = if (isDarkTheme) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
                 val powerLineColor = if (isDarkTheme) 0xFFFFFFFF.toInt() else 0xFF1E2225.toInt()
 
@@ -713,11 +712,9 @@ object KustomFieldRenderer {
 
             // 2. Heart Rate Trace Line (Red with subtle dark under-stroke)
             if (showHrTrace) {
-                val hrPath = android.graphics.Path()
                 val steps = if (hrHistory.isNotEmpty()) hrHistory.size else 30
                 val stepW = (dividerX - marginX) / (steps - 1).coerceAtLeast(1)
-
-                for (idx in 0 until steps) {
+                val points = (0 until steps).map { idx ->
                     val px = marginX + (idx * stepW)
                     val rawVal = if (hrHistory.isNotEmpty()) {
                         (hrHistory[idx] / 190f).coerceIn(0.1f, 1.0f)
@@ -725,9 +722,10 @@ object KustomFieldRenderer {
                         (0.30f + (idx * 0.018f) + (Math.sin(idx * 0.2).toFloat() * 0.04f)).coerceIn(0.1f, 1.0f)
                     }
                     val py = graphBottom - (graphHeight * rawVal)
-                    if (idx == 0) hrPath.moveTo(px, py) else hrPath.lineTo(px, py)
+                    Pair(px, py)
                 }
 
+                val hrPath = buildSmoothTracePath(points)
                 val hrPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = 0xFFFF5252.toInt()
                     style = Paint.Style.STROKE
@@ -741,11 +739,9 @@ object KustomFieldRenderer {
 
             // 3. Cadence Trace Line (Cyan with subtle dark under-stroke)
             if (showCadenceTrace) {
-                val cadencePath = android.graphics.Path()
                 val steps = if (cadenceHistory.isNotEmpty()) cadenceHistory.size else 30
                 val stepW = (dividerX - marginX) / (steps - 1).coerceAtLeast(1)
-
-                for (idx in 0 until steps) {
+                val points = (0 until steps).map { idx ->
                     val px = marginX + (idx * stepW)
                     val rawVal = if (cadenceHistory.isNotEmpty()) {
                         (cadenceHistory[idx] / 120f).coerceIn(0.1f, 1.0f)
@@ -753,9 +749,10 @@ object KustomFieldRenderer {
                         (0.72f + (Math.sin(idx * 0.6).toFloat() * 0.08f)).coerceIn(0.1f, 1.0f)
                     }
                     val py = graphBottom - (graphHeight * rawVal)
-                    if (idx == 0) cadencePath.moveTo(px, py) else cadencePath.lineTo(px, py)
+                    Pair(px, py)
                 }
 
+                val cadencePath = buildSmoothTracePath(points)
                 val cadencePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = 0xFF00E5FF.toInt()
                     style = Paint.Style.STROKE
@@ -763,8 +760,8 @@ object KustomFieldRenderer {
                     strokeCap = Paint.Cap.ROUND
                     strokeJoin = Paint.Join.ROUND
                 }
-                canvas.drawPath(cadencePath, traceShadowPaint)
-                canvas.drawPath(cadencePath, cadencePaint)
+                canvas.drawPath(cadencePath, traceShadowPaint) // High-contrast under-stroke
+                canvas.drawPath(cadencePath, cadencePaint)      // Main line
             }
 
             bitmap
@@ -775,6 +772,26 @@ object KustomFieldRenderer {
                 config.viewSize.second.coerceAtLeast(10),
             )
         }
+    }
+
+    /**
+     * Constructs a smooth cubic Bézier curve path from an array of 2D data points (X, Y).
+     */
+    private fun buildSmoothTracePath(points: List<Pair<Float, Float>>): android.graphics.Path {
+        val path = android.graphics.Path()
+        if (points.isEmpty()) return path
+
+        path.moveTo(points[0].first, points[0].second)
+        if (points.size == 1) return path
+
+        for (i in 0 until points.size - 1) {
+            val p0 = points[i]
+            val p1 = points[i + 1]
+            val controlX = (p0.first + p1.first) / 2f
+            path.quadTo(p0.first, p0.second, controlX, (p0.second + p1.second) / 2f)
+        }
+        path.lineTo(points.last().first, points.last().second)
+        return path
     }
 
     /**
