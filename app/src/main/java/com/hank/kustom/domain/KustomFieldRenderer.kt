@@ -236,20 +236,24 @@ object KustomFieldRenderer {
             val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
 
+            val isSensorStatusText = primaryValueText == "Searching..." || primaryValueText == "No Sensor" || primaryValueText == "Searching"
+            val sensorStatusColor = if (isDarkTheme) 0xFFFF5252.toInt() else 0xFFD32F2F.toInt()
+
             val defaultBgColor = if (isDarkTheme) globalColors.getDarkColorInt() else globalColors.getLightColorInt()
             val defaultTextColor = KustomColorGradeMapper.getContrastingTextColor(defaultBgColor)
 
             val activeZoneColor = mappedColor ?: KustomColorGradeMapper.getPowerZoneColor(powerValueWatts ?: 214.0, null, ColorMode.BACKGROUND_COLOR)
 
-            // Calculate background color
-            val backgroundColor: Int = if (zoneFormat == ZoneFormat.BACKGROUND && activeZoneColor != null) {
+            // Calculate background color (stay default background when searching/no sensor)
+            val backgroundColor: Int = if (zoneFormat == ZoneFormat.BACKGROUND && activeZoneColor != null && !isSensorStatusText) {
                 activeZoneColor
             } else {
                 defaultBgColor
             }
 
-            // Primary center value color: colored in TEXT mode
+            // Primary center value color: red when searching/no sensor, colored in TEXT mode
             val primaryValueColor: Int = when {
+                isSensorStatusText -> sensorStatusColor
                 zoneFormat == ZoneFormat.TEXT && activeZoneColor != null -> activeZoneColor
                 zoneFormat == ZoneFormat.BACKGROUND && activeZoneColor != null -> KustomColorGradeMapper.getContrastingTextColor(activeZoneColor)
                 else -> defaultTextColor
@@ -287,9 +291,9 @@ object KustomFieldRenderer {
             val marginX = width * 0.025f
             val topY = height * 0.06f
 
-            // Strip redundant "Power" word from top corner labels to save space
-            val cleanLeft = leftLabel.replace("power", "", ignoreCase = true).trim().uppercase()
-            val cleanRight = rightLabel.replace("power", "", ignoreCase = true).trim().uppercase()
+            // Abbreviate corner metric labels (e.g. Cadence -> CAD, Torque -> TRQ, Speed -> SPD)
+            val cleanLeft = abbreviateCornerLabel(leftLabel)
+            val cleanRight = abbreviateCornerLabel(rightLabel)
 
             val cornerLabelSize = height * 0.18f
             val cornerValueSize = height * 0.32f
@@ -433,8 +437,14 @@ object KustomFieldRenderer {
 
             val primaryY: Float
             if (isBarMode) {
-                val basePrimaryPx = (height * (valueTypography.fontSizeSp / 88f)).coerceAtLeast(18f)
-                KustomTypefaceResolver.applyTypography(centerValuePaint, valueTypography.font, valueTypography.fontWeight, basePrimaryPx)
+                val rawPrimaryPx = (height * (valueTypography.fontSizeSp / 88f)).coerceAtLeast(18f)
+                val basePrimaryPx = if (isSensorStatusText) rawPrimaryPx * 0.52f else rawPrimaryPx
+                KustomTypefaceResolver.applyTypography(
+                    centerValuePaint,
+                    valueTypography.font,
+                    if (isSensorStatusText) 700 else valueTypography.fontWeight,
+                    basePrimaryPx
+                )
 
                 val leftGap = (width / 2f) - leftMaxX
                 val rightGap = rightMinX - (width / 2f)
@@ -450,13 +460,19 @@ object KustomFieldRenderer {
                     return topEdgeY < (topY + height * 0.22f) || centerValuePaint.measureText(primaryValueText) > maxCenterWidth
                 }
 
-                while (centerValuePaint.textSize > 14f && isPrimaryTooLarge()) {
+                while (centerValuePaint.textSize > 10f && isPrimaryTooLarge()) {
                     centerValuePaint.textSize -= 1f
                 }
             } else {
                 // When zoneFormat != ZoneFormat.BAR (None, Text, Fill): Middle label & value follow EXACT same size, weight & Y position as all standard fields
-                val primaryPx = (height * (valueTypography.fontSizeSp / 86f)).coerceAtLeast(18f)
-                KustomTypefaceResolver.applyTypography(centerValuePaint, valueTypography.font, valueTypography.fontWeight, primaryPx)
+                val rawPrimaryPx = (height * (valueTypography.fontSizeSp / 86f)).coerceAtLeast(18f)
+                val primaryPx = if (isSensorStatusText) rawPrimaryPx * 0.52f else rawPrimaryPx
+                KustomTypefaceResolver.applyTypography(
+                    centerValuePaint,
+                    valueTypography.font,
+                    if (isSensorStatusText) 700 else valueTypography.fontWeight,
+                    primaryPx
+                )
 
                 val valueZoneTop = height * 0.26f
                 val valueZoneHeight = height * 0.74f
@@ -465,7 +481,7 @@ object KustomFieldRenderer {
                 primaryY = valueCenterY - ((valueMetrics.ascent + valueMetrics.descent) / 2f)
 
                 val maxAllowedWidth = width * 0.92f
-                while (centerValuePaint.textSize > 14f && centerValuePaint.measureText(primaryValueText) > maxAllowedWidth) {
+                while (centerValuePaint.textSize > 10f && centerValuePaint.measureText(primaryValueText) > maxAllowedWidth) {
                     centerValuePaint.textSize -= 1f
                 }
             }
@@ -630,6 +646,20 @@ object KustomFieldRenderer {
             return Pair(primary, secondary)
         }
         return Pair(valueText, "")
+    }
+
+    private fun abbreviateCornerLabel(rawLabel: String): String {
+        val trimmed = rawLabel.replace("power", "", ignoreCase = true).trim().uppercase()
+        return when {
+            trimmed.contains("CADENCE") -> trimmed.replace("CADENCE", "CAD")
+            trimmed.contains("TORQUE") -> trimmed.replace("TORQUE", "TRQ")
+            trimmed.contains("HEART RATE") -> trimmed.replace("HEART RATE", "HR")
+            trimmed.contains("SPEED") -> trimmed.replace("SPEED", "SPD")
+            trimmed.contains("DISTANCE") -> trimmed.replace("DISTANCE", "DIST")
+            trimmed.contains("ASCENT") -> trimmed.replace("ASCENT", "ASC")
+            trimmed.contains("DESCENT") -> trimmed.replace("DESCENT", "DSC")
+            else -> trimmed
+        }
     }
 
     private fun createFallbackBitmap(width: Int, height: Int): Bitmap {

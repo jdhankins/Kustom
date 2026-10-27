@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hank.kustom.data.model.ColorMode
+import com.hank.kustom.data.model.CustomComboInstance
 import com.hank.kustom.data.model.GlobalTypographyConfig
 import com.hank.kustom.data.model.KustomFieldConfig
 import com.hank.kustom.data.model.KustomFont
@@ -12,6 +13,7 @@ import com.hank.kustom.data.model.SmoothingOption
 import com.hank.kustom.data.model.ZoneFormat
 import com.hank.kustom.data.model.ZonePalette
 import com.hank.kustom.data.repository.KustomSettingsRepository
+import com.hank.kustom.util.KustomLogger
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -309,6 +311,61 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /** Adds a new user-created dynamic 3-in-1 combo block instance. */
+    fun addCustomComboInstance(name: String) {
+        val current = _settingsState.value
+        val nextNum = current.customComboInstances.size + 1
+        val defaultBlockName = "Custom $nextNum"
+        val newInstance = CustomComboInstance(
+            id = "combo_${System.currentTimeMillis()}",
+            name = name.ifBlank { defaultBlockName },
+        )
+        val updatedList = current.customComboInstances + newInstance
+        _settingsState.value = current.copy(customComboInstances = updatedList)
+
+        viewModelScope.launch {
+            repository.saveCustomComboInstances(updatedList)
+            restartExtensionService()
+        }
+    }
+
+    /** Updates properties of an existing user-created dynamic 3-in-1 combo block instance. */
+    fun updateCustomComboInstance(instance: CustomComboInstance) {
+        val current = _settingsState.value
+        val updatedList = current.customComboInstances.map {
+            if (it.id == instance.id) instance else it
+        }
+        _settingsState.value = current.copy(customComboInstances = updatedList)
+
+        viewModelScope.launch {
+            repository.saveCustomComboInstances(updatedList)
+            restartExtensionService()
+        }
+    }
+
+    /** Deletes a user-created dynamic 3-in-1 combo block instance by id. */
+    fun deleteCustomComboInstance(instanceId: String) {
+        val current = _settingsState.value
+        val updatedList = current.customComboInstances.filter { it.id != instanceId }
+        _settingsState.value = current.copy(customComboInstances = updatedList)
+
+        viewModelScope.launch {
+            repository.saveCustomComboInstances(updatedList)
+            restartExtensionService()
+        }
+    }
+
+    private fun restartExtensionService() {
+        runCatching {
+            val app = getApplication<Application>()
+            val intent = android.content.Intent(app, com.hank.kustom.extension.KustomExtension::class.java)
+            app.stopService(intent)
+            app.startService(intent)
+        }.onFailure { throwable ->
+            KustomLogger.e("Failed to restart KustomExtension service", throwable)
+        }
+    }
+
     /** Updates top-right corner metric for combo block fields. */
     fun updateComboRightMetric(typeId: String, metric: String) {
         val current = _settingsState.value
@@ -342,11 +399,6 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
     /** Legacy helper updating full typography. */
     fun updateGlobalTypography(typography: GlobalTypographyConfig) {
         _settingsState.value = _settingsState.value.copy(globalTypography = typography)
-        saveTypographyJob?.cancel()
-        saveTypographyJob = viewModelScope.launch {
-            delay(300L)
-            repository.updateGlobalTypography(typography)
-        }
     }
 
     /** Legacy helper updating full field config. */
@@ -355,11 +407,5 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
         val updatedConfigs = current.fieldConfigs.toMutableMap()
         updatedConfigs[typeId] = config
         _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
-
-        saveFieldJobs[typeId]?.cancel()
-        saveFieldJobs[typeId] = viewModelScope.launch {
-            delay(300L)
-            repository.updateFieldConfig(typeId, config)
-        }
     }
 }

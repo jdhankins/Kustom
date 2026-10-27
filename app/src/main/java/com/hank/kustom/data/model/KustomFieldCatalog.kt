@@ -11,7 +11,7 @@ enum class FieldCategory(val displayName: String, val iconResId: Int) {
     LAP("Lap", com.hank.kustom.R.drawable.ic_category_lap),
     NAVIGATION("Navigation", com.hank.kustom.R.drawable.ic_category_nav),
     POWER("Power", com.hank.kustom.R.drawable.ic_category_power),
-    SPECIAL("Special", com.hank.kustom.R.drawable.ic_category_special),
+    COMBO("3-In-One Block", com.hank.kustom.R.drawable.ic_category_special),
     SPEED("Speed", com.hank.kustom.R.drawable.ic_category_speed),
     TIME("Time", com.hank.kustom.R.drawable.ic_category_time),
     WORKOUT("Workout", com.hank.kustom.R.drawable.ic_category_workout),
@@ -423,27 +423,7 @@ object KustomFieldCatalog {
     val WORKOUT_TARGET_HR = KustomFieldDefinition("workout-target-hr", "Target HR", FieldCategory.WORKOUT, "Target HR label with current HR value", supportsSmoothing = false, supportsZones = true, listOf(145.0, 148.0, 152.0, 156.0, 150.0))
     val WORKOUT_DURATION_REMAINING = KustomFieldDefinition("workout-duration-remaining", "Wrk Rem", FieldCategory.WORKOUT, "Remaining workout time", supportsSmoothing = false, supportsZones = false, listOf(1800.0, 1740.0, 1680.0, 1620.0, 1560.0))
 
-    // SPECIAL (FieldCategory.SPECIAL)
-    val POWER_COMBO = KustomFieldDefinition(
-        typeId = "power-combo",
-        childTitle = "Power",
-        category = FieldCategory.SPECIAL,
-        description = "Composite power block with corner metrics and zone gauge",
-        supportsSmoothing = true,
-        supportsZones = true,
-        mockValues = listOf(214.0, 235.0, 250.0, 220.0, 205.0),
-    )
-    val CUSTOM_COMBO = KustomFieldDefinition(
-        typeId = "custom-combo",
-        childTitle = "3-in-1 Block",
-        category = FieldCategory.SPECIAL,
-        description = "Universal 3-in-1 composite block with customizable center and corner metrics",
-        supportsSmoothing = true,
-        supportsZones = true,
-        mockValues = listOf(214.0, 235.0, 250.0, 220.0, 205.0),
-    )
-
-    /** Complete list of all 77 registered data fields sorted in alphabetical order by parent and child. */
+    /** Complete list of all 75 registered data fields sorted in alphabetical order by parent and child. */
     val allFields: List<KustomFieldDefinition> = listOf(
         // 1. CADENCE
         AVG_CADENCE, AVG_TORQUE, CADENCE, MAX_CADENCE, MAX_TORQUE, TORQUE,
@@ -459,19 +439,17 @@ object KustomFieldCatalog {
         NAV_DIST_DEST, NAV_DIST_TURN, NAV_ELEV_REM, NAV_ETA, NAV_HEADING, NAV_TIME_DEST,
         // 7. POWER
         PERCENT_FTP, POWER_1HR, POWER_20M, AVG_POWER_BALANCE, AVG_POWER, POWER_CAL_HR, POWER_CAL, INTENSITY_FACTOR, POWER_KJ, MAX_POWER, NP, POWER_SMOOTHNESS, POWER, POWER_BALANCE, POWER_ZONE, POWER_TE, TSS, POWER_VI, POWER_TO_WEIGHT,
-        // 8. SPECIAL
-        POWER_COMBO, CUSTOM_COMBO,
-        // 9. SPEED
+        // 8. SPEED
         AVG_SPEED, DISTANCE, MAX_SPEED, SPEED,
-        // 10. TIME
+        // 9. TIME
         CLOCK_TIME, ELAPSED_TIME, PAUSED_TIME, RIDE_TIME, SUNRISE, SUNSET,
-        // 11. WORKOUT
+        // 10. WORKOUT
         WORKOUT_INTERVAL_COUNT, WORKOUT_INTERVAL_TIME, WORKOUT_NEXT_TARGET, WORKOUT_POWER, WORKOUT_PRIMARY_TARGET, WORKOUT_TARGET_CADENCE, WORKOUT_TARGET_HR, WORKOUT_DURATION_REMAINING,
     )
 
     /** Configurable data fields with smoothing or zone capabilities. */
     val configurableFields: List<KustomFieldDefinition> = allFields.filter {
-        it.supportsSmoothing || it.supportsZones || it.category == FieldCategory.SPECIAL
+        it.supportsSmoothing || it.supportsZones || it.category == FieldCategory.COMBO
     }
 
     /**

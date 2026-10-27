@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.hank.kustom.data.model.ColorMode
+import com.hank.kustom.data.model.CustomComboInstance
 import com.hank.kustom.data.model.GlobalColorConfig
 import com.hank.kustom.data.model.GlobalTypographyConfig
 import com.hank.kustom.data.model.KustomFieldCatalog
@@ -22,6 +23,8 @@ import com.hank.kustom.data.model.ZonePalette
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.IOException
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "kustom_settings")
@@ -96,10 +99,13 @@ class KustomSettingsRepository(context: Context) {
                 configs[typeId] = fieldConfig
             }
 
+            val customCombos = parseCustomComboInstances(prefs[Keys.CUSTOM_COMBO_INSTANCES_JSON])
+
             KustomSettings(
                 globalTypography = globalTypo,
                 globalColors = globalColors,
                 fieldConfigs = configs,
+                customComboInstances = customCombos,
             )
         }
 
@@ -113,25 +119,7 @@ class KustomSettingsRepository(context: Context) {
     }
 
     /**
-     * Atomically updates value font size in DataStore.
-     */
-    suspend fun updateValueFontSizeSp(sizeSp: Int) {
-        dataStore.edit { prefs ->
-            prefs[Keys.GLOBAL_VALUE_SIZE_SP] = sizeSp
-        }
-    }
-
-    /**
-     * Atomically updates value font weight in DataStore.
-     */
-    suspend fun updateValueFontWeight(weight: Int) {
-        dataStore.edit { prefs ->
-            prefs[Keys.GLOBAL_VALUE_WEIGHT] = weight
-        }
-    }
-
-    /**
-     * Atomically updates label font size in DataStore.
+     * Atomically updates label font size in SP.
      */
     suspend fun updateLabelFontSizeSp(sizeSp: Int) {
         dataStore.edit { prefs ->
@@ -140,7 +128,7 @@ class KustomSettingsRepository(context: Context) {
     }
 
     /**
-     * Atomically updates label font weight in DataStore.
+     * Atomically updates label font weight.
      */
     suspend fun updateLabelFontWeight(weight: Int) {
         dataStore.edit { prefs ->
@@ -149,7 +137,25 @@ class KustomSettingsRepository(context: Context) {
     }
 
     /**
-     * Atomically updates Light Mode background color in DataStore.
+     * Atomically updates value font size in SP.
+     */
+    suspend fun updateValueFontSizeSp(sizeSp: Int) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_VALUE_SIZE_SP] = sizeSp
+        }
+    }
+
+    /**
+     * Atomically updates value font weight.
+     */
+    suspend fun updateValueFontWeight(weight: Int) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_VALUE_WEIGHT] = weight
+        }
+    }
+
+    /**
+     * Atomically updates Light Mode background color.
      */
     suspend fun updateLightBgColor(hex: String) {
         dataStore.edit { prefs ->
@@ -159,12 +165,58 @@ class KustomSettingsRepository(context: Context) {
     }
 
     /**
-     * Atomically updates Dark Mode background color in DataStore.
+     * Atomically updates Dark Mode background color.
      */
     suspend fun updateDarkBgColor(hex: String) {
         dataStore.edit { prefs ->
             prefs[Keys.GLOBAL_DARK_BG_COLOR] = hex
             prefs[Keys.GLOBAL_USE_CUSTOM_BG] = true
+        }
+    }
+
+    /**
+     * Atomically updates global power zone count (7 or 5 zones) in DataStore.
+     */
+    suspend fun updateGlobalPowerZoneCount(count: Int) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_POWER_ZONE_COUNT] = count
+        }
+    }
+
+    /**
+     * Atomically updates global zone color palette (Karoo, Garmin, Wahoo, Zwift) in DataStore.
+     */
+    suspend fun updateGlobalZonePalette(palette: ZonePalette) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_ZONE_PALETTE] = palette.name
+        }
+    }
+
+    /**
+     * Atomically updates whether custom field background color is enabled.
+     */
+    suspend fun updateUseCustomBg(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLOBAL_USE_CUSTOM_BG] = enabled
+        }
+    }
+
+    /**
+     * Atomically updates field smoothing in DataStore without touching zone color.
+     */
+    suspend fun updateFieldSmoothing(typeId: String, smoothing: SmoothingOption) {
+        dataStore.edit { prefs ->
+            prefs[intPreferencesKey("${typeId}_smoothing")] = smoothing.seconds
+        }
+    }
+
+    /**
+     * Atomically updates field color mode / zone format in DataStore without touching smoothing.
+     */
+    suspend fun updateFieldColorMode(typeId: String, colorMode: ColorMode) {
+        val zoneFormat = ZoneFormat.fromColorMode(colorMode)
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey("${typeId}_zone_format")] = zoneFormat.name
         }
     }
 
@@ -226,78 +278,114 @@ class KustomSettingsRepository(context: Context) {
     }
 
     /**
-     * Atomically updates whether custom field background color is enabled.
+     * Atomically updates user-created dynamic 3-in-1 combo block instances in DataStore.
      */
-    suspend fun updateUseCustomBg(enabled: Boolean) {
+    suspend fun saveCustomComboInstances(instances: List<CustomComboInstance>) {
         dataStore.edit { prefs ->
-            prefs[Keys.GLOBAL_USE_CUSTOM_BG] = enabled
+            prefs[Keys.CUSTOM_COMBO_INSTANCES_JSON] = serializeCustomComboInstances(instances)
         }
     }
 
-    /**
-     * Atomically updates field smoothing in DataStore without touching zone color.
-     */
-    suspend fun updateFieldSmoothing(typeId: String, smoothing: SmoothingOption) {
-        dataStore.edit { prefs ->
-            prefs[intPreferencesKey("${typeId}_smoothing")] = smoothing.seconds
-        }
+    private fun parseCustomComboInstances(jsonStr: String?): List<CustomComboInstance> {
+        val defaultInstances = listOf(
+            CustomComboInstance(
+                id = "combo-block-1",
+                name = "Block 1",
+                centerMetric = "power",
+                leftMetric = "np",
+                rightMetric = "max-power",
+                centerZoneFormat = ZoneFormat.BAR,
+                centerSmoothing = SmoothingOption.THREE_SEC,
+            ),
+            CustomComboInstance(
+                id = "combo-block-2",
+                name = "Block 2",
+                centerMetric = "hr",
+                leftMetric = "avg-hr",
+                rightMetric = "max-hr",
+                centerZoneFormat = ZoneFormat.BACKGROUND,
+                centerSmoothing = SmoothingOption.NONE,
+            ),
+            CustomComboInstance(
+                id = "combo-block-3",
+                name = "Block 3",
+                centerMetric = "grade",
+                leftMetric = "vam",
+                rightMetric = "ascent",
+                centerZoneFormat = ZoneFormat.BACKGROUND,
+                centerSmoothing = SmoothingOption.NONE,
+            ),
+            CustomComboInstance(
+                id = "combo-block-4",
+                name = "Block 4",
+                centerMetric = "power",
+                leftMetric = "avg-speed",
+                rightMetric = "distance",
+                centerZoneFormat = ZoneFormat.BAR,
+                centerSmoothing = SmoothingOption.THREE_SEC,
+            ),
+            CustomComboInstance(
+                id = "combo-block-5",
+                name = "Block 5",
+                centerMetric = "cadence",
+                leftMetric = "avg-cadence",
+                rightMetric = "max-cadence",
+                centerZoneFormat = ZoneFormat.NONE,
+                centerSmoothing = SmoothingOption.NONE,
+            ),
+        )
+
+        if (jsonStr.isNullOrBlank()) return defaultInstances
+        return runCatching {
+            val jsonArray = JSONArray(jsonStr)
+            if (jsonArray.length() == 0) return defaultInstances
+            val list = mutableListOf<CustomComboInstance>()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                list.add(
+                    CustomComboInstance(
+                        id = obj.optString("id", "combo-block-${i + 1}"),
+                        name = obj.optString("name", "Custom ${i + 1}"),
+                        centerMetric = obj.optString("centerMetric", "power"),
+                        leftMetric = obj.optString("leftMetric", "np"),
+                        rightMetric = obj.optString("rightMetric", "max-power"),
+                        centerZoneFormat = parseEnum(obj.optString("centerZoneFormat"), ZoneFormat.BAR),
+                        leftZoneFormat = parseEnum(obj.optString("leftZoneFormat"), ZoneFormat.NONE),
+                        rightZoneFormat = parseEnum(obj.optString("rightZoneFormat"), ZoneFormat.NONE),
+                        centerSmoothing = SmoothingOption.fromSeconds(obj.optInt("centerSmoothing", 3)),
+                        leftSmoothing = SmoothingOption.fromSeconds(obj.optInt("leftSmoothing", 0)),
+                        rightSmoothing = SmoothingOption.fromSeconds(obj.optInt("rightSmoothing", 0)),
+                    )
+                )
+            }
+            if (list.isEmpty()) defaultInstances else list
+        }.getOrDefault(defaultInstances)
     }
 
-    /**
-     * Atomically updates field color mode / zone format in DataStore without touching smoothing.
-     */
-    suspend fun updateFieldColorMode(typeId: String, colorMode: ColorMode) {
-        val zoneFormat = ZoneFormat.fromColorMode(colorMode)
-        dataStore.edit { prefs ->
-            prefs[stringPreferencesKey("${typeId}_zone_format")] = zoneFormat.name
+    private fun serializeCustomComboInstances(instances: List<CustomComboInstance>): String {
+        val jsonArray = JSONArray()
+        instances.forEach { inst ->
+            val obj = JSONObject().apply {
+                put("id", inst.id)
+                put("name", inst.name)
+                put("centerMetric", inst.centerMetric)
+                put("leftMetric", inst.leftMetric)
+                put("rightMetric", inst.rightMetric)
+                put("centerZoneFormat", inst.centerZoneFormat.name)
+                put("leftZoneFormat", inst.leftZoneFormat.name)
+                put("rightZoneFormat", inst.rightZoneFormat.name)
+                put("centerSmoothing", inst.centerSmoothing.seconds)
+                put("leftSmoothing", inst.leftSmoothing.seconds)
+                put("rightSmoothing", inst.rightSmoothing.seconds)
+            }
+            jsonArray.put(obj)
         }
-    }
-
-    /**
-     * Legacy helper updating full global typography.
-     */
-    suspend fun updateGlobalTypography(typography: GlobalTypographyConfig) {
-        dataStore.edit { prefs ->
-            prefs[Keys.GLOBAL_FONT_FAMILY] = typography.fontFamily.name
-            prefs[Keys.GLOBAL_LABEL_SIZE_SP] = typography.labelSizeSp
-            prefs[Keys.GLOBAL_LABEL_WEIGHT] = typography.labelWeight
-            prefs[Keys.GLOBAL_VALUE_SIZE_SP] = typography.valueSizeSp
-            prefs[Keys.GLOBAL_VALUE_WEIGHT] = typography.valueWeight
-        }
-    }
-
-    /**
-     * Legacy helper updating full field config.
-     */
-    suspend fun updateFieldConfig(typeId: String, config: KustomFieldConfig) {
-        dataStore.edit { prefs ->
-            prefs[intPreferencesKey("${typeId}_smoothing")] = config.smoothingOption.seconds
-            prefs[stringPreferencesKey("${typeId}_zone_format")] = config.zoneFormat.name
-            prefs[booleanPreferencesKey("${typeId}_show_unit")] = config.showUnit
-        }
+        return jsonArray.toString()
     }
 
     private inline fun <reified T : Enum<T>> parseEnum(savedString: String?, defaultValue: T): T {
         if (savedString.isNullOrBlank()) return defaultValue
         return runCatching { java.lang.Enum.valueOf(T::class.java, savedString) }.getOrDefault(defaultValue)
-    }
-
-    /**
-     * Atomically updates global power zone count (7 or 5 zones) in DataStore.
-     */
-    suspend fun updateGlobalPowerZoneCount(count: Int) {
-        dataStore.edit { prefs ->
-            prefs[Keys.GLOBAL_POWER_ZONE_COUNT] = count
-        }
-    }
-
-    /**
-     * Atomically updates global zone color palette (Karoo, Garmin, Wahoo, Zwift) in DataStore.
-     */
-    suspend fun updateGlobalZonePalette(palette: ZonePalette) {
-        dataStore.edit { prefs ->
-            prefs[Keys.GLOBAL_ZONE_PALETTE] = palette.name
-        }
     }
 
     private object Keys {
@@ -311,5 +399,6 @@ class KustomSettingsRepository(context: Context) {
         val GLOBAL_USE_CUSTOM_BG = booleanPreferencesKey("global_use_custom_bg")
         val GLOBAL_POWER_ZONE_COUNT = intPreferencesKey("global_power_zone_count")
         val GLOBAL_ZONE_PALETTE = stringPreferencesKey("global_zone_palette")
+        val CUSTOM_COMBO_INSTANCES_JSON = stringPreferencesKey("custom_combo_instances_json")
     }
 }

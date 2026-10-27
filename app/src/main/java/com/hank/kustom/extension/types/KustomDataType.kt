@@ -220,47 +220,105 @@ class KustomDataType(
 
                 val isDarkTheme = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
 
-                val bitmap = if (definition.typeId == "power-combo" || definition.typeId == "custom-combo") {
-                    val centerDef = if (definition.typeId == "custom-combo") {
-                        KustomFieldCatalog.findByTypeId(fieldConfig.comboCenterMetric) ?: KustomFieldCatalog.POWER
+                val customComboInst = settings.customComboInstances.firstOrNull { it.id == definition.typeId }
+
+                val bitmap = if (definition.typeId == "power-combo" || definition.typeId == "custom-combo" || customComboInst != null) {
+                    val resolvedConfig = if (customComboInst != null) {
+                        KustomFieldConfig(
+                            smoothingOption = customComboInst.centerSmoothing,
+                            zoneFormat = customComboInst.centerZoneFormat,
+                            comboCenterMetric = customComboInst.centerMetric,
+                            comboLeftMetric = customComboInst.leftMetric,
+                            comboRightMetric = customComboInst.rightMetric,
+                            comboLeftSmoothing = customComboInst.leftSmoothing,
+                            comboRightSmoothing = customComboInst.rightSmoothing,
+                            comboLeftZoneFormat = customComboInst.leftZoneFormat,
+                            comboRightZoneFormat = customComboInst.rightZoneFormat,
+                        )
                     } else {
-                        KustomFieldCatalog.POWER
+                        fieldConfig
                     }
 
-                    val pWatts = dynamicValue ?: 214.0
-                    val primaryValText = if (centerDef.typeId.contains("hr") || centerDef.typeId.contains("cadence") || centerDef.typeId.contains("power")) "${pWatts.toInt()}" else centerDef.formatNumericValueOnly(pWatts, isImperial)
-                    val dynamicCenterLabel = centerDef.resolveDynamicLabel(fieldConfig.smoothingOption)
+                    val centerDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboCenterMetric) ?: KustomFieldCatalog.POWER
+                    val leftDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboLeftMetric) ?: KustomFieldCatalog.NP
+                    val rightDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboRightMetric) ?: KustomFieldCatalog.MAX_POWER
 
-                    val leftDef = KustomFieldCatalog.findByTypeId(fieldConfig.comboLeftMetric) ?: KustomFieldCatalog.NP
-                    val rightDef = KustomFieldCatalog.findByTypeId(fieldConfig.comboRightMetric) ?: KustomFieldCatalog.MAX_POWER
+                    // Real live stream value or mock value ONLY if isMock
+                    val centerVal: Double? = if (isMock) {
+                        centerDef.mockValues.first()
+                    } else {
+                        dynamicValue
+                    }
 
-                    val comboMappedColor = if (centerDef.supportsZones) {
+                    val leftVal: Double? = if (isMock) {
+                        leftDef.mockValues.firstOrNull() ?: 203.0
+                    } else {
+                        if (leftDef.typeId == centerDef.typeId) dynamicValue else null
+                    }
+
+                    val rightVal: Double? = if (isMock) {
+                        rightDef.mockValues.firstOrNull() ?: 224.0
+                    } else {
+                        if (rightDef.typeId == centerDef.typeId) dynamicValue else null
+                    }
+
+                    val primaryValText = if (centerVal == null) {
+                        val isCenterSensor = when (centerDef.typeId) {
+                            "power", "np", "avg-power", "max-power", "power-20m", "power-1hr", "power-balance",
+                            "percent-ftp", "power-to-weight", "power-zone", "intensity-factor", "tss", "power-vi",
+                            "power-kj", "power-cal", "power-cal-hr", "power-smoothness", "power-te", "avg-power-balance",
+                            "hr", "avg-hr", "max-hr", "hr-zone", "percent-max-hr", "percent-hrr", "avg-percent-hrr",
+                            "cadence", "torque", "avg-cadence", "max-cadence", "avg-torque", "max-torque" -> true
+                            else -> false
+                        }
+                        if (isCenterSensor) "No Sensor" else "--"
+                    } else if (centerDef.typeId.contains("hr") || centerDef.typeId.contains("cadence") || centerDef.typeId.contains("power")) {
+                        "${centerVal.toInt()}"
+                    } else {
+                        centerDef.formatNumericValueOnly(centerVal, isImperial)
+                    }
+
+                    val leftValueFormattedText = when {
+                        resolvedConfig.comboLeftMetric == "none" -> ""
+                        leftVal != null -> leftDef.formatNumericValueOnly(leftVal, isImperial)
+                        isMock -> leftDef.formatNumericValueOnly(leftDef.mockValues.firstOrNull() ?: 203.0, isImperial)
+                        else -> "--"
+                    }
+
+                    val rightValueFormattedText = when {
+                        resolvedConfig.comboRightMetric == "none" -> ""
+                        rightVal != null -> rightDef.formatNumericValueOnly(rightVal, isImperial)
+                        isMock -> rightDef.formatNumericValueOnly(rightDef.mockValues.firstOrNull() ?: 224.0, isImperial)
+                        else -> "--"
+                    }
+
+                    val comboMappedColor = if (centerDef.supportsZones && centerVal != null) {
                         computeMappedColor(
                             definition = centerDef,
-                            rawVal = pWatts,
-                            fieldConfig = fieldConfig,
+                            rawVal = centerVal,
+                            fieldConfig = resolvedConfig,
                             userProfile = userProfile,
                             palette = settings.globalColors.globalZonePalette,
                         )
                     } else null
 
-                    val leftZoneFormat = fieldConfig.comboLeftZoneFormat
-                    val leftMappedColor = if (leftDef.supportsZones && leftZoneFormat != ZoneFormat.NONE) {
+                    val leftZoneFormat = resolvedConfig.comboLeftZoneFormat
+                    val leftMappedColor = if (leftDef.supportsZones && leftZoneFormat != ZoneFormat.NONE && leftVal != null) {
                         computeMappedColor(
                             definition = leftDef,
-                            rawVal = pWatts * 0.95,
-                            fieldConfig = fieldConfig.copy(zoneFormat = leftZoneFormat),
+                            rawVal = leftVal,
+                            fieldConfig = resolvedConfig.copy(zoneFormat = leftZoneFormat),
                             userProfile = userProfile,
                             palette = settings.globalColors.globalZonePalette,
                         )
                     } else null
 
-                    val rightZoneFormat = fieldConfig.comboRightZoneFormat
-                    val rightMappedColor = if (rightDef.supportsZones && rightZoneFormat != ZoneFormat.NONE) {
+                    val rightZoneFormat = resolvedConfig.comboRightZoneFormat
+                    val rightMappedColor = if (rightDef.supportsZones && rightZoneFormat != ZoneFormat.NONE && rightVal != null) {
                         computeMappedColor(
                             definition = rightDef,
-                            rawVal = pWatts * 1.05,
-                            fieldConfig = fieldConfig.copy(zoneFormat = rightZoneFormat),
+                            rawVal = rightVal,
+                            fieldConfig = resolvedConfig.copy(zoneFormat = rightZoneFormat),
                             userProfile = userProfile,
                             palette = settings.globalColors.globalZonePalette,
                         )
@@ -269,17 +327,17 @@ class KustomDataType(
                     KustomFieldRenderer.renderComboBlock(
                         context = context,
                         config = config,
-                        label = dynamicCenterLabel,
+                        label = centerDef.resolveDynamicLabel(resolvedConfig.smoothingOption),
                         primaryValueText = primaryValText,
                         smoothingLabel = "",
-                        leftLabel = if (fieldConfig.comboLeftMetric == "none") "" else leftDef.childTitle,
-                        leftValueText = if (fieldConfig.comboLeftMetric == "none") "" else leftDef.formatNumericValueOnly(pWatts * 0.95, isImperial),
-                        rightLabel = if (fieldConfig.comboRightMetric == "none") "" else rightDef.childTitle,
-                        rightValueText = if (fieldConfig.comboRightMetric == "none") "" else rightDef.formatNumericValueOnly(pWatts * 1.05, isImperial),
-                        powerValueWatts = pWatts,
+                        leftLabel = if (resolvedConfig.comboLeftMetric == "none") "" else leftDef.childTitle,
+                        leftValueText = leftValueFormattedText,
+                        rightLabel = if (resolvedConfig.comboRightMetric == "none") "" else rightDef.childTitle,
+                        rightValueText = rightValueFormattedText,
+                        powerValueWatts = centerVal,
                         ftpWatts = userProfile?.ftp?.toDouble() ?: 250.0,
                         zoneCount = settings.globalColors.globalPowerZoneCount,
-                        zoneFormat = if (centerDef.supportsZones) fieldConfig.zoneFormat else ZoneFormat.NONE,
+                        zoneFormat = if (centerDef.supportsZones) resolvedConfig.zoneFormat else ZoneFormat.NONE,
                         mappedColor = comboMappedColor,
                         leftZoneFormat = leftZoneFormat,
                         leftMappedColor = leftMappedColor,
