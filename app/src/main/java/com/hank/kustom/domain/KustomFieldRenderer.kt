@@ -82,13 +82,15 @@ object KustomFieldRenderer {
                 }
             }
 
-            // Draw Background (100% edge-to-edge fill with zero margins or corner rounding)
+            // Draw Background (Rounded cell fill sitting cleanly inside Karoo cell border)
             if (boundaries) {
+                val insetRect = RectF(1.5f, 1.5f, width.toFloat() - 1.5f, height.toFloat() - 1.5f)
+                val cornerRadius = height * 0.12f
                 val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = if (backgroundColor != 0x00000000) backgroundColor else defaultBgColor
                     style = Paint.Style.FILL
                 }
-                canvas.drawRect(RectF(0f, 0f, width.toFloat(), height.toFloat()), bgPaint)
+                canvas.drawRoundRect(insetRect, cornerRadius, cornerRadius, bgPaint)
             } else {
                 if (backgroundColor != 0x00000000) {
                     canvas.drawColor(backgroundColor)
@@ -257,15 +259,15 @@ object KustomFieldRenderer {
 
             val mutedTextColor = if (zoneFormat == ZoneFormat.BACKGROUND && activeZoneColor != null) cornerValueColor else defaultTextColor
 
-            // Draw Background (Identical fill logic to standard fields)
+            // Draw Background (Identical fill logic to standard fields with 1.5px inset)
             if (config.boundariesEnabled) {
-                val rect = RectF(0f, 0f, width.toFloat(), height.toFloat())
+                val insetRect = RectF(1.5f, 1.5f, width.toFloat() - 1.5f, height.toFloat() - 1.5f)
                 val cornerRadius = height * 0.12f
                 val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = backgroundColor
                     style = Paint.Style.FILL
                 }
-                canvas.drawRoundRect(rect, cornerRadius, cornerRadius, bgPaint)
+                canvas.drawRoundRect(insetRect, cornerRadius, cornerRadius, bgPaint)
             } else {
                 if (backgroundColor != 0x00000000) canvas.drawColor(backgroundColor)
                 val darkGreyBorder = if (isDarkTheme) 0xFF475569.toInt() else 0xFF64748B.toInt()
@@ -488,7 +490,7 @@ object KustomFieldRenderer {
 
             bitmap
         }.getOrElse { throwable ->
-            KustomLogger.e("Error rendering combo block bitmap", throwable)
+            KustomLogger.e("Error rendering field bitmap", throwable)
             createFallbackBitmap(
                 config.viewSize.first.coerceAtLeast(10),
                 config.viewSize.second.coerceAtLeast(10),
