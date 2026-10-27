@@ -82,6 +82,10 @@ class KustomSettingsRepository(context: Context) {
                 val leftZoneRaw = prefs[stringPreferencesKey("${typeId}_combo_left_zone")]
                 val rightZoneRaw = prefs[stringPreferencesKey("${typeId}_combo_right_zone")]
 
+                val showPowerTrace = prefs[booleanPreferencesKey("${typeId}_show_power_trace")] ?: true
+                val showHrTrace = prefs[booleanPreferencesKey("${typeId}_show_hr_trace")] ?: true
+                val showCadenceTrace = prefs[booleanPreferencesKey("${typeId}_show_cadence_trace")] ?: true
+
                 val fieldConfig = KustomFieldConfig(
                     smoothingOption = SmoothingOption.fromSeconds(smoothingSec),
                     zoneFormat = parseEnum(zoneFormatRaw, defaultZoneFormat),
@@ -94,6 +98,9 @@ class KustomSettingsRepository(context: Context) {
                     comboLeftZoneFormat = parseEnum(leftZoneRaw, ZoneFormat.NONE),
                     comboRightZoneFormat = parseEnum(rightZoneRaw, ZoneFormat.NONE),
                     comboZoneCount = zoneCount,
+                    showPowerTrace = showPowerTrace,
+                    showHrTrace = showHrTrace,
+                    showCadenceTrace = showCadenceTrace,
                 )
                 configs[typeId] = fieldConfig
             }
@@ -215,6 +222,27 @@ class KustomSettingsRepository(context: Context) {
     suspend fun updateFieldZoneFormat(typeId: String, zoneFormat: ZoneFormat) {
         dataStore.edit { prefs ->
             prefs[stringPreferencesKey("${typeId}_zone_format")] = zoneFormat.name
+        }
+    }
+
+    /** Updates Power trace line toggle for workout graph fields. */
+    suspend fun updateShowPowerTrace(typeId: String, enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[booleanPreferencesKey("${typeId}_show_power_trace")] = enabled
+        }
+    }
+
+    /** Updates Heart Rate trace line toggle for workout graph fields. */
+    suspend fun updateShowHrTrace(typeId: String, enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[booleanPreferencesKey("${typeId}_show_hr_trace")] = enabled
+        }
+    }
+
+    /** Updates Cadence trace line toggle for workout graph fields. */
+    suspend fun updateShowCadenceTrace(typeId: String, enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[booleanPreferencesKey("${typeId}_show_cadence_trace")] = enabled
         }
     }
 

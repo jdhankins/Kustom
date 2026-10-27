@@ -203,6 +203,51 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /** Updates Power trace line toggle for workout graph fields. */
+    fun updateShowPowerTrace(typeId: String, enabled: Boolean) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        updatedConfigs[typeId] = currentConfig.copy(showPowerTrace = enabled)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateShowPowerTrace(typeId, enabled)
+        }
+    }
+
+    /** Updates Heart Rate trace line toggle for workout graph fields. */
+    fun updateShowHrTrace(typeId: String, enabled: Boolean) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        updatedConfigs[typeId] = currentConfig.copy(showHrTrace = enabled)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateShowHrTrace(typeId, enabled)
+        }
+    }
+
+    /** Updates Cadence trace line toggle for workout graph fields. */
+    fun updateShowCadenceTrace(typeId: String, enabled: Boolean) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        updatedConfigs[typeId] = currentConfig.copy(showCadenceTrace = enabled)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateShowCadenceTrace(typeId, enabled)
+        }
+    }
+
     /** Adds a new user-created dynamic 3-in-1 combo block instance. */
     fun addCustomComboInstance(name: String) {
         val current = _settingsState.value

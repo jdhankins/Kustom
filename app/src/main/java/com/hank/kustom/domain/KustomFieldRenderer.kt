@@ -566,6 +566,185 @@ object KustomFieldRenderer {
     }
 
     /**
+     * Offscreen ARGB_8888 canvas renderer for Workout Profile Graph HUD with target zone blocks,
+     * current-time divider line, and live Power (White), Heart Rate (Red), and Cadence (Cyan) trace lines.
+     */
+    fun renderWorkoutGraph(
+        context: Context,
+        config: ViewConfig,
+        showPowerTrace: Boolean = true,
+        showHrTrace: Boolean = true,
+        showCadenceTrace: Boolean = true,
+        isDarkTheme: Boolean = false,
+        globalColors: GlobalColorConfig = GlobalColorConfig(),
+    ): Bitmap {
+        return runCatching {
+            val width = config.viewSize.first.coerceAtLeast(10)
+            val height = config.viewSize.second.coerceAtLeast(10)
+
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+
+            val defaultBgColor = if (isDarkTheme) globalColors.getDarkColorInt() else globalColors.getLightColorInt()
+
+            // Draw Background Frame
+            if (config.boundariesEnabled) {
+                val insetRect = RectF(1.5f, 1.5f, width.toFloat() - 1.5f, height.toFloat() - 1.5f)
+                val cornerRadius = height * 0.12f
+                val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = defaultBgColor
+                    style = Paint.Style.FILL
+                }
+                canvas.drawRoundRect(insetRect, cornerRadius, cornerRadius, bgPaint)
+            } else {
+                if (defaultBgColor != 0x00000000) canvas.drawColor(defaultBgColor)
+            }
+
+            // Define Graph Area (insets keep cursor pin comfortably inside top/bottom rounded bounds)
+            val graphTop = height * 0.18f
+            val graphBottom = height * 0.90f
+            val graphHeight = graphBottom - graphTop
+            val marginX = width * 0.035f
+            val graphWidth = width - (marginX * 2)
+
+            // Current-time divider line position (40% across graph = past on left, future on right)
+            val dividerX = marginX + (graphWidth * 0.40f)
+
+            // Sample Workout Interval Blocks: [Duration Ratio, Target Zone Height Ratio, Zone Color]
+            val intervals = listOf(
+                Pair(0.12f, 0.40f) to 0xFF5C6BC0.toInt(), // Z1 Blue Recovery
+                Pair(0.15f, 0.55f) to 0xFF29B6F6.toInt(), // Z2 Light Blue Endurance
+                Pair(0.13f, 0.70f) to 0xFF66BB6A.toInt(), // Z3 Green Tempo
+                Pair(0.20f, 0.82f) to 0xFFFFCA28.toInt(), // Z4 Yellow Threshold
+                Pair(0.15f, 0.60f) to 0xFF29B6F6.toInt(), // Z2 Light Blue Recovery
+                Pair(0.15f, 0.90f) to 0xFFFFA726.toInt(), // Z5 Orange Sweetspot
+                Pair(0.10f, 0.98f) to 0xFFEF5350.toInt(), // Z6 Red Anaerobic
+            )
+
+            var currentBarX = marginX
+            val cornerRadii = floatArrayOf(6f, 6f, 6f, 6f, 0f, 0f, 0f, 0f) // Top corners rounded 6px, bottom corners 0px flat
+
+            intervals.forEach { (spec, zoneColor) ->
+                val (durRatio, heightRatio) = spec
+                val barW = graphWidth * durRatio
+                val barH = graphHeight * heightRatio
+                val barTop = graphBottom - barH
+                val barRect = RectF(currentBarX, barTop, currentBarX + barW, graphBottom)
+
+                val isPast = (currentBarX + barW) <= dividerX
+
+                val barPath = android.graphics.Path().apply {
+                    addRoundRect(barRect, cornerRadii, android.graphics.Path.Direction.CW)
+                }
+
+                // 100% solid fill for all interval blocks with flat bottom
+                val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = zoneColor
+                    style = Paint.Style.FILL
+                    if (isPast) alpha = 180
+                }
+                canvas.drawPath(barPath, barPaint)
+
+                currentBarX += barW
+            }
+
+            // Draw Vertical Current-Time Divider Line (stops flush at graphBottom)
+            val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (isDarkTheme) 0xFFFFFFFF.toInt() else 0xFF1E2225.toInt()
+                style = Paint.Style.STROKE
+                strokeWidth = 3.5f
+            }
+            canvas.drawLine(dividerX, graphTop, dividerX, graphBottom, dividerPaint)
+
+            // Draw Top Progress Cursor Pin Dot marking exact current position
+            val cursorCirclePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (isDarkTheme) 0xFFFFFFFF.toInt() else 0xFF1E2225.toInt()
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(dividerX, graphTop - 5.0f, 5.0f, cursorCirclePaint)
+
+            // Draw Sample Live Telemetry Trace Lines with subtle high-contrast drop-shadows
+            val historySteps = 30
+            val stepWidth = (dividerX - marginX) / (historySteps - 1)
+            val traceShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (isDarkTheme) 0xAA000000.toInt() else 0x55000000.toInt()
+                style = Paint.Style.STROKE
+                strokeWidth = 4.5f
+                strokeCap = Paint.Cap.ROUND
+                strokeJoin = Paint.Join.ROUND
+            }
+
+            // 1. Power Trace Line (White with subtle dark under-stroke)
+            if (showPowerTrace) {
+                val powerPath = android.graphics.Path()
+                for (step in 0 until historySteps) {
+                    val px = marginX + (step * stepWidth)
+                    val sampleVal = 0.35f + (step * 0.015f) + (Math.sin(step * 0.4).toFloat() * 0.06f)
+                    val py = graphBottom - (graphHeight * sampleVal.coerceIn(0.1f, 1.0f))
+                    if (step == 0) powerPath.moveTo(px, py) else powerPath.lineTo(px, py)
+                }
+                val powerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = 0xFFFFFFFF.toInt()
+                    style = Paint.Style.STROKE
+                    strokeWidth = 3.0f
+                    strokeCap = Paint.Cap.ROUND
+                    strokeJoin = Paint.Join.ROUND
+                }
+                canvas.drawPath(powerPath, traceShadowPaint) // Subtle drop contrast
+                canvas.drawPath(powerPath, powerPaint)       // Crisp solid white line
+            }
+
+            // 2. Heart Rate Trace Line (Red with subtle dark under-stroke)
+            if (showHrTrace) {
+                val hrPath = android.graphics.Path()
+                for (step in 0 until historySteps) {
+                    val px = marginX + (step * stepWidth)
+                    val sampleVal = 0.30f + (step * 0.018f) + (Math.sin(step * 0.2).toFloat() * 0.04f)
+                    val py = graphBottom - (graphHeight * sampleVal.coerceIn(0.1f, 1.0f))
+                    if (step == 0) hrPath.moveTo(px, py) else hrPath.lineTo(px, py)
+                }
+                val hrPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = 0xFFFF5252.toInt()
+                    style = Paint.Style.STROKE
+                    strokeWidth = 2.8f
+                    strokeCap = Paint.Cap.ROUND
+                    strokeJoin = Paint.Join.ROUND
+                }
+                canvas.drawPath(hrPath, traceShadowPaint) // Subtle drop contrast
+                canvas.drawPath(hrPath, hrPaint)          // Crisp solid red line
+            }
+
+            // 3. Cadence Trace Line (Cyan with subtle dark under-stroke)
+            if (showCadenceTrace) {
+                val cadencePath = android.graphics.Path()
+                for (step in 0 until historySteps) {
+                    val px = marginX + (step * stepWidth)
+                    val sampleVal = 0.72f + (Math.sin(step * 0.6).toFloat() * 0.08f)
+                    val py = graphBottom - (graphHeight * sampleVal.coerceIn(0.1f, 1.0f))
+                    if (step == 0) cadencePath.moveTo(px, py) else cadencePath.lineTo(px, py)
+                }
+                val cadencePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = 0xFF00E5FF.toInt()
+                    style = Paint.Style.STROKE
+                    strokeWidth = 2.8f
+                    strokeCap = Paint.Cap.ROUND
+                    strokeJoin = Paint.Join.ROUND
+                }
+                canvas.drawPath(cadencePath, traceShadowPaint) // Subtle drop contrast
+                canvas.drawPath(cadencePath, cadencePaint)      // Crisp solid cyan line
+            }
+
+            bitmap
+        }.getOrElse { throwable ->
+            KustomLogger.e("Error rendering workout graph bitmap", throwable)
+            createFallbackBitmap(
+                config.viewSize.first.coerceAtLeast(10),
+                config.viewSize.second.coerceAtLeast(10),
+            )
+        }
+    }
+
+    /**
      * Draws value text with Wahoo ELEMNT style superscript formatting for decimals and time colons.
      * The top of the superscript digits is aligned exactly even with the top of the main value digits.
      */

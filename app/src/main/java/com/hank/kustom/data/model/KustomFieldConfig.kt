@@ -14,6 +14,9 @@ package com.hank.kustom.data.model
  * @property comboLeftZoneFormat Independent zone color format for left corner metric.
  * @property comboRightZoneFormat Independent zone color format for right corner metric.
  * @property comboZoneCount Zone bar count (5 or 7 zones) for combo block fields.
+ * @property showPowerTrace Whether live Power trace line (White) is enabled on workout graph fields.
+ * @property showHrTrace Whether live Heart Rate trace line (Red) is enabled on workout graph fields.
+ * @property showCadenceTrace Whether live Cadence trace line (Cyan) is enabled on workout graph fields.
  */
 data class KustomFieldConfig(
     val smoothingOption: SmoothingOption = SmoothingOption.THREE_SEC,
@@ -27,6 +30,9 @@ data class KustomFieldConfig(
     val comboLeftZoneFormat: ZoneFormat = ZoneFormat.NONE,
     val comboRightZoneFormat: ZoneFormat = ZoneFormat.NONE,
     val comboZoneCount: Int = 7,
+    val showPowerTrace: Boolean = true,
+    val showHrTrace: Boolean = true,
+    val showCadenceTrace: Boolean = true,
 ) {
     val colorMode: ColorMode
         get() = zoneFormat.toColorMode()

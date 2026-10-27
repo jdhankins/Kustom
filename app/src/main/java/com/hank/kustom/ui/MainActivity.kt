@@ -2189,6 +2189,91 @@ fun FieldsTab(
 }
 
 /**
+ * Configuration controls for Workout Profile Graph field (toggles for Power, HR, and Cadence trace lines).
+ */
+@Composable
+fun WorkoutGraphControls(
+    fieldConfig: KustomFieldConfig,
+    colors: KustomColorScheme,
+    viewModel: KustomSettingsViewModel,
+    typeId: String,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = "LIVE TRACE LINES",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = colors.textSecondary,
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // Power Trace (White)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(if (fieldConfig.showPowerTrace) Color.White else colors.trackBg)
+                    .border(1.dp, if (fieldConfig.showPowerTrace) Color.White else colors.border, RoundedCornerShape(50))
+                    .clickable { viewModel.updateShowPowerTrace(typeId, !fieldConfig.showPowerTrace) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "Power ⚪",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (fieldConfig.showPowerTrace) Color.Black else colors.textSecondary,
+                )
+            }
+
+            // HR Trace (Red)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(if (fieldConfig.showHrTrace) Color(0xFFFF5252) else colors.trackBg)
+                    .border(1.dp, if (fieldConfig.showHrTrace) Color(0xFFFF5252) else colors.border, RoundedCornerShape(50))
+                    .clickable { viewModel.updateShowHrTrace(typeId, !fieldConfig.showHrTrace) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "HR 🔴",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (fieldConfig.showHrTrace) Color.White else colors.textSecondary,
+                )
+            }
+
+            // Cadence Trace (Cyan)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(if (fieldConfig.showCadenceTrace) Color(0xFF00E5FF) else colors.trackBg)
+                    .border(1.dp, if (fieldConfig.showCadenceTrace) Color(0xFF00E5FF) else colors.border, RoundedCornerShape(50))
+                    .clickable { viewModel.updateShowCadenceTrace(typeId, !fieldConfig.showCadenceTrace) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "Cadence 🔵",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (fieldConfig.showCadenceTrace) Color.Black else colors.textSecondary,
+                )
+            }
+        }
+    }
+}
+
+/**
  * Individual field configuration card displaying metric name, description, live preview, and controls.
  */
 @Composable
@@ -2248,7 +2333,7 @@ fun FieldCardItem(
                 color = colors.textPrimary,
             )
 
-            val isFullWidthPreview = field.category == FieldCategory.COMBO
+            val isFullWidthPreview = field.typeId == "workout-graph" || field.category == FieldCategory.COMBO
 
             // 2. Centered Live Preview Box
             Box(
@@ -2283,7 +2368,17 @@ fun FieldCardItem(
                         )
                     }
 
-                    val bitmap = if (field.typeId == "power-combo" || field.typeId == "custom-combo") {
+                    val bitmap = if (field.typeId == "workout-graph") {
+                        KustomFieldRenderer.renderWorkoutGraph(
+                            context = context,
+                            config = previewViewConfig,
+                            showPowerTrace = fieldConfig.showPowerTrace,
+                            showHrTrace = fieldConfig.showHrTrace,
+                            showCadenceTrace = fieldConfig.showCadenceTrace,
+                            isDarkTheme = colors.isDark,
+                            globalColors = settings.globalColors,
+                        )
+                    } else if (field.typeId == "power-combo" || field.typeId == "custom-combo") {
                         val centerDef = if (field.typeId == "custom-combo") {
                             KustomFieldCatalog.findByTypeId(fieldConfig.comboCenterMetric) ?: KustomFieldCatalog.POWER
                         } else {
@@ -2412,6 +2507,16 @@ fun FieldCardItem(
                         lineHeight = 16.sp,
                     )
                 }
+            }
+
+            // Controls Below
+            if (field.typeId == "workout-graph") {
+                WorkoutGraphControls(
+                    fieldConfig = fieldConfig,
+                    colors = colors,
+                    viewModel = viewModel,
+                    typeId = field.typeId,
+                )
             }
 
             // Controls Below (For standard fields)

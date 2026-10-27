@@ -122,5 +122,6 @@
     <DataType typeId="workout-target-cadence" displayName="@string/field_workout_target_cadence_name" description="@string/field_workout_target_cadence_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="workout-target-hr" displayName="@string/field_workout_target_hr_name" description="@string/field_workout_target_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="workout-duration-remaining" displayName="@string/field_workout_duration_remaining_name" description="@string/field_workout_duration_remaining_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="workout-graph" displayName="@string/field_workout_graph_name" description="@string/field_workout_graph_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
 </ExtensionInfo>

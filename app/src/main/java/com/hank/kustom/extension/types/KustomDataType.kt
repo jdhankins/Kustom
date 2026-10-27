@@ -274,7 +274,17 @@ class KustomDataType(
                 val customComboInst = settings.customComboInstances.firstOrNull { it.id == definition.typeId }
                 val isComboBlock = customComboInst != null || definition.typeId.startsWith("combo-block-") || definition.typeId == "power-combo" || definition.typeId == "custom-combo"
 
-                val bitmap = if (isComboBlock) {
+                val bitmap = if (definition.typeId == "workout-graph") {
+                    KustomFieldRenderer.renderWorkoutGraph(
+                        context = context,
+                        config = config,
+                        showPowerTrace = fieldConfig.showPowerTrace,
+                        showHrTrace = fieldConfig.showHrTrace,
+                        showCadenceTrace = fieldConfig.showCadenceTrace,
+                        isDarkTheme = isDarkTheme,
+                        globalColors = settings.globalColors,
+                    )
+                } else if (isComboBlock) {
                     val resolvedConfig = if (customComboInst != null) {
                         KustomFieldConfig(
                             smoothingOption = customComboInst.centerSmoothing,
