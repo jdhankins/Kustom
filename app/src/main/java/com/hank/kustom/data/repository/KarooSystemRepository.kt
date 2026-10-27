@@ -54,19 +54,29 @@ class KarooSystemRepository private constructor(context: Context) {
      */
     fun streamDataFlow(dataTypeId: String): Flow<StreamState> = callbackFlow {
         connect()
-        val consumerId = karooSystem.addConsumer<OnStreamState>(
-            params = OnStreamState.StartStreaming(dataTypeId),
-            onError = { error ->
-                Log.e(TAG, "Error in streamDataFlow for $dataTypeId: $error")
-                trySend(StreamState.NotAvailable)
-            },
-            onEvent = { (state) ->
-                trySend(state)
-            },
-        )
+        var consumerId: String? = null
+        runCatching {
+            consumerId = karooSystem.addConsumer<OnStreamState>(
+                params = OnStreamState.StartStreaming(dataTypeId),
+                onError = { error ->
+                    Log.w(TAG, "Notice in streamDataFlow for $dataTypeId: $error")
+                    trySend(StreamState.NotAvailable)
+                },
+                onEvent = { (state) ->
+                    trySend(state)
+                },
+            )
+        }.onFailure { throwable ->
+            Log.w(TAG, "Failed to register consumer for $dataTypeId", throwable)
+            trySend(StreamState.NotAvailable)
+        }
+
         awaitClose {
-            Log.d(TAG, "Closing streamDataFlow for $dataTypeId, removing consumer: $consumerId")
-            karooSystem.removeConsumer(consumerId)
+            val cid = consumerId
+            if (cid != null) {
+                Log.d(TAG, "Closing streamDataFlow for $dataTypeId, removing consumer: $cid")
+                karooSystem.removeConsumer(cid)
+            }
         }
     }.onStart { emit(StreamState.Idle) }
 

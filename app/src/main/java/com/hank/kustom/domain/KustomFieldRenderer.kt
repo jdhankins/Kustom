@@ -613,7 +613,7 @@ object KustomFieldRenderer {
             val graphWidth = width - (marginX * 2)
 
             // Current-time divider line position
-            val activeRatio = currentElapsedRatio.coerceIn(0.05f, 0.95f)
+            val activeRatio = currentElapsedRatio.coerceIn(0.0f, 1.0f)
             val dividerX = marginX + (graphWidth * activeRatio)
 
             // Active workout model or default sample fallback
@@ -630,7 +630,7 @@ object KustomFieldRenderer {
                 val barTop = graphBottom - barH
                 val barRect = RectF(currentBarX, barTop, currentBarX + barW, graphBottom)
 
-                val isPast = (currentBarX + barW) <= dividerX
+                val isPast = activeRatio > 0.01f && (currentBarX + barW) <= dividerX
 
                 val barPath = android.graphics.Path().apply {
                     addRoundRect(barRect, cornerRadii, android.graphics.Path.Direction.CW)
@@ -671,7 +671,7 @@ object KustomFieldRenderer {
                 strokeJoin = Paint.Join.ROUND
             }
 
-            // 1. Power Trace Line (White with subtle dark under-stroke)
+            // 1. Power Trace Line (White with black border in Dark Mode; Black with white border in Light Mode)
             if (showPowerTrace) {
                 val powerPath = android.graphics.Path()
                 val steps = if (powerHistory.isNotEmpty()) powerHistory.size else 30
@@ -688,15 +688,27 @@ object KustomFieldRenderer {
                     if (idx == 0) powerPath.moveTo(px, py) else powerPath.lineTo(px, py)
                 }
 
+                val powerBorderColor = if (isDarkTheme) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
+                val powerLineColor = if (isDarkTheme) 0xFFFFFFFF.toInt() else 0xFF1E2225.toInt()
+
+                val powerBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = powerBorderColor
+                    style = Paint.Style.STROKE
+                    strokeWidth = 5.0f
+                    strokeCap = Paint.Cap.ROUND
+                    strokeJoin = Paint.Join.ROUND
+                }
+
                 val powerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = 0xFFFFFFFF.toInt()
+                    color = powerLineColor
                     style = Paint.Style.STROKE
                     strokeWidth = 3.0f
                     strokeCap = Paint.Cap.ROUND
                     strokeJoin = Paint.Join.ROUND
                 }
-                canvas.drawPath(powerPath, traceShadowPaint)
-                canvas.drawPath(powerPath, powerPaint)
+
+                canvas.drawPath(powerPath, powerBorderPaint) // High contrast outer border
+                canvas.drawPath(powerPath, powerPaint)       // Main line
             }
 
             // 2. Heart Rate Trace Line (Red with subtle dark under-stroke)

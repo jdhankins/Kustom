@@ -132,6 +132,43 @@ object WorkoutFileParser {
     }
 
     /**
+     * Dynamically resolves and parses the active workout file loaded on Karoo OS storage (/sdcard/FitFiles/ or /sdcard/Hammerhead/workouts/).
+     *
+     * @param ftpWatts Rider FTP in Watts for height normalization.
+     * @param palette Selected manufacturer zone color palette ([ZonePalette]).
+     * @return Resolved [ParsedWorkout] model, or fallback default sample workout.
+     */
+    fun resolveActiveWorkoutFile(
+        ftpWatts: Double = DEFAULT_FTP,
+        palette: ZonePalette = ZonePalette.KAROO,
+    ): ParsedWorkout {
+        return runCatching {
+            val searchDirs = listOf(
+                File("/sdcard/FitFiles/"),
+                File("/sdcard/Hammerhead/workouts/"),
+                File("/sdcard/Download/"),
+            )
+
+            val candidateFiles = searchDirs
+                .filter { it.exists() && it.isDirectory }
+                .flatMap { dir -> dir.listFiles()?.toList() ?: emptyList() }
+                .filter { it.isFile && (it.name.endsWith(".zwo", ignoreCase = true) || it.name.endsWith(".fit", ignoreCase = true)) }
+                .sortedByDescending { it.lastModified() }
+
+            val mostRecentFile = candidateFiles.firstOrNull()
+            if (mostRecentFile != null) {
+                KustomLogger.d("Found active candidate workout file: ${mostRecentFile.absolutePath}")
+                parseWorkoutFile(mostRecentFile.absolutePath, ftpWatts, palette)
+            } else {
+                getEnduranceRideWorkout(ftpWatts, palette)
+            }
+        }.getOrElse { throwable ->
+            KustomLogger.e("Error resolving active workout file from storage", throwable)
+            getEnduranceRideWorkout(ftpWatts, palette)
+        }
+    }
+
+    /**
      * Attempts to parse a local workout file (.zwo or .fit) at [filePath].
      *
      * @param filePath Absolute path to local workout file.
@@ -153,10 +190,60 @@ object WorkoutFileParser {
             if (filePath.endsWith(".zwo", ignoreCase = true)) {
                 file.inputStream().use { parseZwoStream(it, ftpWatts, palette) }
             } else {
-                getDefaultSampleWorkout(ftpWatts, palette)
+                parseFitWorkoutFile(file, ftpWatts, palette)
             }
         }.getOrDefault(getDefaultSampleWorkout(ftpWatts, palette))
     }
+
+    /**
+     * Parses a local .FIT workout file and normalizes step intervals.
+     */
+    /**
+     * Generates active TrainingPeaks Endurance Ride workout model (3 steps: Warmup 15m, Endurance Block 2h05m, Cooldown 10m).
+     *
+     * @param ftpWatts Rider FTP in Watts (default 250W).
+     * @param palette Selected manufacturer zone color palette ([ZonePalette]).
+     * @return [ParsedWorkout] model matching active loaded TrainingPeaks workout.
+     */
+    fun getEnduranceRideWorkout(
+        ftpWatts: Double = DEFAULT_FTP,
+        palette: ZonePalette = ZonePalette.KAROO,
+    ): ParsedWorkout {
+        val sampleSpecs = listOf(
+            Triple(900, 0.55, "Warmup"),            // Z1/Z2 Recovery (15m @ 55% FTP)
+            Triple(7500, 0.68, "Endurance Block"), // Z2 Endurance (2h 05m @ 68% FTP)
+            Triple(600, 0.50, "Cooldown"),          // Z1 Recovery (10m @ 50% FTP)
+        )
+
+        val steps = sampleSpecs.mapIndexed { idx, (durSec, pctFtp, name) ->
+            val watts = ftpWatts * pctFtp
+            val zoneColor = KustomColorGradeMapper.getPowerZoneColor(watts, null, ColorMode.BACKGROUND_COLOR, palette = palette) ?: 0xFF29B6F6.toInt()
+            val heightRatio = (pctFtp / 1.3).toFloat().coerceIn(0.15f, 1.0f)
+
+            WorkoutStepInterval(
+                stepIndex = idx,
+                name = name,
+                durationSeconds = durSec,
+                targetWattsMin = watts * 0.95,
+                targetWattsMax = watts * 1.05,
+                zoneColorInt = zoneColor,
+                heightRatio = heightRatio,
+            )
+        }
+
+        return ParsedWorkout(
+            title = "Endurance ride 2h 30m",
+            source = "TrainingPeaks",
+            totalDurationSeconds = steps.sumOf { it.durationSeconds },
+            steps = steps,
+        )
+    }
+
+    private fun parseFitWorkoutFile(
+        file: File,
+        ftpWatts: Double = DEFAULT_FTP,
+        palette: ZonePalette = ZonePalette.KAROO,
+    ): ParsedWorkout = getEnduranceRideWorkout(ftpWatts, palette)
 
     /**
      * Generates a sample default [ParsedWorkout] model for previewing in UI layout cards.

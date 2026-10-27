@@ -163,6 +163,33 @@ class KustomDataType(
                             isMock = false,
                         )
                     }
+                } else if (definition.typeId == "workout-graph") {
+                    // Workout Profile Graph: Stream Power, HR, Cadence, AND Workout Target Streams concurrently
+                    val powerSdkId = KustomFieldCatalog.POWER.resolveSdkDataTypeId(fieldConfig.smoothingOption)
+                    val hrSdkId = KustomFieldCatalog.HR.resolveSdkDataTypeId(SmoothingOption.NONE)
+                    val cadenceSdkId = KustomFieldCatalog.CADENCE.resolveSdkDataTypeId(SmoothingOption.NONE)
+
+                    combine(
+                        karooSystemRepository.streamDataFlow(powerSdkId),
+                        karooSystemRepository.streamDataFlow(hrSdkId),
+                        karooSystemRepository.streamDataFlow(cadenceSdkId),
+                        karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET),
+                        karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_PRIMARY_TARGET),
+                    ) { powerState, hrState, cadenceState, targetPowerState, primaryTargetState ->
+                        val pDp = (targetPowerState as? StreamState.Streaming)?.dataPoint
+                        val priDp = (primaryTargetState as? StreamState.Streaming)?.dataPoint
+                        val targetDp = priDp ?: pDp
+                        RenderPayload(
+                            streamState = powerState,
+                            leftStreamState = hrState,
+                            rightStreamState = cadenceState,
+                            userProfile = userProfile,
+                            settings = settings,
+                            fieldConfig = fieldConfig,
+                            isMock = false,
+                            targetDataPoint = targetDp,
+                        )
+                    }
                 } else if (definition.typeId == "workout-target-power") {
                     // Workout Power: Stream live current power AND live workout target streams
                     val sdkTypeId = definition.resolveSdkDataTypeId(fieldConfig.smoothingOption)
@@ -294,11 +321,22 @@ class KustomDataType(
                         if (cadenceHistory.size > 120) cadenceHistory.removeAt(0)
                     }
 
+                    val userFtp = userProfile?.ftp?.toDouble() ?: 250.0
+                    val activeWorkout = if (isMock) {
+                        WorkoutFileParser.getDefaultSampleWorkout(userFtp, settings.globalColors.globalZonePalette)
+                    } else {
+                        WorkoutFileParser.resolveActiveWorkoutFile(userFtp, settings.globalColors.globalZonePalette)
+                    }
+
+                    val durationRemSec = (targetDataPoint?.singleValue ?: 0.0).toFloat()
+                    val totalSec = activeWorkout.totalDurationSeconds.coerceAtLeast(1).toFloat()
+                    val elapsedRatio = if (isMock) 0.40f else if (durationRemSec <= 0f) 0.0f else ((totalSec - durationRemSec) / totalSec).coerceIn(0.0f, 1.0f)
+
                     KustomFieldRenderer.renderWorkoutGraph(
                         context = context,
                         config = config,
-                        parsedWorkout = WorkoutFileParser.getDefaultSampleWorkout(userProfile?.ftp?.toDouble() ?: 250.0, settings.globalColors.globalZonePalette),
-                        currentElapsedRatio = 0.40f,
+                        parsedWorkout = activeWorkout,
+                        currentElapsedRatio = elapsedRatio,
                         powerHistory = if (isMock) emptyList() else powerHistory.toList(),
                         hrHistory = if (isMock) emptyList() else hrHistory.toList(),
                         cadenceHistory = if (isMock) emptyList() else cadenceHistory.toList(),
