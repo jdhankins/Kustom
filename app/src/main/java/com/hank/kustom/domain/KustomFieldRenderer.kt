@@ -572,6 +572,11 @@ object KustomFieldRenderer {
     fun renderWorkoutGraph(
         context: Context,
         config: ViewConfig,
+        parsedWorkout: com.hank.kustom.data.model.ParsedWorkout? = null,
+        currentElapsedRatio: Float = 0.40f,
+        powerHistory: List<Float> = emptyList(),
+        hrHistory: List<Float> = emptyList(),
+        cadenceHistory: List<Float> = emptyList(),
         showPowerTrace: Boolean = true,
         showHrTrace: Boolean = true,
         showCadenceTrace: Boolean = true,
@@ -607,27 +612,21 @@ object KustomFieldRenderer {
             val marginX = width * 0.035f
             val graphWidth = width - (marginX * 2)
 
-            // Current-time divider line position (40% across graph = past on left, future on right)
-            val dividerX = marginX + (graphWidth * 0.40f)
+            // Current-time divider line position
+            val activeRatio = currentElapsedRatio.coerceIn(0.05f, 0.95f)
+            val dividerX = marginX + (graphWidth * activeRatio)
 
-            // Sample Workout Interval Blocks: [Duration Ratio, Target Zone Height Ratio, Zone Color]
-            val intervals = listOf(
-                Pair(0.12f, 0.40f) to 0xFF5C6BC0.toInt(), // Z1 Blue Recovery
-                Pair(0.15f, 0.55f) to 0xFF29B6F6.toInt(), // Z2 Light Blue Endurance
-                Pair(0.13f, 0.70f) to 0xFF66BB6A.toInt(), // Z3 Green Tempo
-                Pair(0.20f, 0.82f) to 0xFFFFCA28.toInt(), // Z4 Yellow Threshold
-                Pair(0.15f, 0.60f) to 0xFF29B6F6.toInt(), // Z2 Light Blue Recovery
-                Pair(0.15f, 0.90f) to 0xFFFFA726.toInt(), // Z5 Orange Sweetspot
-                Pair(0.10f, 0.98f) to 0xFFEF5350.toInt(), // Z6 Red Anaerobic
-            )
+            // Active workout model or default sample fallback
+            val activeWorkout = parsedWorkout ?: WorkoutFileParser.getDefaultSampleWorkout(250.0, globalColors.globalZonePalette)
+            val totalSec = activeWorkout.totalDurationSeconds.coerceAtLeast(1)
 
             var currentBarX = marginX
             val cornerRadii = floatArrayOf(6f, 6f, 6f, 6f, 0f, 0f, 0f, 0f) // Top corners rounded 6px, bottom corners 0px flat
 
-            intervals.forEach { (spec, zoneColor) ->
-                val (durRatio, heightRatio) = spec
+            activeWorkout.steps.forEach { step ->
+                val durRatio = step.durationSeconds.toFloat() / totalSec
                 val barW = graphWidth * durRatio
-                val barH = graphHeight * heightRatio
+                val barH = graphHeight * step.heightRatio
                 val barTop = graphBottom - barH
                 val barRect = RectF(currentBarX, barTop, currentBarX + barW, graphBottom)
 
@@ -639,7 +638,7 @@ object KustomFieldRenderer {
 
                 // 100% solid fill for all interval blocks with flat bottom
                 val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = zoneColor
+                    color = step.zoneColorInt
                     style = Paint.Style.FILL
                     if (isPast) alpha = 180
                 }
@@ -663,9 +662,7 @@ object KustomFieldRenderer {
             }
             canvas.drawCircle(dividerX, graphTop - 5.0f, 5.0f, cursorCirclePaint)
 
-            // Draw Sample Live Telemetry Trace Lines with subtle high-contrast drop-shadows
-            val historySteps = 30
-            val stepWidth = (dividerX - marginX) / (historySteps - 1)
+            // Draw Live Telemetry Trace Lines with subtle high-contrast drop-shadows
             val traceShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = if (isDarkTheme) 0xAA000000.toInt() else 0x55000000.toInt()
                 style = Paint.Style.STROKE
@@ -677,12 +674,20 @@ object KustomFieldRenderer {
             // 1. Power Trace Line (White with subtle dark under-stroke)
             if (showPowerTrace) {
                 val powerPath = android.graphics.Path()
-                for (step in 0 until historySteps) {
-                    val px = marginX + (step * stepWidth)
-                    val sampleVal = 0.35f + (step * 0.015f) + (Math.sin(step * 0.4).toFloat() * 0.06f)
-                    val py = graphBottom - (graphHeight * sampleVal.coerceIn(0.1f, 1.0f))
-                    if (step == 0) powerPath.moveTo(px, py) else powerPath.lineTo(px, py)
+                val steps = if (powerHistory.isNotEmpty()) powerHistory.size else 30
+                val stepW = (dividerX - marginX) / (steps - 1).coerceAtLeast(1)
+
+                for (idx in 0 until steps) {
+                    val px = marginX + (idx * stepW)
+                    val rawVal = if (powerHistory.isNotEmpty()) {
+                        (powerHistory[idx] / 350f).coerceIn(0.1f, 1.0f)
+                    } else {
+                        (0.35f + (idx * 0.015f) + (Math.sin(idx * 0.4).toFloat() * 0.06f)).coerceIn(0.1f, 1.0f)
+                    }
+                    val py = graphBottom - (graphHeight * rawVal)
+                    if (idx == 0) powerPath.moveTo(px, py) else powerPath.lineTo(px, py)
                 }
+
                 val powerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = 0xFFFFFFFF.toInt()
                     style = Paint.Style.STROKE
@@ -690,19 +695,27 @@ object KustomFieldRenderer {
                     strokeCap = Paint.Cap.ROUND
                     strokeJoin = Paint.Join.ROUND
                 }
-                canvas.drawPath(powerPath, traceShadowPaint) // Subtle drop contrast
-                canvas.drawPath(powerPath, powerPaint)       // Crisp solid white line
+                canvas.drawPath(powerPath, traceShadowPaint)
+                canvas.drawPath(powerPath, powerPaint)
             }
 
             // 2. Heart Rate Trace Line (Red with subtle dark under-stroke)
             if (showHrTrace) {
                 val hrPath = android.graphics.Path()
-                for (step in 0 until historySteps) {
-                    val px = marginX + (step * stepWidth)
-                    val sampleVal = 0.30f + (step * 0.018f) + (Math.sin(step * 0.2).toFloat() * 0.04f)
-                    val py = graphBottom - (graphHeight * sampleVal.coerceIn(0.1f, 1.0f))
-                    if (step == 0) hrPath.moveTo(px, py) else hrPath.lineTo(px, py)
+                val steps = if (hrHistory.isNotEmpty()) hrHistory.size else 30
+                val stepW = (dividerX - marginX) / (steps - 1).coerceAtLeast(1)
+
+                for (idx in 0 until steps) {
+                    val px = marginX + (idx * stepW)
+                    val rawVal = if (hrHistory.isNotEmpty()) {
+                        (hrHistory[idx] / 190f).coerceIn(0.1f, 1.0f)
+                    } else {
+                        (0.30f + (idx * 0.018f) + (Math.sin(idx * 0.2).toFloat() * 0.04f)).coerceIn(0.1f, 1.0f)
+                    }
+                    val py = graphBottom - (graphHeight * rawVal)
+                    if (idx == 0) hrPath.moveTo(px, py) else hrPath.lineTo(px, py)
                 }
+
                 val hrPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = 0xFFFF5252.toInt()
                     style = Paint.Style.STROKE
@@ -710,19 +723,27 @@ object KustomFieldRenderer {
                     strokeCap = Paint.Cap.ROUND
                     strokeJoin = Paint.Join.ROUND
                 }
-                canvas.drawPath(hrPath, traceShadowPaint) // Subtle drop contrast
-                canvas.drawPath(hrPath, hrPaint)          // Crisp solid red line
+                canvas.drawPath(hrPath, traceShadowPaint)
+                canvas.drawPath(hrPath, hrPaint)
             }
 
             // 3. Cadence Trace Line (Cyan with subtle dark under-stroke)
             if (showCadenceTrace) {
                 val cadencePath = android.graphics.Path()
-                for (step in 0 until historySteps) {
-                    val px = marginX + (step * stepWidth)
-                    val sampleVal = 0.72f + (Math.sin(step * 0.6).toFloat() * 0.08f)
-                    val py = graphBottom - (graphHeight * sampleVal.coerceIn(0.1f, 1.0f))
-                    if (step == 0) cadencePath.moveTo(px, py) else cadencePath.lineTo(px, py)
+                val steps = if (cadenceHistory.isNotEmpty()) cadenceHistory.size else 30
+                val stepW = (dividerX - marginX) / (steps - 1).coerceAtLeast(1)
+
+                for (idx in 0 until steps) {
+                    val px = marginX + (idx * stepW)
+                    val rawVal = if (cadenceHistory.isNotEmpty()) {
+                        (cadenceHistory[idx] / 120f).coerceIn(0.1f, 1.0f)
+                    } else {
+                        (0.72f + (Math.sin(idx * 0.6).toFloat() * 0.08f)).coerceIn(0.1f, 1.0f)
+                    }
+                    val py = graphBottom - (graphHeight * rawVal)
+                    if (idx == 0) cadencePath.moveTo(px, py) else cadencePath.lineTo(px, py)
                 }
+
                 val cadencePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = 0xFF00E5FF.toInt()
                     style = Paint.Style.STROKE
@@ -730,8 +751,8 @@ object KustomFieldRenderer {
                     strokeCap = Paint.Cap.ROUND
                     strokeJoin = Paint.Join.ROUND
                 }
-                canvas.drawPath(cadencePath, traceShadowPaint) // Subtle drop contrast
-                canvas.drawPath(cadencePath, cadencePaint)      // Crisp solid cyan line
+                canvas.drawPath(cadencePath, traceShadowPaint)
+                canvas.drawPath(cadencePath, cadencePaint)
             }
 
             bitmap

@@ -2213,60 +2213,66 @@ fun WorkoutGraphControls(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // Power Trace (White)
+            // Power Trace
+            val powerBg = if (fieldConfig.showPowerTrace) (if (colors.isDark) Color(0xFFE0E0E0) else Color(0xFF263238)) else colors.trackBg
+            val powerText = if (fieldConfig.showPowerTrace) (if (colors.isDark) Color.Black else Color.White) else colors.textSecondary
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .height(36.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(if (fieldConfig.showPowerTrace) Color.White else colors.trackBg)
-                    .border(1.dp, if (fieldConfig.showPowerTrace) Color.White else colors.border, RoundedCornerShape(50))
+                    .background(powerBg)
+                    .border(1.dp, if (fieldConfig.showPowerTrace) powerBg else colors.border, RoundedCornerShape(50))
                     .clickable { viewModel.updateShowPowerTrace(typeId, !fieldConfig.showPowerTrace) },
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "Power ⚪",
+                    text = "Power",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (fieldConfig.showPowerTrace) Color.Black else colors.textSecondary,
+                    color = powerText,
                 )
             }
 
-            // HR Trace (Red)
+            // HR Trace
+            val hrBg = if (fieldConfig.showHrTrace) Color(0xFFFF5252) else colors.trackBg
+            val hrText = if (fieldConfig.showHrTrace) Color.White else colors.textSecondary
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .height(36.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(if (fieldConfig.showHrTrace) Color(0xFFFF5252) else colors.trackBg)
-                    .border(1.dp, if (fieldConfig.showHrTrace) Color(0xFFFF5252) else colors.border, RoundedCornerShape(50))
+                    .background(hrBg)
+                    .border(1.dp, if (fieldConfig.showHrTrace) hrBg else colors.border, RoundedCornerShape(50))
                     .clickable { viewModel.updateShowHrTrace(typeId, !fieldConfig.showHrTrace) },
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "HR 🔴",
+                    text = "HR",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (fieldConfig.showHrTrace) Color.White else colors.textSecondary,
+                    color = hrText,
                 )
             }
 
-            // Cadence Trace (Cyan)
+            // Cadence Trace
+            val cadenceBg = if (fieldConfig.showCadenceTrace) Color(0xFF00E5FF) else colors.trackBg
+            val cadenceText = if (fieldConfig.showCadenceTrace) Color.Black else colors.textSecondary
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .height(36.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(if (fieldConfig.showCadenceTrace) Color(0xFF00E5FF) else colors.trackBg)
-                    .border(1.dp, if (fieldConfig.showCadenceTrace) Color(0xFF00E5FF) else colors.border, RoundedCornerShape(50))
+                    .background(cadenceBg)
+                    .border(1.dp, if (fieldConfig.showCadenceTrace) cadenceBg else colors.border, RoundedCornerShape(50))
                     .clickable { viewModel.updateShowCadenceTrace(typeId, !fieldConfig.showCadenceTrace) },
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "Cadence 🔵",
+                    text = "Cadence",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (fieldConfig.showCadenceTrace) Color.Black else colors.textSecondary,
+                    color = cadenceText,
                 )
             }
         }
@@ -2535,8 +2541,8 @@ fun FieldCardItem(
                 )
             }
 
-            // Zone Color Controls (For standard fields and power-combo, NOT for custom-combo which has per-slot zone formatting)
-            if (field.supportsZones && field.typeId != "custom-combo") {
+            // Zone Color Controls (For standard fields, NOT for custom-combo or workout-graph)
+            if (field.supportsZones && field.typeId != "custom-combo" && field.typeId != "workout-graph") {
                 KarooSegmentedPill(
                     selectedZoneFormat = fieldConfig.zoneFormat,
                     colors = colors,

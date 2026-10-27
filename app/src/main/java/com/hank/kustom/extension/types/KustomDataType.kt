@@ -16,6 +16,7 @@ import com.hank.kustom.data.repository.KustomSettingsRepository
 import com.hank.kustom.domain.KustomColorGradeMapper
 import com.hank.kustom.domain.KustomFieldRenderer
 import com.hank.kustom.domain.RollingTimeSmoother
+import com.hank.kustom.domain.WorkoutFileParser
 import com.hank.kustom.util.KustomLogger
 import io.hammerhead.karooext.extension.DataTypeImpl
 import io.hammerhead.karooext.internal.Emitter
@@ -72,6 +73,10 @@ class KustomDataType(
             var leftGradeSmoother = RollingTimeSmoother(3)
             var rightGradeSmoother = RollingTimeSmoother(3)
             var lastSmoothingSec = -1
+
+            val powerHistory = mutableListOf<Float>()
+            val hrHistory = mutableListOf<Float>()
+            val cadenceHistory = mutableListOf<Float>()
 
             combine(
                 karooSystemRepository.rideStateFlow().onStart { emit(RideState.Idle) },
@@ -275,9 +280,28 @@ class KustomDataType(
                 val isComboBlock = customComboInst != null || definition.typeId.startsWith("combo-block-") || definition.typeId == "power-combo" || definition.typeId == "custom-combo"
 
                 val bitmap = if (definition.typeId == "workout-graph") {
+                    if (!isMock) {
+                        val pVal = (streamState as? StreamState.Streaming)?.dataPoint?.singleValue?.toFloat() ?: 0f
+                        val hVal = (leftStreamState as? StreamState.Streaming)?.dataPoint?.singleValue?.toFloat() ?: 0f
+                        val cVal = (rightStreamState as? StreamState.Streaming)?.dataPoint?.singleValue?.toFloat() ?: 0f
+
+                        powerHistory.add(pVal)
+                        hrHistory.add(hVal)
+                        cadenceHistory.add(cVal)
+
+                        if (powerHistory.size > 120) powerHistory.removeAt(0)
+                        if (hrHistory.size > 120) hrHistory.removeAt(0)
+                        if (cadenceHistory.size > 120) cadenceHistory.removeAt(0)
+                    }
+
                     KustomFieldRenderer.renderWorkoutGraph(
                         context = context,
                         config = config,
+                        parsedWorkout = WorkoutFileParser.getDefaultSampleWorkout(userProfile?.ftp?.toDouble() ?: 250.0, settings.globalColors.globalZonePalette),
+                        currentElapsedRatio = 0.40f,
+                        powerHistory = if (isMock) emptyList() else powerHistory.toList(),
+                        hrHistory = if (isMock) emptyList() else hrHistory.toList(),
+                        cadenceHistory = if (isMock) emptyList() else cadenceHistory.toList(),
                         showPowerTrace = fieldConfig.showPowerTrace,
                         showHrTrace = fieldConfig.showHrTrace,
                         showCadenceTrace = fieldConfig.showCadenceTrace,
