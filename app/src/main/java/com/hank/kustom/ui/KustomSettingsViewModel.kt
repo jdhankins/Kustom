@@ -161,6 +161,21 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /** Updates field zone format atomically. */
+    fun updateFieldZoneFormat(typeId: String, zoneFormat: ZoneFormat) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        updatedConfigs[typeId] = currentConfig.copy(zoneFormat = zoneFormat)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateFieldZoneFormat(typeId, zoneFormat)
+        }
+    }
+
     /** Updates field color mode atomically without touching smoothing option. */
     fun updateFieldColorMode(typeId: String, colorMode: ColorMode) {
         val current = _settingsState.value
@@ -174,6 +189,51 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
         saveFieldJobs[typeId] = viewModelScope.launch {
             delay(300L)
             repository.updateFieldColorMode(typeId, colorMode)
+        }
+    }
+
+    /** Updates top-left corner metric for combo block fields. */
+    fun updateComboLeftMetric(typeId: String, metric: String) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        updatedConfigs[typeId] = currentConfig.copy(comboLeftMetric = metric)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateComboLeftMetric(typeId, metric)
+        }
+    }
+
+    /** Updates top-right corner metric for combo block fields. */
+    fun updateComboRightMetric(typeId: String, metric: String) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        updatedConfigs[typeId] = currentConfig.copy(comboRightMetric = metric)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateComboRightMetric(typeId, metric)
+        }
+    }
+
+    /** Updates zone bar count (5 or 7 zones) for combo block fields. */
+    fun updateComboZoneCount(typeId: String, count: Int) {
+        val current = _settingsState.value
+        val updatedConfigs = current.fieldConfigs.toMutableMap()
+        val currentConfig = updatedConfigs[typeId] ?: KustomFieldConfig()
+        updatedConfigs[typeId] = currentConfig.copy(comboZoneCount = count)
+        _settingsState.value = current.copy(fieldConfigs = updatedConfigs)
+
+        saveFieldJobs[typeId]?.cancel()
+        saveFieldJobs[typeId] = viewModelScope.launch {
+            delay(300L)
+            repository.updateComboZoneCount(typeId, count)
         }
     }
 

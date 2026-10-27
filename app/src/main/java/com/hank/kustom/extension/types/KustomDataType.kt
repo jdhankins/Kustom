@@ -3,9 +3,11 @@ package com.hank.kustom.extension.types
 import android.content.Context
 import android.widget.RemoteViews
 import com.hank.kustom.R
+import com.hank.kustom.data.model.KustomFieldCatalog
 import com.hank.kustom.data.model.KustomFieldConfig
 import com.hank.kustom.data.model.KustomFieldDefinition
 import com.hank.kustom.data.model.KustomSettings
+import com.hank.kustom.data.model.SmoothingOption
 import com.hank.kustom.data.model.TypographyConfig
 import com.hank.kustom.data.repository.KarooSystemRepository
 import com.hank.kustom.data.repository.KustomSettingsRepository
@@ -215,26 +217,64 @@ class KustomDataType(
 
                 val isDarkTheme = (context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
 
-                val bitmap = KustomFieldRenderer.render(
-                    context = context,
-                    config = config,
-                    label = dynamicLabel,
-                    valueText = valueText,
-                    labelTypography = TypographyConfig(
-                        font = settings.globalTypography.fontFamily,
-                        fontWeight = settings.globalTypography.labelWeight,
-                        fontSizeSp = settings.globalTypography.labelSizeSp.toFloat(),
-                    ),
-                    valueTypography = TypographyConfig(
-                        font = settings.globalTypography.fontFamily,
-                        fontWeight = settings.globalTypography.valueWeight,
-                        fontSizeSp = settings.globalTypography.valueSizeSp.toFloat(),
-                    ),
-                    colorMode = fieldConfig.colorMode,
-                    mappedColor = mappedColor,
-                    isDarkTheme = isDarkTheme,
-                    globalColors = settings.globalColors,
-                )
+                val bitmap = if (definition.typeId == "power-combo") {
+                    val pWatts = dynamicValue ?: 214.0
+                    val primaryValText = "${pWatts.toInt()}"
+                    val smoothLabel = if (fieldConfig.smoothingOption != SmoothingOption.NONE) fieldConfig.smoothingOption.label else ""
+
+                    val leftDef = KustomFieldCatalog.findByTypeId(fieldConfig.comboLeftMetric) ?: KustomFieldCatalog.AVG_POWER
+                    val rightDef = KustomFieldCatalog.findByTypeId(fieldConfig.comboRightMetric) ?: KustomFieldCatalog.NP
+
+                    KustomFieldRenderer.renderComboBlock(
+                        context = context,
+                        config = config,
+                        label = dynamicLabel,
+                        primaryValueText = primaryValText,
+                        smoothingLabel = smoothLabel,
+                        leftLabel = if (fieldConfig.comboLeftMetric == "none") "" else leftDef.childTitle,
+                        leftValueText = if (fieldConfig.comboLeftMetric == "none") "" else leftDef.formatNumericValueOnly(pWatts * 0.95, isImperial),
+                        rightLabel = if (fieldConfig.comboRightMetric == "none") "" else rightDef.childTitle,
+                        rightValueText = if (fieldConfig.comboRightMetric == "none") "" else rightDef.formatNumericValueOnly(pWatts * 1.03, isImperial),
+                        powerValueWatts = pWatts,
+                        ftpWatts = userProfile?.ftp?.toDouble() ?: 250.0,
+                        zoneCount = fieldConfig.comboZoneCount,
+                        zoneFormat = fieldConfig.zoneFormat,
+                        mappedColor = mappedColor,
+                        labelTypography = TypographyConfig(
+                            font = settings.globalTypography.fontFamily,
+                            fontWeight = settings.globalTypography.labelWeight,
+                            fontSizeSp = settings.globalTypography.labelSizeSp.toFloat(),
+                        ),
+                        valueTypography = TypographyConfig(
+                            font = settings.globalTypography.fontFamily,
+                            fontWeight = settings.globalTypography.valueWeight,
+                            fontSizeSp = settings.globalTypography.valueSizeSp.toFloat(),
+                        ),
+                        isDarkTheme = isDarkTheme,
+                        globalColors = settings.globalColors,
+                    )
+                } else {
+                    KustomFieldRenderer.render(
+                        context = context,
+                        config = config,
+                        label = dynamicLabel,
+                        valueText = valueText,
+                        labelTypography = TypographyConfig(
+                            font = settings.globalTypography.fontFamily,
+                            fontWeight = settings.globalTypography.labelWeight,
+                            fontSizeSp = settings.globalTypography.labelSizeSp.toFloat(),
+                        ),
+                        valueTypography = TypographyConfig(
+                            font = settings.globalTypography.fontFamily,
+                            fontWeight = settings.globalTypography.valueWeight,
+                            fontSizeSp = settings.globalTypography.valueSizeSp.toFloat(),
+                        ),
+                        colorMode = fieldConfig.colorMode,
+                        mappedColor = mappedColor,
+                        isDarkTheme = isDarkTheme,
+                        globalColors = settings.globalColors,
+                    )
+                }
 
                 val remoteViews = RemoteViews(context.packageName, R.layout.kustom_remote_field_canvas).apply {
                     setImageViewBitmap(R.id.kustom_field_canvas_image, bitmap)
@@ -302,7 +342,7 @@ class KustomDataType(
         if (rawVal == null || !definition.supportsZones) return null
 
         return when (definition.typeId) {
-            "power", "np", "avg-power", "max-power", "lap-power", "last-lap-power", "percent-ftp", "power-balance", "power-zone", "power-to-weight", "workout-target-power", "workout-primary-target" -> {
+            "power", "power-combo", "np", "avg-power", "max-power", "lap-power", "last-lap-power", "percent-ftp", "power-balance", "power-zone", "power-to-weight", "workout-target-power", "workout-primary-target" -> {
                 KustomColorGradeMapper.getPowerZoneColor(rawVal, userProfile, fieldConfig.colorMode)
             }
             "hr", "avg-hr", "max-hr", "lap-hr", "percent-max-hr", "hr-zone" -> {

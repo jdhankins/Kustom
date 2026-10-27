@@ -92,13 +92,16 @@
     <DataType typeId="power-vi" displayName="@string/field_power_vi_name" description="@string/field_power_vi_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="power-to-weight" displayName="@string/field_power_to_weight_name" description="@string/field_power_to_weight_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
-    <!-- 8. SPEED -->
+    <!-- 8. SPECIAL -->
+    <DataType typeId="power-combo" displayName="@string/field_power_combo_name" description="@string/field_power_combo_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+
+    <!-- 9. SPEED -->
     <DataType typeId="avg-speed" displayName="@string/field_avg_speed_name" description="@string/field_avg_speed_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="distance" displayName="@string/field_distance_name" description="@string/field_distance_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="max-speed" displayName="@string/field_max_speed_name" description="@string/field_max_speed_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="speed" displayName="@string/field_speed_name" description="@string/field_speed_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
-    <!-- 9. TIME -->
+    <!-- 10. TIME -->
     <DataType typeId="clock-time" displayName="@string/field_clock_time_name" description="@string/field_clock_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="elapsed-time" displayName="@string/field_elapsed_time_name" description="@string/field_elapsed_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="paused-time" displayName="@string/field_paused_time_name" description="@string/field_paused_time_desc" graphical="true" icon="@drawable/ic_kustom_field" />
@@ -106,7 +109,7 @@
     <DataType typeId="sunrise" displayName="@string/field_sunrise_name" description="@string/field_sunrise_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="sunset" displayName="@string/field_sunset_name" description="@string/field_sunset_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
-    <!-- 10. WORKOUT -->
+    <!-- 11. WORKOUT -->
     <DataType typeId="workout-interval-count" displayName="@string/field_workout_interval_count_name" description="@string/field_workout_interval_count_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="workout-interval-time-remaining" displayName="@string/field_workout_interval_time_remaining_name" description="@string/field_workout_interval_time_remaining_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="workout-next-target" displayName="@string/field_workout_next_target_name" description="@string/field_workout_next_target_desc" graphical="true" icon="@drawable/ic_kustom_field" />

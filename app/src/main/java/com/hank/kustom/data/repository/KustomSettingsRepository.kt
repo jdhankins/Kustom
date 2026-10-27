@@ -66,11 +66,17 @@ class KustomSettingsRepository(context: Context) {
                 val smoothingSec = prefs[intPreferencesKey("${typeId}_smoothing")] ?: 3
                 val zoneFormatRaw = prefs[stringPreferencesKey("${typeId}_zone_format")]
                 val showUnit = prefs[booleanPreferencesKey("${typeId}_show_unit")] ?: true
+                val leftMetric = prefs[stringPreferencesKey("${typeId}_combo_left")] ?: "avg-power"
+                val rightMetric = prefs[stringPreferencesKey("${typeId}_combo_right")] ?: "np"
+                val zoneCount = prefs[intPreferencesKey("${typeId}_combo_zones")] ?: 7
 
                 val fieldConfig = KustomFieldConfig(
                     smoothingOption = SmoothingOption.fromSeconds(smoothingSec),
                     zoneFormat = parseEnum(zoneFormatRaw, if (fieldDef.supportsZones) ZoneFormat.BACKGROUND else ZoneFormat.NONE),
                     showUnit = showUnit,
+                    comboLeftMetric = leftMetric,
+                    comboRightMetric = rightMetric,
+                    comboZoneCount = zoneCount,
                 )
                 configs[typeId] = fieldConfig
             }
@@ -144,6 +150,33 @@ class KustomSettingsRepository(context: Context) {
         dataStore.edit { prefs ->
             prefs[Keys.GLOBAL_DARK_BG_COLOR] = hex
             prefs[Keys.GLOBAL_USE_CUSTOM_BG] = true
+        }
+    }
+
+    /**
+     * Atomically updates field zone format in DataStore.
+     */
+    suspend fun updateFieldZoneFormat(typeId: String, zoneFormat: ZoneFormat) {
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey("${typeId}_zone_format")] = zoneFormat.name
+        }
+    }
+
+    suspend fun updateComboLeftMetric(typeId: String, metric: String) {
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey("${typeId}_combo_left")] = metric
+        }
+    }
+
+    suspend fun updateComboRightMetric(typeId: String, metric: String) {
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey("${typeId}_combo_right")] = metric
+        }
+    }
+
+    suspend fun updateComboZoneCount(typeId: String, count: Int) {
+        dataStore.edit { prefs ->
+            prefs[intPreferencesKey("${typeId}_combo_zones")] = count
         }
     }
 

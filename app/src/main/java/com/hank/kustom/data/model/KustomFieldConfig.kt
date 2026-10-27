@@ -5,31 +5,22 @@ package com.hank.kustom.data.model
  *
  * @property smoothingOption Selected rolling smoothing duration ([SmoothingOption]).
  * @property zoneFormat Selected zone color formatting mode ([ZoneFormat]).
- * @property showUnit Whether unit label verbiage is enabled (kept false for numbers-only rendering).
+ * @property showUnit Whether unit label verbiage is enabled.
+ * @property comboLeftMetric Top-left corner metric identifier for combo block fields.
+ * @property comboRightMetric Top-right corner metric identifier for combo block fields.
+ * @property comboZoneCount Zone bar count (5 or 7 zones) for combo block fields.
  */
 data class KustomFieldConfig(
-    /** Selected rolling smoothing duration. */
     val smoothingOption: SmoothingOption = SmoothingOption.THREE_SEC,
-
-    /** Selected zone color formatting mode. */
     val zoneFormat: ZoneFormat = ZoneFormat.NONE,
-
-    /** Whether unit verbiage is displayed. */
     val showUnit: Boolean = true,
+    val comboLeftMetric: String = "avg-power",
+    val comboRightMetric: String = "np",
+    val comboZoneCount: Int = 7,
 ) {
-    /**
-     * Resolves the corresponding [ColorMode] from the active [zoneFormat].
-     *
-     * @return The active [ColorMode] (NONE, BACKGROUND_COLOR, or TEXT_COLOR).
-     */
     val colorMode: ColorMode
         get() = zoneFormat.toColorMode()
 
-    /**
-     * Returns the rolling smoothing duration in integer seconds.
-     *
-     * @return The smoothing duration in seconds.
-     */
     val smoothingSeconds: Int
         get() = smoothingOption.seconds
 }

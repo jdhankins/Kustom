@@ -1,7 +1,7 @@
 package com.hank.kustom.data.model
 
 /**
- * Standardized zone color formatting options (None, Text, Fill/Background).
+ * Standardized zone color formatting options (None, Text, Fill/Background, Bar).
  *
  * @property displayLabel User-visible segment label string.
  */
@@ -16,7 +16,10 @@ enum class ZoneFormat(
     TEXT("Text"),
 
     /** Fills field card background with zone color. */
-    BACKGROUND("Fill");
+    BACKGROUND("Fill"),
+
+    /** Renders bottom multi-zone gauge bar. */
+    BAR("Bar");
 
     /**
      * Converts this [ZoneFormat] to its corresponding [ColorMode].
@@ -28,6 +31,7 @@ enum class ZoneFormat(
             NONE -> ColorMode.NONE
             TEXT -> ColorMode.TEXT_COLOR
             BACKGROUND -> ColorMode.BACKGROUND_COLOR
+            BAR -> ColorMode.NONE
         }
     }
 
