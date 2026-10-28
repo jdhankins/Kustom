@@ -353,7 +353,13 @@ object KustomFieldRenderer {
 
                 val w1 = leftCornerLabelPaint.measureText(cleanLeft)
                 val w2 = leftCornerValuePaint.measureText(leftValueText)
-                val lWidth = maxOf(w1, w2)
+                var lWidth = maxOf(w1, w2)
+                val maxCornerW = width * 0.27f
+                while (lWidth > maxCornerW && leftCornerLabelPaint.textSize > 10f) {
+                    leftCornerLabelPaint.textSize -= 0.5f
+                    leftCornerValuePaint.textSize -= 0.5f
+                    lWidth = maxOf(leftCornerLabelPaint.measureText(cleanLeft), leftCornerValuePaint.measureText(leftValueText))
+                }
 
                 // Fill mode: draw compact rounded pill behind corner metric
                 if (leftZoneFormat == ZoneFormat.BACKGROUND && leftMappedColor != null) {
@@ -406,7 +412,13 @@ object KustomFieldRenderer {
 
                 val w1 = rightCornerLabelPaint.measureText(cleanRight)
                 val w2 = rightCornerValuePaint.measureText(rightValueText)
-                val rWidth = maxOf(w1, w2)
+                var rWidth = maxOf(w1, w2)
+                val maxCornerW = width * 0.27f
+                while (rWidth > maxCornerW && rightCornerLabelPaint.textSize > 10f) {
+                    rightCornerLabelPaint.textSize -= 0.5f
+                    rightCornerValuePaint.textSize -= 0.5f
+                    rWidth = maxOf(rightCornerLabelPaint.measureText(cleanRight), rightCornerValuePaint.measureText(rightValueText))
+                }
 
                 // Fill mode: draw compact rounded pill behind corner metric
                 if (rightZoneFormat == ZoneFormat.BACKGROUND && rightMappedColor != null) {

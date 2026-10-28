@@ -4,38 +4,33 @@
 - Package namespace: `com.hank.kustom`. Extension ID: `"kustom"`.
 - Primary extension service: `com.hank.kustom.extension.KustomExtension : KarooExtension("kustom", "1")`.
 - Key architecture layers:
-  - `data/model/`: `KustomSettings`, `KustomFieldCatalog`, `KustomFieldConfig`, `CustomComboInstance` (5 customizable 3-in-1 blocks), `GlobalTypographyConfig`, `GlobalColorConfig`, `ZonePalette`, `SmoothingOption`, `ZoneFormat`, `KustomFont`.
+  - `data/model/`: `KustomSettings`, `KustomFieldCatalog`, `KustomFieldConfig`, `CustomComboInstance` (5 static 3-in-1 blocks: Block 1 Power, Block 2 HR, Block 3 Grade, Block 4 Workout, Block 5 Cadence), `GlobalTypographyConfig`, `GlobalColorConfig`, `ZonePalette`, `SmoothingOption`, `ZoneFormat`, `KustomFont`.
   - `data/repository/`: `KarooSystemRepository` and `KustomSettingsRepository` (Preferences DataStore `"kustom_settings"`).
-  - `domain/`: `KustomFieldRenderer` (single fields + 3-in-1 combo blocks), `KustomColorAndSmoothing`, `KustomTypefaceResolver`.
+  - `domain/`: `KustomFieldRenderer` (single fields, 3-in-1 combo blocks, and workout graph HUD), `WorkoutFileParser` (local `.fit` and `.zwo` parser), `KustomColorAndSmoothing`, `KustomTypefaceResolver`.
   - `extension/`: `KustomExtension` and `types/KustomDataType`.
   - `ui/`: `MainActivity` and `KustomSettingsViewModel`.
 - **CRITICAL `app/build.gradle.kts` SDK Levels**:
   - Karoo 2 runs Android 8.1 (API 27) and Karoo 3 runs Android 12 (API 31/32).
   - Keep `minSdk = 26` and `targetSdk = 34` (with `compileSdk = 35` or `release(37)`).
 
-## 2. Strict Karoo Page Setup (`extension_info.xml` & `ic_kustom_field.xml`) Rules
-- Every field in `KustomFieldCatalog.allFields` (including standard telemetry fields and the 5 customizable 3-In-One Blocks) MUST have a matching `<DataType>` entry in `app/src/main/res/xml/extension_info.xml` and `@string/...` entry in `app/src/main/res/values/strings.xml`.
-- In `res/xml/extension_info.xml`, use bare attributes ONLY (`id="kustom"`, `typeId`, `displayName="@string/..."`, `description="@string/..."`, `graphical="true"`, `icon="@drawable/ic_kustom_field"`). Never use `android:` prefixes.
+## 2. 3-In-One Configurable Blocks & Workout Target Center Alignment Rules
+- **Static 3-In-One Blocks**: `combo-block-1` through `combo-block-5` are pre-registered in `res/xml/extension_info.xml` and `KustomFieldCatalog`.
+- **Center-Only Workout Target Logic**:
+  - Workout target metrics (`"workout-target-power"`, `"workout-primary-target"`) MUST ONLY be selectable in the **Center** position of a 3-in-1 block (never in Left or Right corner dropdowns).
+  - When a workout target metric is selected in the Center position of a 3-in-1 block:
+    1. **Top Center Label (`comboCenterLabel`)**: Dynamically renders the active workout target range or wattage extracted from `DataType.Type.WORKOUT_POWER_TARGET` / `WORKOUT_PRIMARY_TARGET` (e.g., `"117-146W"`, falling back to `"117-146"` in preview/mock mode).
+    2. **Primary Center Value (`primaryValText`)**: Streams live Power telemetry (`KustomFieldCatalog.POWER.resolveSdkDataTypeId(smoothing)`), displaying live watts when paired or `"No Sensor"` in red when unpaired.
+- **Explicit `DataType.Field` Extraction (No Blanket Loops)**:
+  - Never use `val targetDp = priDp ?: pDp` (which selects a non-null `0.0` `WORKOUT_PRIMARY_TARGET` `DataPoint` over a valid `WORKOUT_POWER_TARGET` `DataPoint`). Always evaluate `extractTargetPowerString(pDp) ?: extractTargetPowerString(priDp)` using explicit `DataType.Field` keys (`WORKOUT_TARGET_MIN_VALUE`, `WORKOUT_TARGET_MAX_VALUE`, `WORKOUT_TARGET_VALUE`, `WORKOUT_TARGET_OUTPUT_VALUE`, `SINGLE`).
 
-## 3. True 1:1 Font Scaling (NEVER Stretch Fonts) & Field Formatting
-- **NEVER Stretch Fonts**:
-  - NEVER set `paint.textScaleX` to anything other than `1.0f` in `KustomFieldRenderer` or `KustomTypefaceResolver`.
-  - NEVER use `ContentScale.FillBounds` on preview `Image` composables in `MainActivity`. Always pass the exact pixel `width` and `height` of the Compose preview container (`BoxWithConstraints`) into `KustomFieldRenderer.render(...)` and render the `Image` with `contentScale = ContentScale.Fit` so fonts retain their true 1:1 aspect ratio.
-- **Numbers Only & Dynamic Labels**:
-  - Format numeric values without unit suffixes, and dynamically reflect active smoothing (`"3S POWER"` vs `"POWER"`) and sensor status typography consistently across standard and 3-in-1 combo fields.
+## 3. Workout Graph Field & FIT/ZWO Storage Rules
+- **Mandatory In-Memory Caching in `WorkoutFileParser`**:
+  - NEVER re-scan directories or re-parse `.fit`/`.zwo` files on every 1 Hz frame. Cache the parsed `ParsedWorkout` keyed by `(filePath, lastModified, ftp)` and throttle directory timestamp checks to at most once every 10 seconds.
+  - Always wrap `FileInputStream` in `BufferedInputStream(..., 8192).use { ... }`.
+- **Multi-Trace Stream Subscription**:
+  - For `"workout-graph"`, `KustomDataType` must subscribe concurrently to `POWER`, `HEART_RATE`, and `CADENCE` streams (plus workout elapsed/remaining duration) and pass immutable list snapshots (`.toList()`) to `KustomFieldRenderer.renderWorkoutGraph`.
 
-## 4. State Isolation Rules (Prevent Slider & Pill Cross-Talk)
-- **ALWAYS Use `rememberUpdatedState` Inside Custom Gesture Controls**:
-  - Inside `KarooSteppedSlider` and segmented pill controls in `MainActivity`, ALWAYS wrap callbacks with `val currentCallback by rememberUpdatedState(callback)` before referencing them inside `Modifier.pointerInput(...)` so gesture handlers never capture a stale state snapshot from an earlier composition.
-- **ALWAYS Use Atomic Per-Property Updates in `KustomSettingsRepository` / `KustomSettingsViewModel`**:
-  - Mutate individual settings or read-modify-write inside `dataStore.edit { ... }` rather than passing stale UI-captured `.copy(...)` objects that could overwrite sibling properties.
-
-## 5. Architectural Hygiene, Dead-Code & `karoo-ext` Lifecycle Rules
-- **Single Source of Truth for Models**: Do not keep duplicate or superseded model classes, enums, or unused helper files in `data/model/`, `domain/`, or `ui/`.
-- **Strict `karoo-ext` Coroutine & Consumer Cleanup**:
-  - In `KustomDataType.startStream(emitter)` and `startView(config, emitter)`, every launched coroutine `Job` and every `karooSystem.addConsumer` listener (including multi-stream `combine` flows for 3-in-1 combo blocks) MUST be cancelled/removed inside `emitter.setCancellable { job.cancel() }` so switching pages or ending a ride never leaks coroutines or binder callbacks.
-  - In `startView(...)`, ALWAYS emit `emitter.onNext(UpdateGraphicConfig(showHeader = false))` before pushing `RemoteViews` updates so Karoo OS hides its default system field header.
-- **Process-Wide Singletons & Caching**:
-  - `Preferences DataStore` and `KarooSystemRepository` (`KarooSystemService`) must be singletons scoped to `applicationContext`.
-  - `KustomTypefaceResolver` must cache loaded `Typeface` instances in memory so fonts are never re-parsed from `assets/fonts/` on every 1 Hz frame.
-- **Review-First Refactoring Protocol**: When asked for an architectural review or cleanup, operate in strict READ-ONLY mode first—present findings sorted by risk (`Low`, `Medium`, `High`) and wait for explicit user approval before modifying or deleting any files.
+## 4. True 1:1 Font Scaling, State Isolation & `karoo-ext` Lifecycle Rules
+- **NEVER Stretch Fonts**: Keep `paint.textScaleX = 1.0f` and use `ContentScale.Fit` with exact container pixel dimensions on all preview `Image` composables.
+- **State Isolation**: Always use `rememberUpdatedState` inside custom gesture controls (`KarooSteppedSlider`) and atomic DataStore updates in `KustomSettingsRepository`.
+- **Strict `karoo-ext` Cleanup**: Always emit `UpdateGraphicConfig(showHeader = false)` at the start of `startView`, and cancel all coroutines/consumers inside `emitter.setCancellable { job.cancel() }`.

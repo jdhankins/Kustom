@@ -166,7 +166,7 @@ class KustomDataType(
                     ) { centerState, leftState, rightState, targetPowerState, primaryTargetState ->
                         val pDp = (targetPowerState as? StreamState.Streaming)?.dataPoint
                         val priDp = (primaryTargetState as? StreamState.Streaming)?.dataPoint
-                        val targetDp = priDp ?: pDp
+                        val targetDp = if (extractTargetPowerString(pDp) != null) pDp else (if (extractTargetPowerString(priDp) != null) priDp else pDp ?: priDp)
                         RenderPayload(
                             streamState = centerState,
                             leftStreamState = leftState,
@@ -193,7 +193,7 @@ class KustomDataType(
                     ) { powerState, hrState, cadenceState, targetPowerState, primaryTargetState ->
                         val pDp = (targetPowerState as? StreamState.Streaming)?.dataPoint
                         val priDp = (primaryTargetState as? StreamState.Streaming)?.dataPoint
-                        val targetDp = priDp ?: pDp
+                        val targetDp = if (extractTargetPowerString(pDp) != null) pDp else (if (extractTargetPowerString(priDp) != null) priDp else pDp ?: priDp)
                         RenderPayload(
                             streamState = powerState,
                             leftStreamState = hrState,
@@ -568,37 +568,34 @@ class KustomDataType(
     )
 
     private fun extractTargetPowerString(dataPoint: DataPoint?): String? {
-        if (dataPoint == null) return null
+        if (dataPoint == null || dataPoint.values.isEmpty()) return null
         KustomLogger.d("extractTargetPowerString dataPoint values: ${dataPoint.values}")
 
-        var minVal: Double? = null
-        var maxVal: Double? = null
-        var targetVal: Double? = null
+        val minVal = dataPoint.values[DataType.Field.WORKOUT_TARGET_MIN_VALUE]
+            ?: dataPoint.values["FIELD_WORKOUT_TARGET_MIN_VALUE_ID"]
+            ?: dataPoint.values.entries.firstOrNull { it.key.contains("MIN", ignoreCase = true) }?.value
 
-        for ((key, value) in dataPoint.values) {
-            when {
-                key.contains("MIN", ignoreCase = true) -> minVal = value
-                key.contains("MAX", ignoreCase = true) -> maxVal = value
-                key.contains("TARGET_VALUE", ignoreCase = true) || key.contains("OUTPUT", ignoreCase = true) -> {
-                    if (targetVal == null || targetVal == 0.0) targetVal = value
-                }
-                else -> {
-                    if (targetVal == null && value > 10.0) targetVal = value
-                }
-            }
-        }
+        val maxVal = dataPoint.values[DataType.Field.WORKOUT_TARGET_MAX_VALUE]
+            ?: dataPoint.values["FIELD_WORKOUT_TARGET_MAX_VALUE_ID"]
+            ?: dataPoint.values.entries.firstOrNull { it.key.contains("MAX", ignoreCase = true) }?.value
+
+        val targetVal = dataPoint.values[DataType.Field.WORKOUT_TARGET_VALUE]
+            ?: dataPoint.values[DataType.Field.WORKOUT_TARGET_OUTPUT_VALUE]
+            ?: dataPoint.values[DataType.Field.SINGLE]
+            ?: dataPoint.values["FIELD_WORKOUT_TARGET_VALUE_ID"]
+            ?: dataPoint.values.entries.firstOrNull { it.key.contains("TARGET", ignoreCase = true) || it.key.contains("OUTPUT", ignoreCase = true) }?.value
 
         KustomLogger.d("Extracted target watts: minVal=$minVal, maxVal=$maxVal, targetVal=$targetVal")
 
         return when {
             minVal != null && maxVal != null && minVal > 0 && maxVal > 0 && minVal != maxVal -> {
-                "${minVal.toInt()}-${maxVal.toInt()}W"
+                "${minVal.toInt()}-${maxVal.toInt()}"
             }
             targetVal != null && targetVal > 0 -> {
-                "${targetVal.toInt()}W"
+                "${targetVal.toInt()}"
             }
             minVal != null && minVal > 0 -> {
-                "${minVal.toInt()}W"
+                "${minVal.toInt()}"
             }
             else -> null
         }

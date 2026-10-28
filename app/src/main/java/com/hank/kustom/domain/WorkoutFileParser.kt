@@ -19,6 +19,24 @@ object WorkoutFileParser {
     /** Default rider Functional Threshold Power (FTP) used for normalizing power target height ratios. */
     private const val DEFAULT_FTP = 250.0
 
+    @Volatile
+    private var cachedWorkoutFile: String? = null
+
+    @Volatile
+    private var cachedLastModified: Long = -1L
+
+    @Volatile
+    private var cachedFtp: Double = -1.0
+
+    @Volatile
+    private var cachedPalette: ZonePalette? = null
+
+    @Volatile
+    private var cachedWorkout: ParsedWorkout? = null
+
+    @Volatile
+    private var lastScanTime: Long = 0L
+
     /**
      * Parses a local .ZWO XML workout file from an [InputStream].
      *
@@ -33,98 +51,100 @@ object WorkoutFileParser {
         palette: ZonePalette = ZonePalette.KAROO,
     ): ParsedWorkout {
         return runCatching {
-            val parser = Xml.newPullParser()
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-            parser.setInput(inputStream, null)
+            java.io.BufferedInputStream(inputStream, 8192).use { buffered ->
+                val parser = Xml.newPullParser()
+                parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+                parser.setInput(buffered, null)
 
-            var eventType = parser.eventType
-            var workoutTitle = "Zwift Workout"
-            val steps = mutableListOf<WorkoutStepInterval>()
-            var stepCounter = 0
+                var eventType = parser.eventType
+                var workoutTitle = "Zwift Workout"
+                val steps = mutableListOf<WorkoutStepInterval>()
+                var stepCounter = 0
 
-            while (eventType != XmlPullParser.END_DOCUMENT) {
-                if (eventType == XmlPullParser.START_TAG) {
-                    val tagName = parser.name
-                    when (tagName) {
-                        "name" -> {
-                            workoutTitle = parser.nextText().trim()
-                        }
-                        "Warmup", "SteadyState", "Cooldown" -> {
-                            val duration = parser.getAttributeValue(null, "Duration")?.toIntOrNull() ?: 300
-                            val powerLow = parser.getAttributeValue(null, "PowerLow")?.toDoubleOrNull()
-                                ?: parser.getAttributeValue(null, "Power")?.toDoubleOrNull() ?: 0.5
-                            val powerHigh = parser.getAttributeValue(null, "PowerHigh")?.toDoubleOrNull() ?: powerLow
+                while (eventType != XmlPullParser.END_DOCUMENT) {
+                    if (eventType == XmlPullParser.START_TAG) {
+                        val tagName = parser.name
+                        when (tagName) {
+                            "name" -> {
+                                workoutTitle = parser.nextText().trim()
+                            }
+                            "Warmup", "SteadyState", "Cooldown" -> {
+                                val duration = parser.getAttributeValue(null, "Duration")?.toIntOrNull() ?: 300
+                                val powerLow = parser.getAttributeValue(null, "PowerLow")?.toDoubleOrNull()
+                                    ?: parser.getAttributeValue(null, "Power")?.toDoubleOrNull() ?: 0.5
+                                val powerHigh = parser.getAttributeValue(null, "PowerHigh")?.toDoubleOrNull() ?: powerLow
 
-                            val avgPctFtp = (powerLow + powerHigh) / 2.0
-                            val watts = avgPctFtp * ftpWatts
-                            val zoneColor = KustomColorGradeMapper.getPowerZoneColor(watts, null, ColorMode.BACKGROUND_COLOR, palette = palette) ?: 0xFF29B6F6.toInt()
-                            val heightRatio = (watts / (ftpWatts * 1.3)).toFloat().coerceIn(0.15f, 1.0f)
-
-                            steps.add(
-                                WorkoutStepInterval(
-                                    stepIndex = stepCounter++,
-                                    name = tagName,
-                                    durationSeconds = duration,
-                                    targetWattsMin = powerLow * ftpWatts,
-                                    targetWattsMax = powerHigh * ftpWatts,
-                                    zoneColorInt = zoneColor,
-                                    heightRatio = heightRatio,
-                                )
-                            )
-                        }
-                        "Intervals" -> {
-                            val repeat = parser.getAttributeValue(null, "Repeat")?.toIntOrNull() ?: 1
-                            val onDuration = parser.getAttributeValue(null, "OnDuration")?.toIntOrNull() ?: 180
-                            val offDuration = parser.getAttributeValue(null, "OffDuration")?.toIntOrNull() ?: 120
-                            val onPower = parser.getAttributeValue(null, "OnPower")?.toDoubleOrNull() ?: 1.0
-                            val offPower = parser.getAttributeValue(null, "OffPower")?.toDoubleOrNull() ?: 0.5
-
-                            for (r in 0 until repeat) {
-                                val onWatts = onPower * ftpWatts
-                                val onColor = KustomColorGradeMapper.getPowerZoneColor(onWatts, null, ColorMode.BACKGROUND_COLOR, palette = palette) ?: 0xFFEF5350.toInt()
-                                val onHeight = (onWatts / (ftpWatts * 1.3)).toFloat().coerceIn(0.15f, 1.0f)
+                                val avgPctFtp = (powerLow + powerHigh) / 2.0
+                                val watts = avgPctFtp * ftpWatts
+                                val zoneColor = KustomColorGradeMapper.getPowerZoneColor(watts, null, ColorMode.BACKGROUND_COLOR, palette = palette) ?: 0xFF29B6F6.toInt()
+                                val heightRatio = (watts / (ftpWatts * 1.3)).toFloat().coerceIn(0.15f, 1.0f)
 
                                 steps.add(
                                     WorkoutStepInterval(
                                         stepIndex = stepCounter++,
-                                        name = "Interval ON",
-                                        durationSeconds = onDuration,
-                                        targetWattsMin = onWatts,
-                                        targetWattsMax = onWatts,
-                                        zoneColorInt = onColor,
-                                        heightRatio = onHeight,
-                                    )
-                                )
-
-                                val offWatts = offPower * ftpWatts
-                                val offColor = KustomColorGradeMapper.getPowerZoneColor(offWatts, null, ColorMode.BACKGROUND_COLOR, palette = palette) ?: 0xFF5C6BC0.toInt()
-                                val offHeight = (offWatts / (ftpWatts * 1.3)).toFloat().coerceIn(0.15f, 1.0f)
-
-                                steps.add(
-                                    WorkoutStepInterval(
-                                        stepIndex = stepCounter++,
-                                        name = "Interval OFF",
-                                        durationSeconds = offDuration,
-                                        targetWattsMin = offWatts,
-                                        targetWattsMax = offWatts,
-                                        zoneColorInt = offColor,
-                                        heightRatio = offHeight,
+                                        name = tagName,
+                                        durationSeconds = duration,
+                                        targetWattsMin = powerLow * ftpWatts,
+                                        targetWattsMax = powerHigh * ftpWatts,
+                                        zoneColorInt = zoneColor,
+                                        heightRatio = heightRatio,
                                     )
                                 )
                             }
+                            "Intervals" -> {
+                                val repeat = parser.getAttributeValue(null, "Repeat")?.toIntOrNull() ?: 1
+                                val onDuration = parser.getAttributeValue(null, "OnDuration")?.toIntOrNull() ?: 180
+                                val offDuration = parser.getAttributeValue(null, "OffDuration")?.toIntOrNull() ?: 120
+                                val onPower = parser.getAttributeValue(null, "OnPower")?.toDoubleOrNull() ?: 1.0
+                                val offPower = parser.getAttributeValue(null, "OffPower")?.toDoubleOrNull() ?: 0.5
+
+                                for (stepIdx in 0 until repeat) {
+                                    val onWatts = onPower * ftpWatts
+                                    val onColor = KustomColorGradeMapper.getPowerZoneColor(onWatts, null, ColorMode.BACKGROUND_COLOR, palette = palette) ?: 0xFFEF5350.toInt()
+                                    val onHeight = (onWatts / (ftpWatts * 1.3)).toFloat().coerceIn(0.15f, 1.0f)
+
+                                    steps.add(
+                                        WorkoutStepInterval(
+                                            stepIndex = stepCounter++,
+                                            name = "Interval ON",
+                                            durationSeconds = onDuration,
+                                            targetWattsMin = onWatts,
+                                            targetWattsMax = onWatts,
+                                            zoneColorInt = onColor,
+                                            heightRatio = onHeight,
+                                        )
+                                    )
+
+                                    val offWatts = offPower * ftpWatts
+                                    val offColor = KustomColorGradeMapper.getPowerZoneColor(offWatts, null, ColorMode.BACKGROUND_COLOR, palette = palette) ?: 0xFF5C6BC0.toInt()
+                                    val offHeight = (offWatts / (ftpWatts * 1.3)).toFloat().coerceIn(0.15f, 1.0f)
+
+                                    steps.add(
+                                        WorkoutStepInterval(
+                                            stepIndex = stepCounter++,
+                                            name = "Interval OFF",
+                                            durationSeconds = offDuration,
+                                            targetWattsMin = offWatts,
+                                            targetWattsMax = offWatts,
+                                            zoneColorInt = offColor,
+                                            heightRatio = offHeight,
+                                        )
+                                    )
+                                }
+                            }
                         }
                     }
+                    eventType = parser.next()
                 }
-                eventType = parser.next()
-            }
 
-            val totalSec = steps.sumOf { it.durationSeconds }
-            ParsedWorkout(
-                title = workoutTitle,
-                source = "ZWO Parser",
-                totalDurationSeconds = totalSec,
-                steps = steps,
-            )
+                val totalSec = steps.sumOf { it.durationSeconds }
+                ParsedWorkout(
+                    title = workoutTitle,
+                    source = "ZWO Parser",
+                    totalDurationSeconds = totalSec,
+                    steps = steps,
+                )
+            }
         }.getOrElse { throwable ->
             KustomLogger.e("Error parsing ZWO workout stream", throwable)
             getDefaultSampleWorkout(ftpWatts, palette)
@@ -133,6 +153,7 @@ object WorkoutFileParser {
 
     /**
      * Dynamically resolves and parses the active workout file loaded on Karoo OS storage (/sdcard/FitFiles/ or /sdcard/Hammerhead/workouts/).
+     * Throttles directory scans to once per 10,000ms and caches parsed model in memory.
      *
      * @param ftpWatts Rider FTP in Watts for height normalization.
      * @param palette Selected manufacturer zone color palette ([ZonePalette]).
@@ -142,7 +163,14 @@ object WorkoutFileParser {
         ftpWatts: Double = DEFAULT_FTP,
         palette: ZonePalette = ZonePalette.KAROO,
     ): ParsedWorkout {
+        val now = System.currentTimeMillis()
+        val currentCached = cachedWorkout
+        if (currentCached != null && (now - lastScanTime < 10_000L) && cachedFtp == ftpWatts && cachedPalette == palette) {
+            return currentCached
+        }
+
         return runCatching {
+            lastScanTime = now
             val searchDirs = listOf(
                 File("/sdcard/FitFiles/"),
                 File("/sdcard/Hammerhead/workouts/"),
@@ -157,14 +185,26 @@ object WorkoutFileParser {
 
             val mostRecentFile = candidateFiles.firstOrNull()
             if (mostRecentFile != null) {
-                KustomLogger.d("Found active candidate workout file: ${mostRecentFile.absolutePath}")
-                parseWorkoutFile(mostRecentFile.absolutePath, ftpWatts, palette)
+                if (mostRecentFile.absolutePath == cachedWorkoutFile && mostRecentFile.lastModified() == cachedLastModified && cachedFtp == ftpWatts && cachedPalette == palette && currentCached != null) {
+                    return currentCached
+                }
+                val parsed = parseWorkoutFile(mostRecentFile.absolutePath, ftpWatts, palette)
+                cachedWorkoutFile = mostRecentFile.absolutePath
+                cachedLastModified = mostRecentFile.lastModified()
+                cachedFtp = ftpWatts
+                cachedPalette = palette
+                cachedWorkout = parsed
+                parsed
             } else {
-                getEnduranceRideWorkout(ftpWatts, palette)
+                val fallback = getEnduranceRideWorkout(ftpWatts, palette)
+                cachedWorkout = fallback
+                fallback
             }
         }.getOrElse { throwable ->
             KustomLogger.e("Error resolving active workout file from storage", throwable)
-            getEnduranceRideWorkout(ftpWatts, palette)
+            val fallback = getEnduranceRideWorkout(ftpWatts, palette)
+            cachedWorkout = fallback
+            fallback
         }
     }
 

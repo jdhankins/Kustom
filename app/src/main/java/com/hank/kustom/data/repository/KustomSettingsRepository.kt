@@ -324,13 +324,18 @@ class KustomSettingsRepository(context: Context) {
                 val defaultRightZone = if (normalizedId == "combo-block-4") ZoneFormat.BACKGROUND else ZoneFormat.NONE
                 val defaultRightSmooth = if (normalizedId == "combo-block-4") 3 else 0
 
+                val rawLeft = obj.optString("leftMetric", defaultLeft)
+                val rawRight = obj.optString("rightMetric", defaultRight)
+                val safeLeft = if (rawLeft == "workout-target-power" || rawLeft == "workout-primary-target") "np" else rawLeft
+                val safeRight = if (rawRight == "workout-target-power" || rawRight == "workout-primary-target") "max-power" else rawRight
+
                 list.add(
                     CustomComboInstance(
                         id = normalizedId,
                         name = obj.optString("name", "Block ${i + 1}"),
                         centerMetric = obj.optString("centerMetric", defaultCenter),
-                        leftMetric = obj.optString("leftMetric", defaultLeft),
-                        rightMetric = obj.optString("rightMetric", defaultRight),
+                        leftMetric = safeLeft,
+                        rightMetric = safeRight,
                         centerZoneFormat = parseEnum(obj.optString("centerZoneFormat"), ZoneFormat.BAR),
                         leftZoneFormat = parseEnum(obj.optString("leftZoneFormat"), ZoneFormat.NONE),
                         rightZoneFormat = parseEnum(obj.optString("rightZoneFormat"), defaultRightZone),
