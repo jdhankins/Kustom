@@ -1361,6 +1361,8 @@ fun UniversalFieldComboControls(
     val centerOptions = remember {
         listOf(
             "power" to "Power",
+            "workout-target-power" to "Workout Target",
+            "workout-primary-target" to "Primary Target",
             "hr" to "Heart Rate",
             "cadence" to "Cadence",
             "speed" to "Speed",
@@ -1379,6 +1381,7 @@ fun UniversalFieldComboControls(
     val cornerOptions = remember {
         listOf(
             "np" to "NP",
+            "tss" to "TSS",
             "max-power" to "Max Power",
             "avg-power" to "Avg Power",
             "power-to-weight" to "W/kg",

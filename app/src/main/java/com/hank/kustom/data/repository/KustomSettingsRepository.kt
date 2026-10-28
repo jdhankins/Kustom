@@ -260,9 +260,9 @@ class KustomSettingsRepository(context: Context) {
             CustomComboInstance(
                 id = "combo-block-1",
                 name = "Block 1",
-                centerMetric = "power",
-                leftMetric = "np",
-                rightMetric = "max-power",
+                centerMetric = "workout-target-power",
+                leftMetric = "avg-speed",
+                rightMetric = "distance",
                 centerZoneFormat = ZoneFormat.BAR,
                 centerSmoothing = SmoothingOption.THREE_SEC,
             ),
@@ -311,11 +311,14 @@ class KustomSettingsRepository(context: Context) {
             val list = mutableListOf<CustomComboInstance>()
             for (i in 0 until jsonArray.length()) {
                 val obj = jsonArray.getJSONObject(i)
+                val rawId = obj.optString("id", "combo-block-${i + 1}")
+                val normalizedId = if (rawId.startsWith("combo_")) "combo-block-${i + 1}" else rawId
+                val defaultCenter = if (normalizedId == "combo-block-1") "workout-target-power" else "power"
                 list.add(
                     CustomComboInstance(
-                        id = obj.optString("id", "combo-block-${i + 1}"),
-                        name = obj.optString("name", "Custom ${i + 1}"),
-                        centerMetric = obj.optString("centerMetric", "power"),
+                        id = normalizedId,
+                        name = obj.optString("name", "Block ${i + 1}"),
+                        centerMetric = obj.optString("centerMetric", defaultCenter),
                         leftMetric = obj.optString("leftMetric", "np"),
                         rightMetric = obj.optString("rightMetric", "max-power"),
                         centerZoneFormat = parseEnum(obj.optString("centerZoneFormat"), ZoneFormat.BAR),
