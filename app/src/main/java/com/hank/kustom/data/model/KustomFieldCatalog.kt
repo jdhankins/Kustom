@@ -144,6 +144,9 @@ data class KustomFieldDefinition(
         }
 
     fun resolveDynamicLabel(smoothing: SmoothingOption): String {
+        if (typeId == "workout-target-power" || typeId == "workout-primary-target") {
+            return "117-146"
+        }
         return if (supportsSmoothing && smoothing != SmoothingOption.NONE) {
             "${smoothing.label} $childTitle"
         } else {

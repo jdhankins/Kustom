@@ -287,11 +287,13 @@ class KustomSettingsRepository(context: Context) {
             CustomComboInstance(
                 id = "combo-block-4",
                 name = "Block 4",
-                centerMetric = "power",
-                leftMetric = "avg-speed",
-                rightMetric = "distance",
+                centerMetric = "workout-target-power",
+                leftMetric = "tss",
+                rightMetric = "hr",
                 centerZoneFormat = ZoneFormat.BAR,
                 centerSmoothing = SmoothingOption.THREE_SEC,
+                rightZoneFormat = ZoneFormat.BACKGROUND,
+                rightSmoothing = SmoothingOption.THREE_SEC,
             ),
             CustomComboInstance(
                 id = "combo-block-5",
@@ -313,20 +315,28 @@ class KustomSettingsRepository(context: Context) {
                 val obj = jsonArray.getJSONObject(i)
                 val rawId = obj.optString("id", "combo-block-${i + 1}")
                 val normalizedId = if (rawId.startsWith("combo_")) "combo-block-${i + 1}" else rawId
-                val defaultCenter = if (normalizedId == "combo-block-1") "workout-target-power" else "power"
+                val defaultCenter = when (normalizedId) {
+                    "combo-block-1", "combo-block-4" -> "workout-target-power"
+                    else -> "power"
+                }
+                val defaultLeft = if (normalizedId == "combo-block-4") "tss" else "np"
+                val defaultRight = if (normalizedId == "combo-block-4") "hr" else "max-power"
+                val defaultRightZone = if (normalizedId == "combo-block-4") ZoneFormat.BACKGROUND else ZoneFormat.NONE
+                val defaultRightSmooth = if (normalizedId == "combo-block-4") 3 else 0
+
                 list.add(
                     CustomComboInstance(
                         id = normalizedId,
                         name = obj.optString("name", "Block ${i + 1}"),
                         centerMetric = obj.optString("centerMetric", defaultCenter),
-                        leftMetric = obj.optString("leftMetric", "np"),
-                        rightMetric = obj.optString("rightMetric", "max-power"),
+                        leftMetric = obj.optString("leftMetric", defaultLeft),
+                        rightMetric = obj.optString("rightMetric", defaultRight),
                         centerZoneFormat = parseEnum(obj.optString("centerZoneFormat"), ZoneFormat.BAR),
                         leftZoneFormat = parseEnum(obj.optString("leftZoneFormat"), ZoneFormat.NONE),
-                        rightZoneFormat = parseEnum(obj.optString("rightZoneFormat"), ZoneFormat.NONE),
+                        rightZoneFormat = parseEnum(obj.optString("rightZoneFormat"), defaultRightZone),
                         centerSmoothing = SmoothingOption.fromSeconds(obj.optInt("centerSmoothing", 3)),
                         leftSmoothing = SmoothingOption.fromSeconds(obj.optInt("leftSmoothing", 0)),
-                        rightSmoothing = SmoothingOption.fromSeconds(obj.optInt("rightSmoothing", 0)),
+                        rightSmoothing = SmoothingOption.fromSeconds(obj.optInt("rightSmoothing", defaultRightSmooth)),
                     )
                 )
             }

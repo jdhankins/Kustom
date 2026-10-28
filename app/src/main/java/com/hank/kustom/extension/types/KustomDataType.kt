@@ -424,7 +424,7 @@ class KustomDataType(
 
                     val primaryValText = if (centerVal == null) {
                         val isCenterSensor = when (centerDef.typeId) {
-                            "power", "np", "avg-power", "max-power", "power-20m", "power-1hr", "power-balance",
+                            "power", "workout-target-power", "workout-primary-target", "np", "avg-power", "max-power", "power-20m", "power-1hr", "power-balance",
                             "percent-ftp", "power-to-weight", "power-zone", "intensity-factor", "tss", "power-vi",
                             "power-kj", "power-cal", "power-cal-hr", "power-smoothness", "power-te", "avg-power-balance",
                             "hr", "avg-hr", "max-hr", "hr-zone", "percent-max-hr", "percent-hrr", "avg-percent-hrr",
@@ -432,7 +432,7 @@ class KustomDataType(
                             else -> false
                         }
                         if (isCenterSensor) "No Sensor" else "--"
-                    } else if (centerDef.typeId.contains("hr") || centerDef.typeId.contains("cadence") || centerDef.typeId.contains("power")) {
+                    } else if (centerDef.typeId.contains("hr") || centerDef.typeId.contains("cadence") || centerDef.typeId.contains("power") || centerDef.typeId.contains("workout")) {
                         "${centerVal.toInt()}"
                     } else {
                         centerDef.formatNumericValueOnly(centerVal, isImperial)
