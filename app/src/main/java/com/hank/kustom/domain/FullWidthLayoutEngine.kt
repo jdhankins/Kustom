@@ -294,11 +294,27 @@ object FullWidthLayoutEngine {
 
                 is HeaderSlot.MetricStack -> {
                     if (rightSlot.label.isNotEmpty()) {
-                        val rightValColor = when {
-                            rightSlot.isZoneFilled && rightSlot.zoneColor != null -> KustomColorGradeMapper.getContrastingTextColor(rightSlot.zoneColor)
-                            else -> defaultTextColor
+                        val isZoneFilled = rightSlot.isZoneFilled && rightSlot.zoneColor != null
+                        val rightValColor = if (isZoneFilled) {
+                            0xFFFFFFFF.toInt()
+                        } else {
+                            defaultTextColor
                         }
-                        val rightLabelColor = if (rightSlot.isZoneFilled && rightSlot.zoneColor != null) rightValColor else defaultTextColor
+                        val rightLabelColor = if (isZoneFilled) 0xFFFFFFFF.toInt() else defaultTextColor
+
+                        if (isZoneFilled) {
+                            val rPillRect = RectF(
+                                rightColLeft - width * 0.010f,
+                                height * 0.04f,
+                                rightColRight + width * 0.010f,
+                                height * 0.58f
+                            )
+                            val rPillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                                color = rightSlot.zoneColor
+                                style = Paint.Style.FILL
+                            }
+                            canvas.drawRoundRect(rPillRect, 12f, 12f, rPillPaint)
+                        }
 
                         val labelPaint = TextPaint().apply {
                             color = rightLabelColor
@@ -310,43 +326,35 @@ object FullWidthLayoutEngine {
                         }
                         KustomTypefaceResolver.applyTypography(valPaint, valueTypography.font, valueTypography.fontWeight, startValuePx)
 
+                        val align = if (isZoneFilled) Paint.Align.CENTER else Paint.Align.RIGHT
+                        val labelX = if (isZoneFilled) (rightColLeft + rightColRight) / 2f else rightColRight
+
                         drawFixedLabel(
                             canvas = canvas,
                             text = rightSlot.label,
-                            anchorX = rightColRight,
+                            anchorX = labelX,
                             topY = labelTopY,
                             paint = labelPaint,
-                            align = Paint.Align.RIGHT,
+                            align = align,
                             fixedTextSizePx = fixedLabelPx
                         )
 
-                        val vBounds = drawTextInBox(
+                        val boxL = if (isZoneFilled) rightColLeft + width * 0.010f else rightColLeft
+                        val boxR = if (isZoneFilled) rightColRight - width * 0.010f else rightColRight
+
+                        drawTextInBox(
                             canvas = canvas,
                             text = rightSlot.value,
-                            boxLeft = rightColLeft,
+                            boxLeft = boxL,
                             boxTop = valueBoxTop,
-                            boxRight = rightColRight,
+                            boxRight = boxR,
                             boxBottom = valueBoxBottom,
                             paint = valPaint,
-                            align = Paint.Align.RIGHT,
+                            align = align,
                             verticalAlign = VerticalAlign.TOP,
                             maxStartTextSizePx = startValuePx,
                             minTextSizePx = 10f
                         )
-
-                        if (rightSlot.isZoneFilled && rightSlot.zoneColor != null) {
-                            val rPillRect = RectF(
-                                rightColRight - vBounds.width().toFloat() - width * 0.020f,
-                                height * 0.05f,
-                                rightColRight + width * 0.012f,
-                                valueBoxBottom + height * 0.02f
-                            )
-                            val rPillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                                color = rightSlot.zoneColor
-                                style = Paint.Style.FILL
-                            }
-                            canvas.drawRoundRect(rPillRect, 8f, 8f, rPillPaint)
-                        }
                     }
                 }
                 is HeaderSlot.HeroValue -> {}

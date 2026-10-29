@@ -673,19 +673,39 @@ object KustomFieldRenderer {
                 },
             )
 
-            // Status Pill Badge on the Right
-            val (badgeText, badgeBgColor, badgeTextColor) = when {
-                currentPower == null && !isMock -> Triple("NO SENSOR", 0xFFC62828.toInt(), 0xFFFFFFFF.toInt())
-                cPower < lowBound -> Triple("LOW -${(lowBound - cPower).toInt()}W", 0xFF455A64.toInt(), 0xFFFFFFFF.toInt())
-                cPower > highBound -> Triple("HIGH +${(cPower - highBound).toInt()}W", 0xFFC62828.toInt(), 0xFFFFFFFF.toInt())
-                else -> Triple("ON TARGET", 0xFF2E7D32.toInt(), 0xFFFFFFFF.toInt())
+            // Full-Height 2-Line Zone-Filled Corner Block for Right Slot
+            val rightSlot = when {
+                currentPower == null && !isMock -> HeaderSlot.MetricStack(
+                    label = "STATUS",
+                    value = "--",
+                    isZoneFilled = true,
+                    zoneColor = android.graphics.Color.parseColor("#475569")
+                )
+                cPower < lowBound -> {
+                    val diff = (lowBound - cPower).toInt().coerceAtLeast(1)
+                    HeaderSlot.MetricStack(
+                        label = "LOW",
+                        value = "▲+$diff",
+                        isZoneFilled = true,
+                        zoneColor = android.graphics.Color.parseColor("#2563EB") // Matte Blue
+                    )
+                }
+                cPower > highBound -> {
+                    val diff = (cPower - highBound).toInt().coerceAtLeast(1)
+                    HeaderSlot.MetricStack(
+                        label = "HIGH",
+                        value = "▼-$diff",
+                        isZoneFilled = true,
+                        zoneColor = android.graphics.Color.parseColor("#C62828") // Matte Crimson Red
+                    )
+                }
+                else -> HeaderSlot.MetricStack(
+                    label = "STATUS",
+                    value = "✓ OK",
+                    isZoneFilled = true,
+                    zoneColor = android.graphics.Color.parseColor("#2E7D32") // Matte Forest Green
+                )
             }
-
-            val rightSlot = HeaderSlot.StatusPill(
-                text = badgeText,
-                backgroundColor = badgeBgColor,
-                textColor = badgeTextColor,
-            )
 
             val centerHero = HeaderSlot.HeroValue(
                 value = if (currentPower != null || isMock) cPower.toInt().toString() else "No Sensor",
@@ -736,38 +756,22 @@ object KustomFieldRenderer {
             }
             canvas.drawRoundRect(targetBoxRect, 6f, 6f, targetFillPaint)
 
-            // Boundary Numbers (115 & 160) framed vertically centered on track edges at tLeftX - 8f and tRightX + 8f
-            val boundTextPx = (height * 0.11f).coerceIn(11f, 13f)
-            val trackCenterY = trackY + (trackHeight / 2f)
-            val boundColor = if (isDarkTheme) 0xFFCBD5E1.toInt() else 0xFF475569.toInt()
-
-            val boundPaintLeft = TextPaint().apply {
-                color = boundColor
-                textSize = boundTextPx
-                textAlign = Paint.Align.RIGHT
+            // Crisp Vertical Boundary Gate Tick Lines at tLeftX and tRightX
+            val gateTickPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (isDarkTheme) 0xFFFFFFFF.toInt() else 0xFF0F172A.toInt()
+                style = Paint.Style.STROKE
+                strokeWidth = 3.5f
             }
-            KustomTypefaceResolver.applyTypography(boundPaintLeft, labelTypography.font, 700, boundTextPx)
+            canvas.drawLine(tLeftX, trackY - 4f, tLeftX, trackY + trackHeight + 4f, gateTickPaint)
+            canvas.drawLine(tRightX, trackY - 4f, tRightX, trackY + trackHeight + 4f, gateTickPaint)
 
-            val boundPaintRight = TextPaint().apply {
-                color = boundColor
-                textSize = boundTextPx
-                textAlign = Paint.Align.LEFT
-            }
-            KustomTypefaceResolver.applyTypography(boundPaintRight, labelTypography.font, 700, boundTextPx)
-
-            val bMetrics = boundPaintLeft.fontMetrics
-            val finalBoundY = trackCenterY - ((bMetrics.ascent + bMetrics.descent) / 2f)
-
-            canvas.drawText(lowBound.toInt().toString(), tLeftX - 8f, finalBoundY, boundPaintLeft)
-            canvas.drawText(highBound.toInt().toString(), tRightX + 8f, finalBoundY, boundPaintRight)
-
-            // Solid WHITE Cursor Needle (extending 2dp above and below track)
+            // Solid WHITE Cursor Needle (extending 5px above and below track with 2.5f border)
             if (currentPower != null || isMock) {
                 val cursorFrac = ((cPower - scaleMin) / scaleSpan).coerceIn(0f, 1f)
                 val cursorX = barLeft + (cursorFrac * barWidth)
 
-                val needleWidth = width * 0.020f
-                val needleExt = height * 0.02f
+                val needleWidth = 7f
+                val needleExt = 5f
                 val needleRect = RectF(
                     cursorX - (needleWidth / 2f),
                     trackY - needleExt,
@@ -780,9 +784,9 @@ object KustomFieldRenderer {
                     style = Paint.Style.FILL
                 }
                 val needleBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = 0xFF000000.toInt()
+                    color = 0xFF0F172A.toInt()
                     style = Paint.Style.STROKE
-                    strokeWidth = 1.8f
+                    strokeWidth = 2.5f
                 }
                 canvas.drawRoundRect(needleRect, needleWidth / 2f, needleWidth / 2f, needlePaint)
                 canvas.drawRoundRect(needleRect, needleWidth / 2f, needleWidth / 2f, needleBorderPaint)
