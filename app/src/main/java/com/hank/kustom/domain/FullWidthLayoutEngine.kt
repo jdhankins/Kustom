@@ -68,14 +68,24 @@ object FullWidthLayoutEngine {
         paint.textAlign = Paint.Align.LEFT // Always draw using exact LEFT offset from getTextBounds
         paint.textScaleX = 1.0f
 
+        val initialStroke = paint.strokeWidth
+        val strokeRatio = if (maxStartTextSizePx > 0f && initialStroke > 0f) initialStroke / maxStartTextSizePx else 0f
+
         var size = maxStartTextSizePx.coerceAtLeast(minTextSizePx)
         paint.textSize = size
+        if (strokeRatio > 0f) {
+            paint.strokeWidth = size * strokeRatio
+        }
+
         val bounds = Rect()
         paint.getTextBounds(renderText, 0, renderText.length, bounds)
 
         while (size > minTextSizePx && (bounds.width() > boxW || bounds.height() > boxH)) {
             size -= 1f
             paint.textSize = size
+            if (strokeRatio > 0f) {
+                paint.strokeWidth = size * strokeRatio
+            }
             paint.getTextBounds(renderText, 0, renderText.length, bounds)
         }
 

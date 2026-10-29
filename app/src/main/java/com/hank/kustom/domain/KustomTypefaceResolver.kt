@@ -102,12 +102,12 @@ object KustomTypefaceResolver {
         }
 
         val baseFactor = when (weight) {
-            300 -> 0.0f          // Light
-            400 -> 0.008f        // Regular
-            500 -> 0.018f        // Medium
-            700 -> 0.032f        // Bold
-            900 -> 0.050f        // Ultra Bold
-            else -> ((weight - 300) / 12000f).coerceAtLeast(0f)
+            300 -> 0.0f
+            400 -> 0.0f
+            500 -> 0.008f
+            700 -> 0.018f
+            900 -> 0.028f
+            else -> ((weight - 400) / 18000f).coerceIn(0f, 0.028f)
         }
 
         val strokeFactor = baseFactor * fontMultiplier

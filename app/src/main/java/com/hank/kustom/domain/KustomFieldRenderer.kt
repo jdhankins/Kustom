@@ -736,19 +736,20 @@ object KustomFieldRenderer {
             }
             canvas.drawRoundRect(targetBoxRect, 6f, 6f, targetFillPaint)
 
-            // Boundary Numbers (115 & 160) framed vertically centered on track edges at tLeftX - 8f and tRightX + 8f (#CBD5E1)
+            // Boundary Numbers (115 & 160) framed vertically centered on track edges at tLeftX - 8f and tRightX + 8f
             val boundTextPx = (height * 0.11f).coerceIn(11f, 13f)
             val trackCenterY = trackY + (trackHeight / 2f)
+            val boundColor = if (isDarkTheme) 0xFFCBD5E1.toInt() else 0xFF475569.toInt()
 
             val boundPaintLeft = TextPaint().apply {
-                color = 0xFFCBD5E1.toInt()
+                color = boundColor
                 textSize = boundTextPx
                 textAlign = Paint.Align.RIGHT
             }
             KustomTypefaceResolver.applyTypography(boundPaintLeft, labelTypography.font, 700, boundTextPx)
 
             val boundPaintRight = TextPaint().apply {
-                color = 0xFFCBD5E1.toInt()
+                color = boundColor
                 textSize = boundTextPx
                 textAlign = Paint.Align.LEFT
             }
