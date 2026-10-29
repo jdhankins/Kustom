@@ -302,18 +302,31 @@ class KustomDataType(
                     mockValue
                 } else if (streamState is StreamState.Streaming) {
                     val dp = streamState.dataPoint
-                    if (definition.typeId == "workout-interval-time-remaining" || definition.typeId == "workout-duration-remaining") {
-                        dp.values[DataType.Field.WORKOUT_TARGET_VALUE]
-                            ?: dp.values[DataType.Field.SINGLE]
-                            ?: dp.values["FIELD_WORKOUT_REMAINING_INTERVAL_DURATION_ID"]
-                            ?: dp.values["FIELD_WORKOUT_REMAINING_DURATION_ID"]
-                            ?: dp.values.entries.firstOrNull { !it.key.contains("STATE", ignoreCase = true) && !it.key.contains("DIFFICULTY", ignoreCase = true) }?.value
-                    } else {
-                        val rawVal = dp.singleValue
-                        if (rawVal != null && definition.typeId == "grade") {
-                            gradeSmoother.addSample(rawVal)
-                        } else {
-                            rawVal
+                    when (definition.typeId) {
+                        "workout-duration-remaining", "workout-interval-time-remaining" -> {
+                            val single = dp.singleValue
+                            if (single != null && single > 0.0) {
+                                single
+                            } else {
+                                dp.values[DataType.Field.WORKOUT_TARGET_VALUE]
+                                    ?: dp.values[DataType.Field.SINGLE]
+                                    ?: dp.values["FIELD_WORKOUT_REMAINING_TOTAL_DURATION_ID"]
+                                    ?: dp.values["FIELD_WORKOUT_REMAINING_INTERVAL_DURATION_ID"]
+                                    ?: dp.values["FIELD_WORKOUT_REMAINING_DURATION_ID"]
+                                    ?: dp.values.entries.firstOrNull { 
+                                        !it.key.contains("STATE", ignoreCase = true) && 
+                                        !it.key.contains("DIFFICULTY", ignoreCase = true) &&
+                                        it.value > 0.0
+                                    }?.value ?: single
+                            }
+                        }
+                        else -> {
+                            val rawVal = dp.singleValue
+                            if (rawVal != null && definition.typeId == "grade") {
+                                gradeSmoother.addSample(rawVal)
+                            } else {
+                                rawVal
+                            }
                         }
                     }
                 } else {
@@ -345,15 +358,17 @@ class KustomDataType(
                     WorkoutFileParser.resolveActiveWorkoutFile(userFtp, settings.globalColors.globalZonePalette)
                 }
 
-                val preRideWorkoutDuration: Double? = when (definition.typeId) {
-                    "workout-interval-time-remaining" -> activeWorkout.steps.firstOrNull()?.durationSeconds?.toDouble()
-                    "workout-duration-remaining" -> activeWorkout.totalDurationSeconds.toDouble()
-                    else -> null
-                }
+                val preRideWorkoutDuration: Double? = if (isMock || activeWorkout.steps.isNotEmpty()) {
+                    when (definition.typeId) {
+                        "workout-interval-time-remaining" -> activeWorkout.steps.firstOrNull()?.durationSeconds?.toDouble()
+                        "workout-duration-remaining" -> activeWorkout.totalDurationSeconds.toDouble()
+                        else -> null
+                    }
+                } else null
 
-                val effectiveValue: Double? = if (dynamicValue != null && dynamicValue > 0.0) {
+                val effectiveValue: Double? = if (dynamicValue != null && dynamicValue >= 0.0) {
                     dynamicValue
-                } else if (preRideWorkoutDuration != null && preRideWorkoutDuration > 0.0) {
+                } else if (preRideWorkoutDuration != null && preRideWorkoutDuration >= 0.0) {
                     preRideWorkoutDuration
                 } else {
                     dynamicValue
@@ -364,7 +379,7 @@ class KustomDataType(
                         val v = dynamicValue ?: 228.0
                         definition.formatNumericValueOnly(v, isImperial)
                     }
-                    effectiveValue != null && effectiveValue > 0.0 -> {
+                    effectiveValue != null && effectiveValue >= 0.0 -> {
                         definition.formatNumericValueOnly(effectiveValue, isImperial)
                     }
                     streamState is StreamState.Streaming -> {
@@ -428,7 +443,7 @@ class KustomDataType(
                         if (targetV != null) targetWattsVal = targetV.toFloat()
                     }
 
-                    if (isMock && minTargetWatts == null && maxTargetWatts == null && targetWattsVal == null && activeWorkout.steps.isNotEmpty()) {
+                    if (minTargetWatts == null && maxTargetWatts == null && targetWattsVal == null && activeWorkout.steps.isNotEmpty()) {
                         val currentStep = activeWorkout.steps.firstOrNull()
                         if (currentStep != null) {
                             minTargetWatts = currentStep.targetWattsMin.toFloat()
@@ -624,7 +639,12 @@ class KustomDataType(
                     } else null
 
                     val comboCenterLabel = if (centerDef.typeId == "workout-target-power" || centerDef.typeId == "workout-primary-target") {
-                        extractTargetPowerString(targetDataPoint) ?: "117-146"
+                        val liveTargetStr = extractTargetPowerString(targetDataPoint)
+                        when {
+                            liveTargetStr != null -> liveTargetStr
+                            isMock -> "117-146"
+                            else -> centerDef.resolveDynamicLabel(resolvedConfig.smoothingOption)
+                        }
                     } else {
                         centerDef.resolveDynamicLabel(resolvedConfig.smoothingOption)
                     }

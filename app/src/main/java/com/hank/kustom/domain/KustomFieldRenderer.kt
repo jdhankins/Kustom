@@ -242,22 +242,33 @@ object KustomFieldRenderer {
             val defaultBgColor = if (isDarkTheme) globalColors.getDarkColorInt() else globalColors.getLightColorInt()
             val defaultTextColor = KustomColorGradeMapper.getContrastingTextColor(defaultBgColor)
 
-            val activeZoneColor = mappedColor ?: KustomColorGradeMapper.getPowerZoneColor(powerValueWatts ?: 214.0, null, ColorMode.BACKGROUND_COLOR)
+            val activeZoneColor = mappedColor ?: if (powerValueWatts != null) {
+                KustomColorGradeMapper.getPowerZoneColor(
+                    watts = powerValueWatts,
+                    userProfile = null,
+                    colorMode = ColorMode.BACKGROUND_COLOR,
+                    isDarkTheme = isDarkTheme,
+                    palette = globalColors.globalZonePalette,
+                )
+            } else null
+
+            val isBgZoneFilled = zoneFormat == ZoneFormat.BACKGROUND && activeZoneColor != null && !isSensorStatusText
 
             // Calculate background color (stay default background when searching/no sensor)
-            val backgroundColor: Int = if (zoneFormat == ZoneFormat.BACKGROUND && activeZoneColor != null && !isSensorStatusText) {
-                activeZoneColor
+            val backgroundColor: Int = if (isBgZoneFilled) {
+                activeZoneColor!!
             } else {
                 defaultBgColor
             }
 
             // Corner default values color
-            val defaultCornerValueColor: Int = when {
-                zoneFormat == ZoneFormat.BACKGROUND && activeZoneColor != null -> KustomColorGradeMapper.getContrastingTextColor(activeZoneColor)
-                else -> defaultTextColor
+            val defaultCornerValueColor: Int = if (isBgZoneFilled) {
+                KustomColorGradeMapper.getContrastingTextColor(activeZoneColor!!)
+            } else {
+                defaultTextColor
             }
 
-            val mutedTextColor = if (zoneFormat == ZoneFormat.BACKGROUND && activeZoneColor != null) defaultCornerValueColor else defaultTextColor
+            val mutedTextColor = if (isBgZoneFilled) defaultCornerValueColor else defaultTextColor
 
             // Draw Background (Identical fill logic to standard fields with 1.5px inset)
             if (config.boundariesEnabled) {

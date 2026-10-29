@@ -172,8 +172,12 @@ object WorkoutFileParser {
         return runCatching {
             lastScanTime = now
             val searchDirs = listOf(
-                File("/sdcard/FitFiles/"),
+                File("/sdcard/Android/data/io.hammerhead.rideapp/files/workouts/"),
+                File("/sdcard/Android/data/io.hammerhead.rideapp/files/"),
                 File("/sdcard/Hammerhead/workouts/"),
+                File("/sdcard/Hammerhead/Workouts/"),
+                File("/sdcard/FitFiles/Workouts/"),
+                File("/sdcard/FitFiles/"),
                 File("/sdcard/Download/"),
             )
 
@@ -182,6 +186,10 @@ object WorkoutFileParser {
                 .flatMap { dir -> dir.listFiles()?.toList() ?: emptyList() }
                 .filter { it.isFile && (it.name.endsWith(".zwo", ignoreCase = true) || it.name.endsWith(".fit", ignoreCase = true)) }
                 .sortedByDescending { it.lastModified() }
+
+            candidateFiles.take(5).forEach { file ->
+                KustomLogger.d("WorkoutFileParser candidate: ${file.absolutePath}, modified: ${file.lastModified()}")
+            }
 
             val mostRecentFile = candidateFiles.firstOrNull()
             if (mostRecentFile != null) {
@@ -236,10 +244,7 @@ object WorkoutFileParser {
     }
 
     /**
-     * Parses a local .FIT workout file and normalizes step intervals.
-     */
-    /**
-     * Generates active TrainingPeaks Endurance Ride workout model (3 steps: Warmup 15m, Endurance Block 2h05m, Cooldown 10m).
+     * Generates active TrainingPeaks Endurance Ride workout model (3 steps: Warmup 10m, Endurance Block 1h40m, Cooldown 10m).
      *
      * @param ftpWatts Rider FTP in Watts (default 250W).
      * @param palette Selected manufacturer zone color palette ([ZonePalette]).
@@ -250,9 +255,9 @@ object WorkoutFileParser {
         palette: ZonePalette = ZonePalette.KAROO,
     ): ParsedWorkout {
         val sampleSpecs = listOf(
-            Triple(900, 0.55, "Warmup"),            // Z1/Z2 Recovery (15m @ 55% FTP)
-            Triple(7500, 0.68, "Endurance Block"), // Z2 Endurance (2h 05m @ 68% FTP)
-            Triple(600, 0.50, "Cooldown"),          // Z1 Recovery (10m @ 50% FTP)
+            Triple(600, 0.55, "Warmup"),             // Z1/Z2 Recovery (10m @ 55% FTP)
+            Triple(6000, 0.68, "Endurance Block"),  // Z2 Endurance (1h 40m @ 68% FTP)
+            Triple(600, 0.50, "Cooldown"),           // Z1 Recovery (10m @ 50% FTP)
         )
 
         val steps = sampleSpecs.mapIndexed { idx, (durSec, pctFtp, name) ->
@@ -272,7 +277,7 @@ object WorkoutFileParser {
         }
 
         return ParsedWorkout(
-            title = "Endurance ride 2h 30m",
+            title = "Endurance ride 2h 00m",
             source = "TrainingPeaks",
             totalDurationSeconds = steps.sumOf { it.durationSeconds },
             steps = steps,

@@ -300,8 +300,8 @@ data class KustomFieldDefinition(
             "workout-target-hr" -> DataType.Type.HEART_RATE
             "workout-target-cadence" -> smoothing.toCadenceDataTypeId()
             "workout-primary-target" -> DataType.Type.WORKOUT_PRIMARY_TARGET
-            "workout-interval-time-remaining" -> DataType.Type.WORKOUT_REMAINING_INTERVAL_DURATION
-            "workout-duration-remaining" -> DataType.Type.WORKOUT_REMAINING_TOTAL_DURATION
+            "workout-interval-time-remaining" -> DataType.Type.WORKOUT_REMAINING_TOTAL_DURATION
+            "workout-duration-remaining" -> DataType.Type.WORKOUT_REMAINING_INTERVAL_DURATION
             "workout-interval-count" -> DataType.Type.WORKOUT_INTERVAL_COUNT
             "workout-next-target" -> DataType.Type.WORKOUT_SECONDARY_TARGET
             "battery-pct" -> DataType.Type.BATTERY_PERCENT
