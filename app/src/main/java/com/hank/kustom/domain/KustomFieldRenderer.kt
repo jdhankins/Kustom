@@ -706,9 +706,9 @@ object KustomFieldRenderer {
                 valueTypography = valueTypography,
             )
 
-            // Target Corridor Track Geometry
-            val trackY = height * 0.80f
-            val trackHeight = height * 0.11f
+            // Unified Footer Band (78%..92% Height)
+            val trackY = height * 0.78f
+            val trackHeight = height * 0.14f
 
             val spanBuffer = if (minT != null && maxT != null && minT != maxT) ((maxT - minT) * 0.45f).coerceAtLeast(30f) else 40f
             val scaleMin = ((lowBound - spanBuffer)).coerceAtLeast(0f)
@@ -719,23 +719,6 @@ object KustomFieldRenderer {
             val tRightFrac = ((highBound - scaleMin) / scaleSpan).coerceIn(0f, 1f)
             val tLeftX = barLeft + (tLeftFrac * barWidth)
             val tRightX = barLeft + (tRightFrac * barWidth)
-
-            // Boundary Numbers (115 & 160) directly ABOVE corridor edges at y = trackY - 3% height (#CBD5E1)
-            val boundTextPx = (height * 0.11f).coerceIn(11f, 13f)
-            val boundY = trackY - (height * 0.03f)
-
-            val boundPaint = TextPaint().apply {
-                color = 0xFFCBD5E1.toInt()
-                textSize = boundTextPx
-                textAlign = Paint.Align.CENTER
-            }
-            KustomTypefaceResolver.applyTypography(boundPaint, labelTypography.font, 700, boundTextPx)
-
-            val bMetrics = boundPaint.fontMetrics
-            val finalBoundY = boundY - ((bMetrics.ascent + bMetrics.descent) / 2f)
-
-            canvas.drawText(lowBound.toInt().toString(), tLeftX, finalBoundY, boundPaint)
-            canvas.drawText(highBound.toInt().toString(), tRightX, finalBoundY, boundPaint)
 
             // Base Track Capsule (Flat Solid Slate #1E262C)
             val trackBasePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -752,6 +735,30 @@ object KustomFieldRenderer {
                 style = Paint.Style.FILL
             }
             canvas.drawRoundRect(targetBoxRect, 6f, 6f, targetFillPaint)
+
+            // Boundary Numbers (115 & 160) framed vertically centered on track edges at tLeftX - 8f and tRightX + 8f (#CBD5E1)
+            val boundTextPx = (height * 0.11f).coerceIn(11f, 13f)
+            val trackCenterY = trackY + (trackHeight / 2f)
+
+            val boundPaintLeft = TextPaint().apply {
+                color = 0xFFCBD5E1.toInt()
+                textSize = boundTextPx
+                textAlign = Paint.Align.RIGHT
+            }
+            KustomTypefaceResolver.applyTypography(boundPaintLeft, labelTypography.font, 700, boundTextPx)
+
+            val boundPaintRight = TextPaint().apply {
+                color = 0xFFCBD5E1.toInt()
+                textSize = boundTextPx
+                textAlign = Paint.Align.LEFT
+            }
+            KustomTypefaceResolver.applyTypography(boundPaintRight, labelTypography.font, 700, boundTextPx)
+
+            val bMetrics = boundPaintLeft.fontMetrics
+            val finalBoundY = trackCenterY - ((bMetrics.ascent + bMetrics.descent) / 2f)
+
+            canvas.drawText(lowBound.toInt().toString(), tLeftX - 8f, finalBoundY, boundPaintLeft)
+            canvas.drawText(highBound.toInt().toString(), tRightX + 8f, finalBoundY, boundPaintRight)
 
             // Solid WHITE Cursor Needle (extending 2dp above and below track)
             if (currentPower != null || isMock) {

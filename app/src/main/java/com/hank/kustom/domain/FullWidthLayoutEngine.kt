@@ -2,6 +2,7 @@ package com.hank.kustom.domain
 
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
 import android.text.TextPaint
 import com.hank.kustom.data.model.TypographyConfig
@@ -41,14 +42,56 @@ sealed class HeaderSlot {
 
 /**
  * Shared layout engine for all full-width multi-slot fields in Kustom.
- * Manages 1:1 Canvas geometry, baselines, font sizing, auto-scaling, and drawing.
+ * Manages strict 1:1 Bounding-Box Grid, baselines, font sizing, auto-scaling, and drawing.
  */
 object FullWidthLayoutEngine {
 
     /**
-     * Draws the standardized 3-slot header (Left, Center Hero, Right) on the provided Canvas.
-     *
-     * @return RectF bounding box of the left slot pill if filled, or null.
+     * Fits and positions any string strictly inside [boxLeft, boxTop, boxRight, boxBottom]
+     * using its true visible glyph ink bounds (Paint.getTextBounds).
+     */
+    private fun drawTextInBox(
+        canvas: Canvas,
+        text: String,
+        boxLeft: Float,
+        boxTop: Float,
+        boxRight: Float,
+        boxBottom: Float,
+        paint: Paint,
+        align: Paint.Align,
+        maxStartTextSizePx: Float,
+        minTextSizePx: Float = 10f,
+    ): Rect {
+        val renderText = text.ifEmpty { "--" }
+        val boxW = (boxRight - boxLeft).coerceAtLeast(1f)
+        val boxH = (boxBottom - boxTop).coerceAtLeast(1f)
+        paint.textAlign = Paint.Align.LEFT // Always draw using exact LEFT offset from getTextBounds
+        paint.textScaleX = 1.0f
+
+        var size = maxStartTextSizePx.coerceAtLeast(minTextSizePx)
+        paint.textSize = size
+        val bounds = Rect()
+        paint.getTextBounds(renderText, 0, renderText.length, bounds)
+
+        while (size > minTextSizePx && (bounds.width() > boxW || bounds.height() > boxH)) {
+            size -= 1f
+            paint.textSize = size
+            paint.getTextBounds(renderText, 0, renderText.length, bounds)
+        }
+
+        val drawX = when (align) {
+            Paint.Align.LEFT -> boxLeft - bounds.left
+            Paint.Align.RIGHT -> boxRight - bounds.right
+            else -> ((boxLeft + boxRight) / 2f) - bounds.exactCenterX()
+        }
+        val drawY = ((boxTop + boxBottom) / 2f) - bounds.exactCenterY()
+        canvas.drawText(renderText, drawX, drawY, paint)
+        return bounds
+    }
+
+    /**
+     * Draws the standardized 3-slot header (Left, Center Hero, Right) on the provided Canvas
+     * using strict non-overlapping bounding-box grid geometry.
      */
     fun drawHeaderSlots(
         canvas: Canvas,
@@ -62,66 +105,85 @@ object FullWidthLayoutEngine {
         labelTypography: TypographyConfig,
         valueTypography: TypographyConfig,
     ) {
-        val marginX = width * 0.025f
+        val hasLeft = leftSlot is HeaderSlot.MetricStack && leftSlot.label.isNotEmpty()
+        val hasRight = rightSlot != null
+        val sideSlotsPresent = hasLeft || hasRight
+
+        // Strict Horizontal Column Coordinates (Sum = 100%)
+        val leftColLeft = width * 0.035f
+        val leftColRight = width * 0.265f
+
+        val rightColLeft = width * 0.735f
+        val rightColRight = width * 0.965f
+
+        val heroColLeft = if (sideSlotsPresent) width * 0.290f else width * 0.080f
+        val heroColRight = if (sideSlotsPresent) width * 0.710f else width * 0.920f
+
+        // Vertical Bounding Boxes
         val topY = height * 0.06f
 
-        // Calculate standard center/top label baseline Y
-        val cornerLabelSize = height * 0.16f
-        val cornerValueSize = height * 0.26f
+        // Top Row Band (Label Row: 6%..26% height)
+        val labelBoxTop = topY
+        val labelBoxBottom = height * 0.26f
 
-        val labelZoneHeight = height * 0.26f
-        val centerLabelPx = (height * (labelTypography.fontSizeSp / 68f)).coerceAtLeast(10f)
-        val tempPaint = TextPaint().apply {
-            textSize = centerLabelPx
-        }
-        KustomTypefaceResolver.applyTypography(tempPaint, labelTypography.font, labelTypography.fontWeight, centerLabelPx)
+        // Value Row Band (Value Row: 28%..58% height for left/right slots)
+        val valueBoxTop = height * 0.28f
+        val valueBoxBottom = height * 0.58f
 
-        val labelMetrics = tempPaint.fontMetrics
-        val topPadding = height * 0.04f
-        val labelCenterY = (labelZoneHeight / 2f) + topPadding
-        val labelY = labelCenterY - ((labelMetrics.ascent + labelMetrics.descent) / 2f)
+        val startLabelPx = (height * (labelTypography.fontSizeSp / 68f)).coerceAtLeast(10f)
+        val startValuePx = (height * (valueTypography.fontSizeSp / 86f)).coerceAtLeast(18f)
 
-        // 1. Draw Left Slot (if present)
-        if (leftSlot is HeaderSlot.MetricStack && leftSlot.label.isNotEmpty()) {
+        // 1. Draw Left Slot
+        if (hasLeft && leftSlot is HeaderSlot.MetricStack) {
             val leftValColor = when {
                 leftSlot.isZoneFilled && leftSlot.zoneColor != null -> KustomColorGradeMapper.getContrastingTextColor(leftSlot.zoneColor)
                 else -> defaultTextColor
             }
             val leftLabelColor = if (leftSlot.isZoneFilled && leftSlot.zoneColor != null) leftValColor else defaultTextColor
 
-            val maxCornerW = width * 0.30f
-            val labelPx = cornerLabelSize // NEVER SCALED!
-            var curValuePx = cornerValueSize
-
-            val targetLabelPaint = TextPaint().apply {
+            val labelPaint = TextPaint().apply {
                 color = leftLabelColor
-                textAlign = Paint.Align.LEFT
-                textSize = labelPx
             }
-            KustomTypefaceResolver.applyTypography(targetLabelPaint, labelTypography.font, 700, labelPx)
+            KustomTypefaceResolver.applyTypography(labelPaint, labelTypography.font, 700, startLabelPx)
 
-            val targetValuePaint = TextPaint().apply {
+            val valPaint = TextPaint().apply {
                 color = leftValColor
-                textAlign = Paint.Align.LEFT
-                textSize = curValuePx
             }
-            KustomTypefaceResolver.applyTypography(targetValuePaint, valueTypography.font, valueTypography.fontWeight, curValuePx)
+            KustomTypefaceResolver.applyTypography(valPaint, valueTypography.font, valueTypography.fontWeight, startValuePx)
 
-            // Scale ONLY the value text size if value width > maxCornerW
-            while (targetValuePaint.measureText(leftSlot.value) > maxCornerW && curValuePx > 10f) {
-                curValuePx -= 0.5f
-                targetValuePaint.textSize = curValuePx
-            }
+            val lBounds = drawTextInBox(
+                canvas = canvas,
+                text = leftSlot.label,
+                boxLeft = leftColLeft,
+                boxTop = labelBoxTop,
+                boxRight = leftColRight,
+                boxBottom = labelBoxBottom,
+                paint = labelPaint,
+                align = Paint.Align.LEFT,
+                maxStartTextSizePx = startLabelPx,
+                minTextSizePx = 9f
+            )
 
-            val lWidth = maxOf(targetLabelPaint.measureText(leftSlot.label), targetValuePaint.measureText(leftSlot.value))
+            val vBounds = drawTextInBox(
+                canvas = canvas,
+                text = leftSlot.value,
+                boxLeft = leftColLeft,
+                boxTop = valueBoxTop,
+                boxRight = leftColRight,
+                boxBottom = valueBoxBottom,
+                paint = valPaint,
+                align = Paint.Align.LEFT,
+                maxStartTextSizePx = startValuePx,
+                minTextSizePx = 10f
+            )
 
-            // Draw Zone Background Pill behind left slot if enabled
             if (leftSlot.isZoneFilled && leftSlot.zoneColor != null) {
+                val maxW = maxOf(lBounds.width().toFloat(), vBounds.width().toFloat())
                 val lPillRect = RectF(
-                    marginX - width * 0.015f,
-                    topY + height * 0.02f,
-                    marginX + lWidth + width * 0.025f,
-                    labelY + height * 0.30f
+                    leftColLeft - width * 0.012f,
+                    topY,
+                    leftColLeft + maxW + width * 0.020f,
+                    valueBoxBottom + height * 0.02f
                 )
                 val lPillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = leftSlot.zoneColor
@@ -129,41 +191,48 @@ object FullWidthLayoutEngine {
                 }
                 canvas.drawRoundRect(lPillRect, 8f, 8f, lPillPaint)
             }
-
-            canvas.drawText(leftSlot.label, marginX, labelY, targetLabelPaint)
-            canvas.drawText(leftSlot.value, marginX, labelY + height * 0.28f, targetValuePaint)
         }
 
-        // 2. Draw Right Slot (if present)
+        // 2. Draw Right Slot
         if (rightSlot != null) {
             when (rightSlot) {
                 is HeaderSlot.StatusPill -> {
-                    val pillHeight = height * 0.22f
-                    val pillTop = topY + (height * 0.02f)
-                    val pillBottom = pillTop + pillHeight
-                    val pillRight = width - marginX
+                    val pillBoxLeft = width * 0.690f
+                    val pillBoxRight = width * 0.965f
+                    val pillBoxTop = height * 0.06f
+                    val pillBoxBottom = height * 0.30f
+                    val pillH = pillBoxBottom - pillBoxTop
 
-                    val badgeTextPx = (height * 0.11f).coerceIn(11f, 14f)
+                    val badgeTextPx = (pillH * 0.50f).coerceIn(11f, 14f)
                     val badgeTextPaint = TextPaint().apply {
                         color = rightSlot.textColor
-                        textSize = badgeTextPx
-                        textAlign = Paint.Align.CENTER
                     }
                     KustomTypefaceResolver.applyTypography(badgeTextPaint, labelTypography.font, 900, badgeTextPx)
 
-                    val badgeTextW = badgeTextPaint.measureText(rightSlot.text)
-                    val pillWidth = badgeTextW + (width * 0.05f)
-                    val pillLeftX = pillRight - pillWidth
+                    val badgeW = badgeTextPaint.measureText(rightSlot.text)
+                    val pillW = badgeW + (width * 0.05f)
+                    val pRight = pillBoxRight
+                    val pLeft = (pRight - pillW).coerceAtLeast(pillBoxLeft)
 
-                    val badgePillRect = RectF(pillLeftX, pillTop, pillRight, pillBottom)
+                    val badgePillRect = RectF(pLeft, pillBoxTop, pRight, pillBoxBottom)
                     val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         color = rightSlot.backgroundColor
                         style = Paint.Style.FILL
                     }
-                    canvas.drawRoundRect(badgePillRect, pillHeight / 2f, pillHeight / 2f, badgePaint)
+                    canvas.drawRoundRect(badgePillRect, pillH / 2f, pillH / 2f, badgePaint)
 
-                    val badgeTextY = badgePillRect.centerY() - ((badgeTextPaint.fontMetrics.ascent + badgeTextPaint.fontMetrics.descent) / 2f)
-                    canvas.drawText(rightSlot.text, badgePillRect.centerX(), badgeTextY, badgeTextPaint)
+                    drawTextInBox(
+                        canvas = canvas,
+                        text = rightSlot.text,
+                        boxLeft = pLeft,
+                        boxTop = pillBoxTop,
+                        boxRight = pRight,
+                        boxBottom = pillBoxBottom,
+                        paint = badgeTextPaint,
+                        align = Paint.Align.CENTER,
+                        maxStartTextSizePx = badgeTextPx,
+                        minTextSizePx = 9f
+                    )
                 }
 
                 is HeaderSlot.MetricStack -> {
@@ -174,39 +243,49 @@ object FullWidthLayoutEngine {
                         }
                         val rightLabelColor = if (rightSlot.isZoneFilled && rightSlot.zoneColor != null) rightValColor else defaultTextColor
 
-                        val maxCornerW = width * 0.30f
-                        val labelPx = cornerLabelSize // NEVER SCALED!
-                        var curValuePx = cornerValueSize
-
-                        val rLabelPaint = TextPaint().apply {
+                        val labelPaint = TextPaint().apply {
                             color = rightLabelColor
-                            textAlign = Paint.Align.RIGHT
-                            textSize = labelPx
                         }
-                        KustomTypefaceResolver.applyTypography(rLabelPaint, labelTypography.font, 700, labelPx)
+                        KustomTypefaceResolver.applyTypography(labelPaint, labelTypography.font, 700, startLabelPx)
 
-                        val rValuePaint = TextPaint().apply {
+                        val valPaint = TextPaint().apply {
                             color = rightValColor
-                            textAlign = Paint.Align.RIGHT
-                            textSize = curValuePx
                         }
-                        KustomTypefaceResolver.applyTypography(rValuePaint, valueTypography.font, valueTypography.fontWeight, curValuePx)
+                        KustomTypefaceResolver.applyTypography(valPaint, valueTypography.font, valueTypography.fontWeight, startValuePx)
 
-                        // Scale ONLY the value text size if value width > maxCornerW
-                        while (rValuePaint.measureText(rightSlot.value) > maxCornerW && curValuePx > 10f) {
-                            curValuePx -= 0.5f
-                            rValuePaint.textSize = curValuePx
-                        }
+                        val lBounds = drawTextInBox(
+                            canvas = canvas,
+                            text = rightSlot.label,
+                            boxLeft = rightColLeft,
+                            boxTop = labelBoxTop,
+                            boxRight = rightColRight,
+                            boxBottom = labelBoxBottom,
+                            paint = labelPaint,
+                            align = Paint.Align.RIGHT,
+                            maxStartTextSizePx = startLabelPx,
+                            minTextSizePx = 9f
+                        )
 
-                        val rWidth = maxOf(rLabelPaint.measureText(rightSlot.label), rValuePaint.measureText(rightSlot.value))
-                        val rightX = width - marginX
+                        val vBounds = drawTextInBox(
+                            canvas = canvas,
+                            text = rightSlot.value,
+                            boxLeft = rightColLeft,
+                            boxTop = valueBoxTop,
+                            boxRight = rightColRight,
+                            boxBottom = valueBoxBottom,
+                            paint = valPaint,
+                            align = Paint.Align.RIGHT,
+                            maxStartTextSizePx = startValuePx,
+                            minTextSizePx = 10f
+                        )
 
                         if (rightSlot.isZoneFilled && rightSlot.zoneColor != null) {
+                            val maxW = maxOf(lBounds.width().toFloat(), vBounds.width().toFloat())
                             val rPillRect = RectF(
-                                rightX - rWidth - width * 0.025f,
-                                topY + height * 0.02f,
-                                rightX + width * 0.015f,
-                                labelY + height * 0.30f
+                                rightColRight - maxW - width * 0.020f,
+                                topY,
+                                rightColRight + width * 0.012f,
+                                valueBoxBottom + height * 0.02f
                             )
                             val rPillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                                 color = rightSlot.zoneColor
@@ -214,68 +293,60 @@ object FullWidthLayoutEngine {
                             }
                             canvas.drawRoundRect(rPillRect, 8f, 8f, rPillPaint)
                         }
-
-                        canvas.drawText(rightSlot.label, rightX, labelY, rLabelPaint)
-                        canvas.drawText(rightSlot.value, rightX, labelY + height * 0.28f, rValuePaint)
                     }
                 }
-
-                else -> {}
+                is HeaderSlot.HeroValue -> {}
             }
         }
 
-        // 3. Draw Center Hero Slot (if present)
+        // 3. Draw Center Hero Slot
         if (centerHero != null) {
             val headerLabelText = centerHero.label
             val hasHeaderLabel = !headerLabelText.isNullOrEmpty()
             val hasBottomBar = centerHero.hasBottomBar
 
-            // Draw optional label directly above hero digits on labelY baseline
+            // Draw header label if present
             if (hasHeaderLabel) {
                 val heroLabelPaint = TextPaint().apply {
                     color = mutedTextColor
-                    textAlign = Paint.Align.CENTER
-                    textSize = centerLabelPx
                 }
-                KustomTypefaceResolver.applyTypography(heroLabelPaint, labelTypography.font, labelTypography.fontWeight, centerLabelPx)
+                KustomTypefaceResolver.applyTypography(heroLabelPaint, labelTypography.font, labelTypography.fontWeight, startLabelPx)
 
-                val maxLabelW = width * 0.44f
-                while (heroLabelPaint.textSize > 10f && heroLabelPaint.measureText(headerLabelText) > maxLabelW) {
-                    heroLabelPaint.textSize -= 1f
-                }
-
-                canvas.drawText(headerLabelText, width / 2f, labelY, heroLabelPaint)
+                drawTextInBox(
+                    canvas = canvas,
+                    text = headerLabelText,
+                    boxLeft = heroColLeft,
+                    boxTop = labelBoxTop,
+                    boxRight = heroColRight,
+                    boxBottom = labelBoxBottom,
+                    paint = heroLabelPaint,
+                    align = Paint.Align.CENTER,
+                    maxStartTextSizePx = startLabelPx,
+                    minTextSizePx = 9f
+                )
             }
 
-            // Calculate precise vertical bounds for hero digits based on presence of top header label & bottom bar
-            val topLimit = if (hasHeaderLabel) labelY + (height * 0.12f) else topY + (height * 0.04f)
-            val bottomLimit = if (hasBottomBar) height * 0.74f else height * 0.94f
-            val maxAllowedHeroHeight = (bottomLimit - topLimit).coerceAtLeast(height * 0.25f)
-            val heroCenterY = topLimit + (maxAllowedHeroHeight / 2f)
+            // Calculate exact bounding box for Center Hero Value
+            val heroValueBoxTop = if (hasHeaderLabel) height * 0.28f else height * 0.06f
+            val heroValueBoxBottom = if (hasBottomBar) height * 0.76f else height * 0.94f
 
-            val baseHeroPx = (height * (valueTypography.fontSizeSp / 86f)).coerceAtLeast(20f)
-            val heroPaint = TextPaint().apply {
+            val heroValPaint = TextPaint().apply {
                 color = defaultTextColor
-                textSize = baseHeroPx
-                textAlign = Paint.Align.CENTER
             }
-            KustomTypefaceResolver.applyTypography(heroPaint, valueTypography.font, valueTypography.fontWeight, baseHeroPx)
+            KustomTypefaceResolver.applyTypography(heroValPaint, valueTypography.font, valueTypography.fontWeight, startValuePx)
 
-            val maxAllowedHeroWidth = width * 0.44f
-            val maxHeroHeightPx = maxAllowedHeroHeight * 0.95f
-
-            var heroMetrics = heroPaint.fontMetrics
-            var heroTextHeight = heroMetrics.descent - heroMetrics.ascent
-
-            // Auto-scale hero font size so it takes maximum available area without overlapping top label or bottom bar
-            while (heroPaint.textSize > 14f && (heroPaint.measureText(centerHero.value) > maxAllowedHeroWidth || heroTextHeight > maxHeroHeightPx)) {
-                heroPaint.textSize -= 1f
-                heroMetrics = heroPaint.fontMetrics
-                heroTextHeight = heroMetrics.descent - heroMetrics.ascent
-            }
-
-            val finalHeroY = heroCenterY - ((heroMetrics.ascent + heroMetrics.descent) / 2f)
-            canvas.drawText(centerHero.value, width / 2f, finalHeroY, heroPaint)
+            drawTextInBox(
+                canvas = canvas,
+                text = centerHero.value,
+                boxLeft = heroColLeft,
+                boxTop = heroValueBoxTop,
+                boxRight = heroColRight,
+                boxBottom = heroValueBoxBottom,
+                paint = heroValPaint,
+                align = Paint.Align.CENTER,
+                maxStartTextSizePx = startValuePx,
+                minTextSizePx = 14f
+            )
         }
     }
 }
