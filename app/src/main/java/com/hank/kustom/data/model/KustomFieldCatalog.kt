@@ -184,7 +184,11 @@ data class KustomFieldDefinition(
                 String.format(Locale.US, "%.1f", converted)
             }
             "ride-time", "elapsed-time", "paused-time", "lap-time", "last-lap-time", "workout-interval-time-remaining", "workout-duration-remaining" -> {
-                val totalSec = rawValue.toInt()
+                val totalSec = when {
+                    rawValue > 100000.0 -> (rawValue / 1000.0).toInt() // Handle ms duration streams
+                    rawValue > 0.0 && rawValue <= 100000.0 -> rawValue.toInt() // Handle second duration streams
+                    else -> 0
+                }
                 val hrs = totalSec / 3600
                 val mins = (totalSec % 3600) / 60
                 val secs = totalSec % 60

@@ -179,30 +179,35 @@ class KustomDataType(
                         )
                     }
                 } else if (definition.typeId == "workout-graph") {
-                    // Workout Profile Graph: Stream Power, HR, Cadence, AND Workout Target Streams concurrently
+                    // Workout Profile Graph: Stream Power, HR, Cadence, AND Workout Target & Duration Streams
                     val powerSdkId = KustomFieldCatalog.POWER.resolveSdkDataTypeId(fieldConfig.smoothingOption)
                     val hrSdkId = KustomFieldCatalog.HR.resolveSdkDataTypeId(SmoothingOption.NONE)
                     val cadenceSdkId = KustomFieldCatalog.CADENCE.resolveSdkDataTypeId(SmoothingOption.NONE)
 
+                    val powerFlow = karooSystemRepository.streamDataFlow(powerSdkId)
+                    val hrFlow = karooSystemRepository.streamDataFlow(hrSdkId)
+                    val cadenceFlow = karooSystemRepository.streamDataFlow(cadenceSdkId)
+                    val pTargetFlow = karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET)
+                    val priTargetFlow = karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_PRIMARY_TARGET)
+                    val durRemFlow = karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_REMAINING_TOTAL_DURATION)
+
                     combine(
-                        karooSystemRepository.streamDataFlow(powerSdkId),
-                        karooSystemRepository.streamDataFlow(hrSdkId),
-                        karooSystemRepository.streamDataFlow(cadenceSdkId),
-                        karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET),
-                        karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_PRIMARY_TARGET),
-                    ) { powerState, hrState, cadenceState, targetPowerState, primaryTargetState ->
-                        val pDp = (targetPowerState as? StreamState.Streaming)?.dataPoint
-                        val priDp = (primaryTargetState as? StreamState.Streaming)?.dataPoint
-                        val targetDp = if (extractTargetPowerString(pDp) != null) pDp else (if (extractTargetPowerString(priDp) != null) priDp else pDp ?: priDp)
+                        combine(powerFlow, hrFlow, cadenceFlow) { p, h, c -> Triple(p, h, c) },
+                        combine(pTargetFlow, priTargetFlow, durRemFlow) { pt, pr, dr -> Triple(pt, pr, dr) },
+                    ) { (p, h, c), (pt, pr, dr) ->
+                        val pDp = (pt as? StreamState.Streaming)?.dataPoint
+                        val priDp = (pr as? StreamState.Streaming)?.dataPoint
+                        val durDp = (dr as? StreamState.Streaming)?.dataPoint
+                        val targetDp = if (extractTargetPowerString(pDp) != null) pDp else (if (extractTargetPowerString(priDp) != null) priDp else pDp ?: priDp ?: durDp)
                         RenderPayload(
-                            streamState = powerState,
-                            leftStreamState = hrState,
-                            rightStreamState = cadenceState,
+                            streamState = p,
+                            leftStreamState = h,
+                            rightStreamState = c,
                             userProfile = userProfile,
                             settings = settings,
                             fieldConfig = fieldConfig,
                             isMock = false,
-                            targetDataPoint = targetDp,
+                            targetDataPoint = targetDp ?: durDp,
                         )
                     }
                 } else if (definition.typeId == "workout-target-power") {
@@ -254,11 +259,20 @@ class KustomDataType(
                 val dynamicValue: Double? = if (isMock) {
                     mockValue
                 } else if (streamState is StreamState.Streaming) {
-                    val rawVal = streamState.dataPoint.singleValue
-                    if (rawVal != null && definition.typeId == "grade") {
-                        gradeSmoother.addSample(rawVal)
+                    val dp = streamState.dataPoint
+                    if (definition.typeId == "workout-interval-time-remaining" || definition.typeId == "workout-duration-remaining") {
+                        dp.values[DataType.Field.WORKOUT_TARGET_VALUE]
+                            ?: dp.values[DataType.Field.SINGLE]
+                            ?: dp.values["FIELD_WORKOUT_REMAINING_INTERVAL_DURATION_ID"]
+                            ?: dp.values["FIELD_WORKOUT_REMAINING_DURATION_ID"]
+                            ?: dp.values.entries.firstOrNull { !it.key.contains("STATE", ignoreCase = true) && !it.key.contains("DIFFICULTY", ignoreCase = true) }?.value
                     } else {
-                        rawVal
+                        val rawVal = dp.singleValue
+                        if (rawVal != null && definition.typeId == "grade") {
+                            gradeSmoother.addSample(rawVal)
+                        } else {
+                            rawVal
+                        }
                     }
                 } else {
                     null
@@ -282,10 +296,34 @@ class KustomDataType(
                     else -> false
                 }
 
+                val userFtp = userProfile?.ftp?.toDouble() ?: 250.0
+                val activeWorkout = if (isMock) {
+                    WorkoutFileParser.getDefaultSampleWorkout(userFtp, settings.globalColors.globalZonePalette)
+                } else {
+                    WorkoutFileParser.resolveActiveWorkoutFile(userFtp, settings.globalColors.globalZonePalette)
+                }
+
+                val preRideWorkoutDuration: Double? = when (definition.typeId) {
+                    "workout-interval-time-remaining" -> activeWorkout.steps.firstOrNull()?.durationSeconds?.toDouble()
+                    "workout-duration-remaining" -> activeWorkout.totalDurationSeconds.toDouble()
+                    else -> null
+                }
+
+                val effectiveValue: Double? = if (dynamicValue != null && dynamicValue > 0.0) {
+                    dynamicValue
+                } else if (preRideWorkoutDuration != null && preRideWorkoutDuration > 0.0) {
+                    preRideWorkoutDuration
+                } else {
+                    dynamicValue
+                }
+
                 val valueText = when {
                     isMock -> {
                         val v = dynamicValue ?: 228.0
                         definition.formatNumericValueOnly(v, isImperial)
+                    }
+                    effectiveValue != null && effectiveValue > 0.0 -> {
+                        definition.formatNumericValueOnly(effectiveValue, isImperial)
                     }
                     streamState is StreamState.Streaming -> {
                         val v = dynamicValue

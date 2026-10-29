@@ -30,25 +30,35 @@ object KustomColorGradeMapper {
     ): Int? {
         if (colorMode == ColorMode.NONE) return null
 
+        val ftp = (userProfile?.ftp ?: 250).toDouble().coerceAtLeast(50.0)
+        val pctFtp = watts / ftp
+
         val powerZones = userProfile?.powerZones
         val zoneIndex = if (!powerZones.isNullOrEmpty()) {
-            val idx = powerZones.indexOfFirst { (min, max) -> watts in min.toDouble()..max.toDouble() }
+            val idx = powerZones.indexOfFirst { (min, max) ->
+                val minD = min.toDouble()
+                val maxD = max.toDouble()
+                if (maxD <= 5.0) {
+                    pctFtp in minD..maxD
+                } else {
+                    watts in minD..maxD
+                }
+            }
             if (idx != -1) {
                 idx
-            } else if (watts < (powerZones.firstOrNull()?.min ?: 0)) {
+            } else if (pctFtp < (powerZones.firstOrNull()?.min?.toDouble() ?: 0.55)) {
                 0
             } else {
                 powerZones.lastIndex
             }
         } else {
-            val ftp = userProfile?.ftp ?: 250
             when {
-                watts < 0.55 * ftp -> 0
-                watts < 0.75 * ftp -> 1
-                watts < 0.90 * ftp -> 2
-                watts < 1.05 * ftp -> 3
-                watts < 1.20 * ftp -> 4
-                watts < 1.50 * ftp -> 5
+                pctFtp < 0.55 -> 0
+                pctFtp < 0.75 -> 1
+                pctFtp < 0.90 -> 2
+                pctFtp < 1.05 -> 3
+                pctFtp < 1.20 -> 4
+                pctFtp < 1.50 -> 5
                 else -> 6
             }
         }
