@@ -21,11 +21,12 @@
   - Center Hero Column: `30.5%` to `69.5%` (`39%` width when side slots are present; `8.0%` to `92.0%` when both side slots are `Empty`).
   - Right Gutter: `69.5%` to `71.5%` (`2.0%` empty buffer).
   - Right Column: `71.5%` to `96.5%` (`25%` width; `StatusPill` spans `69.0%` to `96.5%` in the top `6%..30%` band).
+- **LABELS NEVER AUTO-SCALE; ONLY VALUES AUTO-SCALE**:
+  - **Labels (`leftSlot.label`, `centerHero.label`, `rightSlot.label`) MUST NEVER be auto-scaled.** All labels across the card (whether a metric abbreviation like `"AVG SPD"`, `"DIST"`, `"3S POWER"`, or a center workout target range like `"117-146"`) must be drawn via `drawFixedLabel` at the exact same fixed pixel size `fixedLabelPx` (computed strictly from `labelTypography.fontSizeSp`) and top-anchored to `labelTopY = height * 0.07f`.
+  - **Only Values (`leftSlot.value`, `rightSlot.value`, `centerHero.value`) auto-scale** via `drawTextInBox` to fit their bounding box.
+  - **Top-Anchor Corner Values**: Left and Right corner values must be top-anchored (`drawY = valueBoxTop - bounds.top + halfStroke` at `valueBoxTop = height * 0.25f`) so shrunken multi-character values (like `"115-160"`) maintain the exact same vertical gap below their label as 3-character values (`"140"`, `"7.7"`).
 - **Mandatory Stroke-Width Rescaling Inside `drawTextInBox`**:
-  - Whenever `drawTextInBox` steps down `paint.textSize` in its `while` loop, it MUST proportionally step down `paint.strokeWidth = size * strokeRatio` (capped at `0.028f` for weight `900`) and include `paint.strokeWidth` in `bounds.width()` and `bounds.height()` so heavy font weights (`900`) never bloat shrunk text into unreadable blobs or overflow bounding boxes.
-- **Row Font-Size Synchronization & 7% Vertical Gap**:
-  - Header labels (`0.07f..0.20f` height) and Value boxes (`0.27f..0.54f` corners; `0.27f..0.71f` center hero with bar; `0.27f..0.88f` center hero without bar) MUST maintain at least a `7%` vertical gap.
-  - Left and Right corner labels on the same card MUST share their minimum fitted font size (`minOf(leftLabelSize, rightLabelSize)`), and Left and Right corner values MUST share `minOf(leftValSize, rightValSize)`.
+  - Whenever `drawTextInBox` steps down `paint.textSize` for a value in its `while` loop, it MUST proportionally step down `paint.strokeWidth = size * strokeRatio` (capped at `0.028f` for weight `900`) and include `paint.strokeWidth` in `bounds.width()` and `bounds.height()`.
 - **High-Contrast Target Corridor Boundary Numbers**:
   - Boundary numbers (`115`, `160`) inside the Target Corridor track (`0.78f..0.92f` height) must use high-contrast text color (`#0F172A` on `#CBD5E1` track in Day Mode; `#F8FAFC` on `#1E262C` track in Night Mode).
 

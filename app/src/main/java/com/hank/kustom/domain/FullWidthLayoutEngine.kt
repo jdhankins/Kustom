@@ -8,6 +8,14 @@ import android.text.TextPaint
 import com.hank.kustom.data.model.TypographyConfig
 
 /**
+ * Vertical alignment positioning modes for bounding box text drawing.
+ */
+enum class VerticalAlign {
+    TOP,
+    CENTER
+}
+
+/**
  * Slot content data models for full-width composite fields.
  */
 sealed class HeaderSlot {
@@ -47,8 +55,46 @@ sealed class HeaderSlot {
 object FullWidthLayoutEngine {
 
     /**
-     * Fits and positions any string strictly inside [boxLeft, boxTop, boxRight, boxBottom]
-     * using its true visible glyph ink bounds (Paint.getTextBounds).
+     * Renders labels at a strictly fixed pixel size with ZERO auto-scaling,
+     * top-anchoring glyphs so all labels across Left, Center, and Right share the exact same top cap-line.
+     */
+    private fun drawFixedLabel(
+        canvas: Canvas,
+        text: String,
+        anchorX: Float,
+        topY: Float,
+        paint: Paint,
+        align: Paint.Align,
+        fixedTextSizePx: Float,
+    ) {
+        if (text.isBlank()) return
+        val strokeRatio = if (paint.style == Paint.Style.FILL_AND_STROKE && paint.textSize > 0f) {
+            (paint.strokeWidth / paint.textSize).coerceAtMost(0.028f)
+        } else 0f
+
+        paint.textAlign = Paint.Align.LEFT
+        paint.textScaleX = 1.0f
+        paint.textSize = fixedTextSizePx
+        if (strokeRatio > 0f) {
+            paint.strokeWidth = fixedTextSizePx * strokeRatio
+        }
+
+        val bounds = Rect()
+        paint.getTextBounds(text, 0, text.length, bounds)
+        val halfStroke = paint.strokeWidth / 2f
+
+        val drawX = when (align) {
+            Paint.Align.LEFT -> anchorX - bounds.left + halfStroke
+            Paint.Align.RIGHT -> anchorX - bounds.right - halfStroke
+            else -> anchorX - bounds.exactCenterX()
+        }
+        val drawY = topY - bounds.top + halfStroke
+        canvas.drawText(text, drawX, drawY, paint)
+    }
+
+    /**
+     * Fits and positions dynamic values strictly inside [boxLeft, boxTop, boxRight, boxBottom]
+     * using true visible glyph ink bounds (Paint.getTextBounds).
      */
     private fun drawTextInBox(
         canvas: Canvas,
@@ -59,6 +105,7 @@ object FullWidthLayoutEngine {
         boxBottom: Float,
         paint: Paint,
         align: Paint.Align,
+        verticalAlign: VerticalAlign = VerticalAlign.CENTER,
         maxStartTextSizePx: Float,
         minTextSizePx: Float = 10f,
     ): Rect {
@@ -69,7 +116,7 @@ object FullWidthLayoutEngine {
         paint.textScaleX = 1.0f
 
         val initialStroke = paint.strokeWidth
-        val strokeRatio = if (maxStartTextSizePx > 0f && initialStroke > 0f) initialStroke / maxStartTextSizePx else 0f
+        val strokeRatio = if (maxStartTextSizePx > 0f && initialStroke > 0f) (initialStroke / maxStartTextSizePx).coerceAtMost(0.028f) else 0f
 
         var size = maxStartTextSizePx.coerceAtLeast(minTextSizePx)
         paint.textSize = size
@@ -90,18 +137,23 @@ object FullWidthLayoutEngine {
         }
 
         val drawX = when (align) {
-            Paint.Align.LEFT -> boxLeft - bounds.left
-            Paint.Align.RIGHT -> boxRight - bounds.right
+            Paint.Align.LEFT -> boxLeft - bounds.left + (paint.strokeWidth / 2f)
+            Paint.Align.RIGHT -> boxRight - bounds.right - (paint.strokeWidth / 2f)
             else -> ((boxLeft + boxRight) / 2f) - bounds.exactCenterX()
         }
-        val drawY = ((boxTop + boxBottom) / 2f) - bounds.exactCenterY()
+
+        val drawY = when (verticalAlign) {
+            VerticalAlign.TOP -> boxTop - bounds.top + (paint.strokeWidth / 2f)
+            VerticalAlign.CENTER -> ((boxTop + boxBottom) / 2f) - bounds.exactCenterY()
+        }
+
         canvas.drawText(renderText, drawX, drawY, paint)
         return bounds
     }
 
     /**
      * Draws the standardized 3-slot header (Left, Center Hero, Right) on the provided Canvas
-     * using strict non-overlapping bounding-box grid geometry.
+     * using strict non-overlapping bounding-box grid geometry and zero-scaling labels.
      */
     fun drawHeaderSlots(
         canvas: Canvas,
@@ -129,18 +181,15 @@ object FullWidthLayoutEngine {
         val heroColLeft = if (sideSlotsPresent) width * 0.290f else width * 0.080f
         val heroColRight = if (sideSlotsPresent) width * 0.710f else width * 0.920f
 
-        // Vertical Bounding Boxes
-        val topY = height * 0.06f
+        // Top Cap-Line for All Labels across the card (7% height)
+        val labelTopY = height * 0.07f
 
-        // Top Row Band (Label Row: 6%..26% height)
-        val labelBoxTop = topY
-        val labelBoxBottom = height * 0.26f
+        // Value Box for Left/Right Corner Values (25%..55% height)
+        val valueBoxTop = height * 0.25f
+        val valueBoxBottom = height * 0.55f
 
-        // Value Row Band (Value Row: 28%..58% height for left/right slots)
-        val valueBoxTop = height * 0.28f
-        val valueBoxBottom = height * 0.58f
-
-        val startLabelPx = (height * (labelTypography.fontSizeSp / 68f)).coerceAtLeast(10f)
+        // Uniform fixed label font size across ALL labels on the card (11.5%..15.0% height)
+        val fixedLabelPx = height * (0.115f + ((labelTypography.fontSizeSp - 10f).coerceIn(0f, 10f) * 0.0035f))
         val startValuePx = (height * (valueTypography.fontSizeSp / 86f)).coerceAtLeast(18f)
 
         // 1. Draw Left Slot
@@ -154,24 +203,21 @@ object FullWidthLayoutEngine {
             val labelPaint = TextPaint().apply {
                 color = leftLabelColor
             }
-            KustomTypefaceResolver.applyTypography(labelPaint, labelTypography.font, 700, startLabelPx)
+            KustomTypefaceResolver.applyTypography(labelPaint, labelTypography.font, 700, fixedLabelPx)
 
             val valPaint = TextPaint().apply {
                 color = leftValColor
             }
             KustomTypefaceResolver.applyTypography(valPaint, valueTypography.font, valueTypography.fontWeight, startValuePx)
 
-            val lBounds = drawTextInBox(
+            drawFixedLabel(
                 canvas = canvas,
                 text = leftSlot.label,
-                boxLeft = leftColLeft,
-                boxTop = labelBoxTop,
-                boxRight = leftColRight,
-                boxBottom = labelBoxBottom,
+                anchorX = leftColLeft,
+                topY = labelTopY,
                 paint = labelPaint,
                 align = Paint.Align.LEFT,
-                maxStartTextSizePx = startLabelPx,
-                minTextSizePx = 9f
+                fixedTextSizePx = fixedLabelPx
             )
 
             val vBounds = drawTextInBox(
@@ -183,16 +229,16 @@ object FullWidthLayoutEngine {
                 boxBottom = valueBoxBottom,
                 paint = valPaint,
                 align = Paint.Align.LEFT,
+                verticalAlign = VerticalAlign.TOP,
                 maxStartTextSizePx = startValuePx,
                 minTextSizePx = 10f
             )
 
             if (leftSlot.isZoneFilled && leftSlot.zoneColor != null) {
-                val maxW = maxOf(lBounds.width().toFloat(), vBounds.width().toFloat())
                 val lPillRect = RectF(
                     leftColLeft - width * 0.012f,
-                    topY,
-                    leftColLeft + maxW + width * 0.020f,
+                    height * 0.05f,
+                    leftColLeft + vBounds.width().toFloat() + width * 0.020f,
                     valueBoxBottom + height * 0.02f
                 )
                 val lPillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -240,6 +286,7 @@ object FullWidthLayoutEngine {
                         boxBottom = pillBoxBottom,
                         paint = badgeTextPaint,
                         align = Paint.Align.CENTER,
+                        verticalAlign = VerticalAlign.CENTER,
                         maxStartTextSizePx = badgeTextPx,
                         minTextSizePx = 9f
                     )
@@ -256,24 +303,21 @@ object FullWidthLayoutEngine {
                         val labelPaint = TextPaint().apply {
                             color = rightLabelColor
                         }
-                        KustomTypefaceResolver.applyTypography(labelPaint, labelTypography.font, 700, startLabelPx)
+                        KustomTypefaceResolver.applyTypography(labelPaint, labelTypography.font, 700, fixedLabelPx)
 
                         val valPaint = TextPaint().apply {
                             color = rightValColor
                         }
                         KustomTypefaceResolver.applyTypography(valPaint, valueTypography.font, valueTypography.fontWeight, startValuePx)
 
-                        val lBounds = drawTextInBox(
+                        drawFixedLabel(
                             canvas = canvas,
                             text = rightSlot.label,
-                            boxLeft = rightColLeft,
-                            boxTop = labelBoxTop,
-                            boxRight = rightColRight,
-                            boxBottom = labelBoxBottom,
+                            anchorX = rightColRight,
+                            topY = labelTopY,
                             paint = labelPaint,
                             align = Paint.Align.RIGHT,
-                            maxStartTextSizePx = startLabelPx,
-                            minTextSizePx = 9f
+                            fixedTextSizePx = fixedLabelPx
                         )
 
                         val vBounds = drawTextInBox(
@@ -285,15 +329,15 @@ object FullWidthLayoutEngine {
                             boxBottom = valueBoxBottom,
                             paint = valPaint,
                             align = Paint.Align.RIGHT,
+                            verticalAlign = VerticalAlign.TOP,
                             maxStartTextSizePx = startValuePx,
                             minTextSizePx = 10f
                         )
 
                         if (rightSlot.isZoneFilled && rightSlot.zoneColor != null) {
-                            val maxW = maxOf(lBounds.width().toFloat(), vBounds.width().toFloat())
                             val rPillRect = RectF(
-                                rightColRight - maxW - width * 0.020f,
-                                topY,
+                                rightColRight - vBounds.width().toFloat() - width * 0.020f,
+                                height * 0.05f,
                                 rightColRight + width * 0.012f,
                                 valueBoxBottom + height * 0.02f
                             )
@@ -315,30 +359,27 @@ object FullWidthLayoutEngine {
             val hasHeaderLabel = !headerLabelText.isNullOrEmpty()
             val hasBottomBar = centerHero.hasBottomBar
 
-            // Draw header label if present
+            // Draw header label if present at fixedLabelPx with ZERO auto-scaling
             if (hasHeaderLabel) {
                 val heroLabelPaint = TextPaint().apply {
                     color = mutedTextColor
                 }
-                KustomTypefaceResolver.applyTypography(heroLabelPaint, labelTypography.font, labelTypography.fontWeight, startLabelPx)
+                KustomTypefaceResolver.applyTypography(heroLabelPaint, labelTypography.font, labelTypography.fontWeight, fixedLabelPx)
 
-                drawTextInBox(
+                drawFixedLabel(
                     canvas = canvas,
                     text = headerLabelText,
-                    boxLeft = heroColLeft,
-                    boxTop = labelBoxTop,
-                    boxRight = heroColRight,
-                    boxBottom = labelBoxBottom,
+                    anchorX = width / 2f,
+                    topY = labelTopY,
                     paint = heroLabelPaint,
                     align = Paint.Align.CENTER,
-                    maxStartTextSizePx = startLabelPx,
-                    minTextSizePx = 9f
+                    fixedTextSizePx = fixedLabelPx
                 )
             }
 
             // Calculate exact bounding box for Center Hero Value
-            val heroValueBoxTop = if (hasHeaderLabel) height * 0.28f else height * 0.06f
-            val heroValueBoxBottom = if (hasBottomBar) height * 0.76f else height * 0.94f
+            val heroValueBoxTop = if (hasHeaderLabel) height * 0.26f else height * 0.10f
+            val heroValueBoxBottom = if (hasBottomBar) height * 0.71f else height * 0.89f
 
             val heroValPaint = TextPaint().apply {
                 color = defaultTextColor
@@ -354,6 +395,7 @@ object FullWidthLayoutEngine {
                 boxBottom = heroValueBoxBottom,
                 paint = heroValPaint,
                 align = Paint.Align.CENTER,
+                verticalAlign = VerticalAlign.CENTER,
                 maxStartTextSizePx = startValuePx,
                 minTextSizePx = 14f
             )
