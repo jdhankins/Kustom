@@ -188,8 +188,8 @@ object FullWidthLayoutEngine {
         val valueBoxTop = height * 0.25f
         val valueBoxBottom = height * 0.55f
 
-        // Uniform fixed label font size across ALL labels on the card (11.5%..15.0% height)
-        val fixedLabelPx = height * (0.115f + ((labelTypography.fontSizeSp - 10f).coerceIn(0f, 10f) * 0.0035f))
+        // Uniform fixed label font size across ALL labels on the card (13.5%..17.0% height)
+        val fixedLabelPx = height * (0.135f + ((labelTypography.fontSizeSp - 10f).coerceIn(0f, 10f) * 0.0035f))
         val startValuePx = (height * (valueTypography.fontSizeSp / 86f)).coerceAtLeast(18f)
 
         // 1. Draw Left Slot
@@ -367,27 +367,32 @@ object FullWidthLayoutEngine {
             val hasHeaderLabel = !headerLabelText.isNullOrEmpty()
             val hasBottomBar = centerHero.hasBottomBar
 
-            // Draw header label if present at fixedLabelPx with ZERO auto-scaling
+            // Draw header label if present: scales up to fill available center space without overlapping
             if (hasHeaderLabel) {
                 val heroLabelPaint = TextPaint().apply {
                     color = mutedTextColor
                 }
-                KustomTypefaceResolver.applyTypography(heroLabelPaint, labelTypography.font, labelTypography.fontWeight, fixedLabelPx)
+                val startHeroLabelPx = (fixedLabelPx * 1.5f).coerceAtLeast(fixedLabelPx)
+                KustomTypefaceResolver.applyTypography(heroLabelPaint, labelTypography.font, labelTypography.fontWeight, startHeroLabelPx)
 
-                drawFixedLabel(
+                drawTextInBox(
                     canvas = canvas,
                     text = headerLabelText,
-                    anchorX = width / 2f,
-                    topY = labelTopY,
+                    boxLeft = heroColLeft,
+                    boxTop = labelTopY,
+                    boxRight = heroColRight,
+                    boxBottom = height * 0.26f,
                     paint = heroLabelPaint,
                     align = Paint.Align.CENTER,
-                    fixedTextSizePx = fixedLabelPx
+                    verticalAlign = VerticalAlign.TOP,
+                    maxStartTextSizePx = startHeroLabelPx,
+                    minTextSizePx = 10f
                 )
             }
 
-            // Calculate exact bounding box for Center Hero Value
-            val heroValueBoxTop = if (hasHeaderLabel) height * 0.26f else height * 0.10f
-            val heroValueBoxBottom = if (hasBottomBar) height * 0.71f else height * 0.89f
+            // Calculate exact bounding box for Center Hero Value (Shift heroValueBoxTop down to 31% when header label is present to give clear vertical separation)
+            val heroValueBoxTop = if (hasHeaderLabel) height * 0.31f else height * 0.10f
+            val heroValueBoxBottom = if (hasBottomBar) height * 0.74f else height * 0.90f
 
             val heroValPaint = TextPaint().apply {
                 color = defaultTextColor

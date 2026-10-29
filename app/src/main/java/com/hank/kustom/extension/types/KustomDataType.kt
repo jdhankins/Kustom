@@ -87,28 +87,48 @@ class KustomDataType(
             }.flatMapLatest { (rideState, userProfile, settings) ->
                 val fieldConfig = settings.getFieldConfig(definition.typeId)
                 val isInRide = rideState is RideState.Recording || rideState is RideState.Paused
-                val isMockMode = config.preview && !isInRide
 
                 val customComboInst = settings.customComboInstances.firstOrNull { it.id == definition.typeId }
                 val isComboBlock = customComboInst != null || definition.typeId.startsWith("combo-block-") || definition.typeId == "power-combo" || definition.typeId == "custom-combo"
 
+                val resolvedConfig = if (customComboInst != null) {
+                    KustomFieldConfig(
+                        smoothingOption = customComboInst.centerSmoothing,
+                        zoneFormat = customComboInst.centerZoneFormat,
+                        comboCenterMetric = customComboInst.centerMetric,
+                        comboLeftMetric = customComboInst.leftMetric,
+                        comboRightMetric = customComboInst.rightMetric,
+                        comboLeftSmoothing = customComboInst.leftSmoothing,
+                        comboRightSmoothing = customComboInst.rightSmoothing,
+                        comboLeftZoneFormat = customComboInst.leftZoneFormat,
+                        comboRightZoneFormat = customComboInst.rightZoneFormat,
+                    )
+                } else {
+                    fieldConfig
+                }
+
+                val isMockMode = !isInRide || config.preview
+
                 if (isMockMode) {
-                    // Page Setup / Profile Design Mode Only (when not in ride): Loop animated mock values
+                    // Page Setup / Profile Design / Off-Ride Mode: Loop animated mock values with full slot support
                     flow {
                         var i = 0
                         while (true) {
-                            val mockVal = definition.mockValues[i % definition.mockValues.size]
+                            val mockVal = definition.mockValues.getOrElse(i % definition.mockValues.size) { 142.0 }
                             val mockState = StreamState.Streaming(
                                 DataPoint(definition.typeId, mapOf(DataType.Field.SINGLE to mockVal))
                             )
                             emit(
                                 RenderPayload(
                                     streamState = mockState,
+                                    leftStreamState = mockState,
+                                    rightStreamState = mockState,
                                     userProfile = userProfile,
                                     settings = settings,
-                                    fieldConfig = fieldConfig,
+                                    fieldConfig = resolvedConfig,
                                     isMock = true,
                                     mockValue = mockVal,
+                                    mockIndex = i,
                                     targetDataPoint = DataPoint(
                                         dataTypeId = DataType.Type.WORKOUT_PRIMARY_TARGET,
                                         values = mapOf(
@@ -266,7 +286,7 @@ class KustomDataType(
                     }
                 }
             }.collect { payload ->
-                val (streamState, leftStreamState, rightStreamState, userProfile, settings, fieldConfig, isMock, mockValue, targetDataPoint) = payload
+                val (streamState, leftStreamState, rightStreamState, userProfile, settings, fieldConfig, isMock, mockValue, mockIndex, targetDataPoint) = payload
 
                 if (fieldConfig.smoothingOption.seconds != lastSmoothingSec) {
                     lastSmoothingSec = fieldConfig.smoothingOption.seconds
@@ -416,7 +436,8 @@ class KustomDataType(
                         }
                     }
 
-                    val livePowerFloat = if (isMock) 142f else dynamicValue?.toFloat()
+                    val corridorMockPower = listOf(110f, 128f, 142f, 155f, 168f)
+                    val livePowerFloat = if (isMock) corridorMockPower[mockIndex % corridorMockPower.size] else dynamicValue?.toFloat()
 
                     KustomFieldRenderer.renderTargetPowerCorridor(
                         context = context,
@@ -502,7 +523,7 @@ class KustomDataType(
 
                     // Real live multi-stream values for Center, Left, and Right slots
                     val centerVal: Double? = if (isMock) {
-                        centerDef.mockValues.first()
+                        centerDef.mockValues.getOrElse(mockIndex % centerDef.mockValues.size) { centerDef.mockValues.first() }
                     } else if (streamState is StreamState.Streaming) {
                         val rawVal = streamState.dataPoint.singleValue
                         if (rawVal != null && centerDef.typeId == "grade") {
@@ -515,7 +536,7 @@ class KustomDataType(
                     }
 
                     val leftVal: Double? = if (isMock) {
-                        leftDef.mockValues.firstOrNull() ?: 203.0
+                        leftDef.mockValues.getOrElse(mockIndex % leftDef.mockValues.size) { leftDef.mockValues.firstOrNull() ?: 203.0 }
                     } else if (leftStreamState is StreamState.Streaming) {
                         val rawVal = leftStreamState.dataPoint.singleValue
                         if (rawVal != null && leftDef.typeId == "grade") {
@@ -528,7 +549,7 @@ class KustomDataType(
                     }
 
                     val rightVal: Double? = if (isMock) {
-                        rightDef.mockValues.firstOrNull() ?: 224.0
+                        rightDef.mockValues.getOrElse(mockIndex % rightDef.mockValues.size) { rightDef.mockValues.firstOrNull() ?: 224.0 }
                     } else if (rightStreamState is StreamState.Streaming) {
                         val rawVal = rightStreamState.dataPoint.singleValue
                         if (rawVal != null && rightDef.typeId == "grade") {
@@ -682,6 +703,7 @@ class KustomDataType(
         val fieldConfig: KustomFieldConfig,
         val isMock: Boolean,
         val mockValue: Double? = null,
+        val mockIndex: Int = 0,
         val targetDataPoint: DataPoint? = null,
     )
 
