@@ -673,35 +673,29 @@ object KustomFieldRenderer {
                 },
             )
 
-            // Full-Height 2-Line Zone-Filled Corner Block for Right Slot
+            // Full-Height 2-Line Zone-Filled Corner Block for Right Slot (BELOW/ON/ABOVE TARGET)
             val rightSlot = when {
                 currentPower == null && !isMock -> HeaderSlot.MetricStack(
-                    label = "STATUS",
-                    value = "--",
+                    label = "NO",
+                    value = "SENSOR",
                     isZoneFilled = true,
                     zoneColor = android.graphics.Color.parseColor("#475569")
                 )
-                cPower < lowBound -> {
-                    val diff = (lowBound - cPower).toInt().coerceAtLeast(1)
-                    HeaderSlot.MetricStack(
-                        label = "LOW",
-                        value = "▲+$diff",
-                        isZoneFilled = true,
-                        zoneColor = android.graphics.Color.parseColor("#2563EB") // Matte Blue
-                    )
-                }
-                cPower > highBound -> {
-                    val diff = (cPower - highBound).toInt().coerceAtLeast(1)
-                    HeaderSlot.MetricStack(
-                        label = "HIGH",
-                        value = "▼-$diff",
-                        isZoneFilled = true,
-                        zoneColor = android.graphics.Color.parseColor("#C62828") // Matte Crimson Red
-                    )
-                }
+                cPower < lowBound -> HeaderSlot.MetricStack(
+                    label = "BELOW",
+                    value = "TARGET",
+                    isZoneFilled = true,
+                    zoneColor = android.graphics.Color.parseColor("#2563EB") // Matte Blue
+                )
+                cPower > highBound -> HeaderSlot.MetricStack(
+                    label = "ABOVE",
+                    value = "TARGET",
+                    isZoneFilled = true,
+                    zoneColor = android.graphics.Color.parseColor("#C62828") // Matte Crimson Red
+                )
                 else -> HeaderSlot.MetricStack(
-                    label = "STATUS",
-                    value = "✓ OK",
+                    label = "ON",
+                    value = "TARGET",
                     isZoneFilled = true,
                     zoneColor = android.graphics.Color.parseColor("#2E7D32") // Matte Forest Green
                 )
@@ -740,13 +734,19 @@ object KustomFieldRenderer {
             val tLeftX = barLeft + (tLeftFrac * barWidth)
             val tRightX = barLeft + (tRightFrac * barWidth)
 
-            // Base Track Capsule (Flat Solid Slate #1E262C)
+            // Base Track Capsule (Flat Solid Slate #1E262C with thin border)
             val trackBasePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = if (isDarkTheme) 0xFF1E262C.toInt() else 0xFFE2E8F0.toInt()
                 style = Paint.Style.FILL
             }
+            val trackBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (isDarkTheme) 0xFF475569.toInt() else 0xFF94A3B8.toInt()
+                style = Paint.Style.STROKE
+                strokeWidth = 1.8f
+            }
             val trackRect = RectF(barLeft, trackY, barRight, trackY + trackHeight)
             canvas.drawRoundRect(trackRect, trackHeight / 2f, trackHeight / 2f, trackBasePaint)
+            canvas.drawRoundRect(trackRect, trackHeight / 2f, trackHeight / 2f, trackBorderPaint)
 
             // Target Corridor Highlight Box (Matte Forest Green #388E3C)
             val targetBoxRect = RectF(tLeftX, trackY, tRightX, trackY + trackHeight)
