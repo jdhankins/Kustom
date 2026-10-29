@@ -178,6 +178,28 @@ class KustomDataType(
                             targetDataPoint = targetDp,
                         )
                     }
+                } else if (definition.typeId == "workout-target-corridor") {
+                    // Target Power Corridor: Stream live smoothed Power AND Workout Targets concurrently
+                    val powerSdkId = KustomFieldCatalog.POWER.resolveSdkDataTypeId(fieldConfig.smoothingOption)
+                    val pTargetFlow = karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET)
+                    val priTargetFlow = karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_PRIMARY_TARGET)
+
+                    combine(
+                        karooSystemRepository.streamDataFlow(powerSdkId),
+                        combine(pTargetFlow, priTargetFlow) { pt, pr -> Pair(pt, pr) },
+                    ) { powerState, (targetPowerState, primaryTargetState) ->
+                        val pDp = (targetPowerState as? StreamState.Streaming)?.dataPoint
+                        val priDp = (primaryTargetState as? StreamState.Streaming)?.dataPoint
+                        val targetDp = if (extractTargetPowerString(pDp) != null) pDp else (if (extractTargetPowerString(priDp) != null) priDp else pDp ?: priDp)
+                        RenderPayload(
+                            streamState = powerState,
+                            userProfile = userProfile,
+                            settings = settings,
+                            fieldConfig = fieldConfig,
+                            isMock = false,
+                            targetDataPoint = targetDp,
+                        )
+                    }
                 } else if (definition.typeId == "workout-graph") {
                     // Workout Profile Graph: Stream Power, HR, Cadence, AND Workout Target & Duration Streams
                     val powerSdkId = KustomFieldCatalog.POWER.resolveSdkDataTypeId(fieldConfig.smoothingOption)
@@ -359,7 +381,65 @@ class KustomDataType(
                 val customComboInst = settings.customComboInstances.firstOrNull { it.id == definition.typeId }
                 val isComboBlock = customComboInst != null || definition.typeId.startsWith("combo-block-") || definition.typeId == "power-combo" || definition.typeId == "custom-combo"
 
-                val bitmap = if (definition.typeId == "workout-graph") {
+                val bitmap = if (definition.typeId == "workout-target-corridor") {
+                    val userFtp = userProfile?.ftp?.toDouble() ?: 250.0
+                    val activeWorkout = if (isMock) {
+                        WorkoutFileParser.getDefaultSampleWorkout(userFtp, settings.globalColors.globalZonePalette)
+                    } else {
+                        WorkoutFileParser.resolveActiveWorkoutFile(userFtp, settings.globalColors.globalZonePalette)
+                    }
+
+                    var minTargetWatts: Float? = null
+                    var maxTargetWatts: Float? = null
+                    var targetWattsVal: Float? = null
+
+                    if (targetDataPoint != null && targetDataPoint.values.isNotEmpty()) {
+                        val minV = targetDataPoint.values[DataType.Field.WORKOUT_TARGET_MIN_VALUE]
+                            ?: targetDataPoint.values["FIELD_WORKOUT_TARGET_MIN_VALUE_ID"]
+                        val maxV = targetDataPoint.values[DataType.Field.WORKOUT_TARGET_MAX_VALUE]
+                            ?: targetDataPoint.values["FIELD_WORKOUT_TARGET_MAX_VALUE_ID"]
+                        val targetV = targetDataPoint.values[DataType.Field.WORKOUT_TARGET_VALUE]
+                            ?: targetDataPoint.values[DataType.Field.WORKOUT_TARGET_OUTPUT_VALUE]
+                            ?: targetDataPoint.values[DataType.Field.SINGLE]
+                            ?: targetDataPoint.values["FIELD_WORKOUT_TARGET_VALUE_ID"]
+
+                        if (minV != null) minTargetWatts = minV.toFloat()
+                        if (maxV != null) maxTargetWatts = maxV.toFloat()
+                        if (targetV != null) targetWattsVal = targetV.toFloat()
+                    }
+
+                    if (minTargetWatts == null && maxTargetWatts == null && targetWattsVal == null && activeWorkout.steps.isNotEmpty()) {
+                        val currentStep = activeWorkout.steps.firstOrNull()
+                        if (currentStep != null) {
+                            minTargetWatts = currentStep.targetWattsMin.toFloat()
+                            maxTargetWatts = currentStep.targetWattsMax.toFloat()
+                        }
+                    }
+
+                    val livePowerFloat = if (isMock) 142f else dynamicValue?.toFloat()
+
+                    KustomFieldRenderer.renderTargetPowerCorridor(
+                        context = context,
+                        config = config,
+                        currentPower = livePowerFloat,
+                        minTarget = if (isMock) 115f else minTargetWatts,
+                        maxTarget = if (isMock) 160f else maxTargetWatts,
+                        targetWatts = if (isMock) 138f else targetWattsVal,
+                        labelTypography = TypographyConfig(
+                            font = settings.globalTypography.fontFamily,
+                            fontWeight = settings.globalTypography.labelWeight,
+                            fontSizeSp = settings.globalTypography.labelSizeSp.toFloat(),
+                        ),
+                        valueTypography = TypographyConfig(
+                            font = settings.globalTypography.fontFamily,
+                            fontWeight = settings.globalTypography.valueWeight,
+                            fontSizeSp = settings.globalTypography.valueSizeSp.toFloat(),
+                        ),
+                        isDarkTheme = isDarkTheme,
+                        globalColors = settings.globalColors,
+                        isMock = isMock,
+                    )
+                } else if (definition.typeId == "workout-graph") {
                     if (!isMock) {
                         val pVal = (streamState as? StreamState.Streaming)?.dataPoint?.singleValue?.toFloat() ?: 0f
                         val hVal = (leftStreamState as? StreamState.Streaming)?.dataPoint?.singleValue?.toFloat() ?: 0f

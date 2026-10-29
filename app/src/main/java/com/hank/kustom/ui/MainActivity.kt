@@ -2342,7 +2342,7 @@ fun FieldCardItem(
                 color = colors.textPrimary,
             )
 
-            val isFullWidthPreview = field.typeId == "workout-graph" || field.category == FieldCategory.COMBO
+            val isFullWidthPreview = field.typeId == "workout-graph" || field.typeId == "workout-target-corridor" || field.category == FieldCategory.COMBO
 
             // 2. Centered Live Preview Box
             Box(
@@ -2377,7 +2377,29 @@ fun FieldCardItem(
                         )
                     }
 
-                    val bitmap = if (field.typeId == "workout-graph") {
+                    val bitmap = if (field.typeId == "workout-target-corridor") {
+                        KustomFieldRenderer.renderTargetPowerCorridor(
+                            context = context,
+                            config = previewViewConfig,
+                            currentPower = 142f,
+                            minTarget = 115f,
+                            maxTarget = 160f,
+                            targetWatts = 138f,
+                            labelTypography = TypographyConfig(
+                                font = globalTypography.fontFamily,
+                                fontWeight = globalTypography.labelWeight,
+                                fontSizeSp = globalTypography.labelSizeSp.toFloat(),
+                            ),
+                            valueTypography = TypographyConfig(
+                                font = globalTypography.fontFamily,
+                                fontWeight = globalTypography.valueWeight,
+                                fontSizeSp = globalTypography.valueSizeSp.toFloat(),
+                            ),
+                            isDarkTheme = colors.isDark,
+                            globalColors = settings.globalColors,
+                            isMock = true,
+                        )
+                    } else if (field.typeId == "workout-graph") {
                         KustomFieldRenderer.renderWorkoutGraph(
                             context = context,
                             config = previewViewConfig,

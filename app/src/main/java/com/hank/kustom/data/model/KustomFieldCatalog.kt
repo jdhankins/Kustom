@@ -297,6 +297,7 @@ data class KustomFieldDefinition(
             "shift-rear" -> DataType.Type.SHIFTING_REAR_GEAR
             "shift-batt" -> DataType.Type.SHIFTING_BATTERY
             "workout-target-power" -> smoothing.toPowerDataTypeId()
+            "workout-target-corridor" -> DataType.Type.POWER
             "workout-target-hr" -> DataType.Type.HEART_RATE
             "workout-target-cadence" -> smoothing.toCadenceDataTypeId()
             "workout-primary-target" -> DataType.Type.WORKOUT_PRIMARY_TARGET
@@ -430,8 +431,9 @@ object KustomFieldCatalog {
     val WORKOUT_TARGET_HR = KustomFieldDefinition("workout-target-hr", "Target HR", FieldCategory.WORKOUT, "Target HR label with current HR value", supportsSmoothing = false, supportsZones = true, listOf(145.0, 148.0, 152.0, 156.0, 150.0))
     val WORKOUT_DURATION_REMAINING = KustomFieldDefinition("workout-duration-remaining", "Wrk Rem", FieldCategory.WORKOUT, "Remaining workout time", supportsSmoothing = false, supportsZones = false, listOf(1800.0, 1740.0, 1680.0, 1620.0, 1560.0))
     val WORKOUT_GRAPH = KustomFieldDefinition("workout-graph", "Workout Graph", FieldCategory.WORKOUT, "Interactive workout profile graph with live Power, HR, and Cadence trace lines", supportsSmoothing = true, supportsZones = true, listOf(215.0, 228.0, 242.0, 260.0, 235.0))
+    val WORKOUT_TARGET_CORRIDOR = KustomFieldDefinition("workout-target-corridor", "Target Corridor", FieldCategory.WORKOUT, "Target power range corridor & live power needle", supportsSmoothing = true, supportsZones = false, listOf(142.0, 155.0, 168.0, 138.0, 148.0))
 
-    /** Complete list of all 76 registered data fields sorted in alphabetical order by parent and child. */
+    /** Complete list of all 77 registered data fields sorted in alphabetical order by parent and child. */
     val allFields: List<KustomFieldDefinition> = listOf(
         // 1. CADENCE
         AVG_CADENCE, AVG_TORQUE, CADENCE, MAX_CADENCE, MAX_TORQUE, TORQUE,
@@ -452,12 +454,12 @@ object KustomFieldCatalog {
         // 9. TIME
         CLOCK_TIME, ELAPSED_TIME, PAUSED_TIME, RIDE_TIME, SUNRISE, SUNSET,
         // 10. WORKOUT
-        WORKOUT_GRAPH, WORKOUT_INTERVAL_COUNT, WORKOUT_INTERVAL_TIME, WORKOUT_NEXT_TARGET, WORKOUT_POWER, WORKOUT_PRIMARY_TARGET, WORKOUT_TARGET_CADENCE, WORKOUT_TARGET_HR, WORKOUT_DURATION_REMAINING,
+        WORKOUT_GRAPH, WORKOUT_INTERVAL_COUNT, WORKOUT_INTERVAL_TIME, WORKOUT_NEXT_TARGET, WORKOUT_POWER, WORKOUT_PRIMARY_TARGET, WORKOUT_TARGET_CADENCE, WORKOUT_TARGET_CORRIDOR, WORKOUT_TARGET_HR, WORKOUT_DURATION_REMAINING,
     )
 
     /** Configurable data fields with smoothing or zone capabilities. */
     val configurableFields: List<KustomFieldDefinition> = allFields.filter {
-        it.supportsSmoothing || it.supportsZones || it.typeId == "workout-graph" || it.category == FieldCategory.COMBO
+        it.supportsSmoothing || it.supportsZones || it.typeId == "workout-graph" || it.typeId == "workout-target-corridor" || it.category == FieldCategory.COMBO
     }
 
     /**

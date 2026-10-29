@@ -217,4 +217,6 @@
     <string name="field_workout_duration_remaining_desc">Remaining workout time</string>
     <string name="field_workout_graph_name">Workout - Workout Graph</string>
     <string name="field_workout_graph_desc">Interactive workout profile graph with live Power, HR, and Cadence trace lines</string>
+    <string name="field_workout_target_corridor_name">Workout - Target Corridor</string>
+    <string name="field_workout_target_corridor_desc">Target power range corridor &amp; live power needle</string>
 </resources>

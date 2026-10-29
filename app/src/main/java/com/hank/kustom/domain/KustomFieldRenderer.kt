@@ -251,14 +251,6 @@ object KustomFieldRenderer {
                 defaultBgColor
             }
 
-            // Primary center value color: red when searching/no sensor, colored in TEXT mode
-            val primaryValueColor: Int = when {
-                isSensorStatusText -> sensorStatusColor
-                zoneFormat == ZoneFormat.TEXT && activeZoneColor != null -> activeZoneColor
-                zoneFormat == ZoneFormat.BACKGROUND && activeZoneColor != null -> KustomColorGradeMapper.getContrastingTextColor(activeZoneColor)
-                else -> defaultTextColor
-            }
-
             // Corner default values color
             val defaultCornerValueColor: Int = when {
                 zoneFormat == ZoneFormat.BACKGROUND && activeZoneColor != null -> KustomColorGradeMapper.getContrastingTextColor(activeZoneColor)
@@ -295,212 +287,46 @@ object KustomFieldRenderer {
             val cleanLeft = abbreviateCornerLabel(leftLabel)
             val cleanRight = abbreviateCornerLabel(rightLabel)
 
-            val cornerLabelSize = height * 0.18f
-            val cornerValueSize = height * 0.32f
+            val leftSlot = if (cleanLeft.isNotEmpty()) {
+                HeaderSlot.MetricStack(
+                    label = cleanLeft,
+                    value = leftValueText,
+                    isZoneFilled = leftZoneFormat == ZoneFormat.BACKGROUND && leftMappedColor != null,
+                    zoneColor = leftMappedColor,
+                )
+            } else null
 
-            // Calculate exact same label baseline Y as standard fields
-            val labelZoneHeight = height * 0.26f
-            val centerLabelPx = (height * (labelTypography.fontSizeSp / 68f)).coerceAtLeast(10f)
-            val centerLabelPaint = TextPaint().apply {
-                color = mutedTextColor
-                textAlign = Paint.Align.CENTER
-                textSize = centerLabelPx
-            }
-            KustomTypefaceResolver.applyTypography(centerLabelPaint, labelTypography.font, labelTypography.fontWeight, centerLabelPx)
+            val rightSlot = if (cleanRight.isNotEmpty()) {
+                HeaderSlot.MetricStack(
+                    label = cleanRight,
+                    value = rightValueText,
+                    isZoneFilled = rightZoneFormat == ZoneFormat.BACKGROUND && rightMappedColor != null,
+                    zoneColor = rightMappedColor,
+                )
+            } else null
 
-            val labelMetrics = centerLabelPaint.fontMetrics
-            val topPadding = height * 0.04f
-            val labelCenterY = (labelZoneHeight / 2f) + topPadding
-            val labelY = labelCenterY - ((labelMetrics.ascent + labelMetrics.descent) / 2f)
-
-            // Auto-scale center label if it exceeds center space
-            val primaryLabelText = label.uppercase()
-            while (centerLabelPaint.textSize > 10f && centerLabelPaint.measureText(primaryLabelText) > width * 0.45f) {
-                centerLabelPaint.textSize -= 1f
-            }
-
-            // 0. Top-Center Primary Metric Label (e.g. "3S POWER" - exact same vertical baseline Y as all other fields)
-            canvas.drawText(primaryLabelText, width / 2f, labelY, centerLabelPaint)
-
-            // 1. Top-Left Corner Metric
-            var leftMaxX = marginX
-            if (cleanLeft.isNotEmpty()) {
-                val leftValColor = when {
-                    leftZoneFormat == ZoneFormat.TEXT && leftMappedColor != null -> leftMappedColor
-                    leftZoneFormat == ZoneFormat.BACKGROUND && leftMappedColor != null -> KustomColorGradeMapper.getContrastingTextColor(leftMappedColor)
-                    else -> defaultCornerValueColor
-                }
-
-                val leftLabelColor = if (leftZoneFormat == ZoneFormat.BACKGROUND && leftMappedColor != null) {
-                    leftValColor
-                } else {
-                    mutedTextColor
-                }
-
-                val leftCornerLabelPaint = TextPaint().apply {
-                    color = leftLabelColor
-                    textAlign = Paint.Align.LEFT
-                    textSize = cornerLabelSize
-                }
-                KustomTypefaceResolver.applyTypography(leftCornerLabelPaint, labelTypography.font, 700, cornerLabelSize)
-
-                val leftCornerValuePaint = TextPaint().apply {
-                    color = leftValColor
-                    textAlign = Paint.Align.LEFT
-                    textSize = cornerValueSize
-                }
-                KustomTypefaceResolver.applyTypography(leftCornerValuePaint, valueTypography.font, valueTypography.fontWeight, cornerValueSize)
-
-                val w1 = leftCornerLabelPaint.measureText(cleanLeft)
-                val w2 = leftCornerValuePaint.measureText(leftValueText)
-                var lWidth = maxOf(w1, w2)
-                val maxCornerW = width * 0.27f
-                while (lWidth > maxCornerW && leftCornerLabelPaint.textSize > 10f) {
-                    leftCornerLabelPaint.textSize -= 0.5f
-                    leftCornerValuePaint.textSize -= 0.5f
-                    lWidth = maxOf(leftCornerLabelPaint.measureText(cleanLeft), leftCornerValuePaint.measureText(leftValueText))
-                }
-
-                // Fill mode: draw compact rounded pill behind corner metric
-                if (leftZoneFormat == ZoneFormat.BACKGROUND && leftMappedColor != null) {
-                    val lPillRect = RectF(
-                        marginX - width * 0.015f,
-                        topY + height * 0.02f,
-                        marginX + lWidth + width * 0.025f,
-                        labelY + height * 0.30f
-                    )
-                    val lPillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = leftMappedColor
-                        style = Paint.Style.FILL
-                    }
-                    canvas.drawRoundRect(lPillRect, 8f, 8f, lPillPaint)
-                }
-
-                canvas.drawText(cleanLeft, marginX, labelY, leftCornerLabelPaint)
-                canvas.drawText(leftValueText, marginX, labelY + height * 0.28f, leftCornerValuePaint)
-                leftMaxX = marginX + lWidth
-            }
-
-            // 2. Top-Right Corner Metric
-            var rightMinX = width - marginX
-            if (cleanRight.isNotEmpty()) {
-                val rightValColor = when {
-                    rightZoneFormat == ZoneFormat.TEXT && rightMappedColor != null -> rightMappedColor
-                    rightZoneFormat == ZoneFormat.BACKGROUND && rightMappedColor != null -> KustomColorGradeMapper.getContrastingTextColor(rightMappedColor)
-                    else -> defaultCornerValueColor
-                }
-
-                val rightLabelColor = if (rightZoneFormat == ZoneFormat.BACKGROUND && rightMappedColor != null) {
-                    rightValColor
-                } else {
-                    mutedTextColor
-                }
-
-                val rightCornerLabelPaint = TextPaint().apply {
-                    color = rightLabelColor
-                    textAlign = Paint.Align.RIGHT
-                    textSize = cornerLabelSize
-                }
-                KustomTypefaceResolver.applyTypography(rightCornerLabelPaint, labelTypography.font, 700, cornerLabelSize)
-
-                val rightCornerValuePaint = TextPaint().apply {
-                    color = rightValColor
-                    textAlign = Paint.Align.RIGHT
-                    textSize = cornerValueSize
-                }
-                KustomTypefaceResolver.applyTypography(rightCornerValuePaint, valueTypography.font, valueTypography.fontWeight, cornerValueSize)
-
-                val w1 = rightCornerLabelPaint.measureText(cleanRight)
-                val w2 = rightCornerValuePaint.measureText(rightValueText)
-                var rWidth = maxOf(w1, w2)
-                val maxCornerW = width * 0.27f
-                while (rWidth > maxCornerW && rightCornerLabelPaint.textSize > 10f) {
-                    rightCornerLabelPaint.textSize -= 0.5f
-                    rightCornerValuePaint.textSize -= 0.5f
-                    rWidth = maxOf(rightCornerLabelPaint.measureText(cleanRight), rightCornerValuePaint.measureText(rightValueText))
-                }
-
-                // Fill mode: draw compact rounded pill behind corner metric
-                if (rightZoneFormat == ZoneFormat.BACKGROUND && rightMappedColor != null) {
-                    val rPillRect = RectF(
-                        width - marginX - rWidth - width * 0.025f,
-                        topY + height * 0.02f,
-                        width - marginX + width * 0.015f,
-                        labelY + height * 0.30f
-                    )
-                    val rPillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = rightMappedColor
-                        style = Paint.Style.FILL
-                    }
-                    canvas.drawRoundRect(rPillRect, 8f, 8f, rPillPaint)
-                }
-
-                canvas.drawText(cleanRight, width - marginX, labelY, rightCornerLabelPaint)
-                canvas.drawText(rightValueText, width - marginX, labelY + height * 0.28f, rightCornerValuePaint)
-                rightMinX = width - marginX - rWidth
-            }
-
-            // 3. Center Primary Power Metric
             val isBarMode = zoneFormat == ZoneFormat.BAR
-            val centerValuePaint = TextPaint().apply {
-                color = primaryValueColor
-                textAlign = Paint.Align.CENTER
-            }
+            val centerHero = HeaderSlot.HeroValue(
+                value = primaryValueText,
+                label = label.uppercase(),
+                hasBottomBar = isBarMode,
+            )
 
-            val primaryY: Float
-            if (isBarMode) {
-                val rawPrimaryPx = (height * (valueTypography.fontSizeSp / 88f)).coerceAtLeast(18f)
-                val basePrimaryPx = if (isSensorStatusText) rawPrimaryPx * 0.52f else rawPrimaryPx
-                KustomTypefaceResolver.applyTypography(
-                    centerValuePaint,
-                    valueTypography.font,
-                    if (isSensorStatusText) 700 else valueTypography.fontWeight,
-                    basePrimaryPx
-                )
+            // Delegate header slot layout and drawing to global FullWidthLayoutEngine
+            FullWidthLayoutEngine.drawHeaderSlots(
+                canvas = canvas,
+                leftSlot = leftSlot,
+                centerHero = centerHero,
+                rightSlot = rightSlot,
+                width = width.toFloat(),
+                height = height.toFloat(),
+                defaultTextColor = defaultCornerValueColor,
+                mutedTextColor = mutedTextColor,
+                labelTypography = labelTypography,
+                valueTypography = valueTypography,
+            )
 
-                val leftGap = (width / 2f) - leftMaxX
-                val rightGap = rightMinX - (width / 2f)
-                val baseClearanceRadius = (minOf(leftGap, rightGap) - width * 0.03f).coerceAtLeast(width * 0.12f)
-                val maxCenterWidth = baseClearanceRadius * 2f
-
-                primaryY = height * 0.75f
-
-                fun isPrimaryTooLarge(): Boolean {
-                    val bounds = Rect()
-                    centerValuePaint.getTextBounds(primaryValueText, 0, primaryValueText.length, bounds)
-                    val topEdgeY = primaryY + bounds.top
-                    return topEdgeY < (topY + height * 0.22f) || centerValuePaint.measureText(primaryValueText) > maxCenterWidth
-                }
-
-                while (centerValuePaint.textSize > 10f && isPrimaryTooLarge()) {
-                    centerValuePaint.textSize -= 1f
-                }
-            } else {
-                // When zoneFormat != ZoneFormat.BAR (None, Text, Fill): Middle label & value follow EXACT same size, weight & Y position as all standard fields
-                val rawPrimaryPx = (height * (valueTypography.fontSizeSp / 86f)).coerceAtLeast(18f)
-                val primaryPx = if (isSensorStatusText) rawPrimaryPx * 0.52f else rawPrimaryPx
-                KustomTypefaceResolver.applyTypography(
-                    centerValuePaint,
-                    valueTypography.font,
-                    if (isSensorStatusText) 700 else valueTypography.fontWeight,
-                    primaryPx
-                )
-
-                val valueZoneTop = height * 0.26f
-                val valueZoneHeight = height * 0.74f
-                val valueMetrics = centerValuePaint.fontMetrics
-                val valueCenterY = valueZoneTop + (valueZoneHeight / 2f)
-                primaryY = valueCenterY - ((valueMetrics.ascent + valueMetrics.descent) / 2f)
-
-                val maxAllowedWidth = width * 0.92f
-                while (centerValuePaint.textSize > 10f && centerValuePaint.measureText(primaryValueText) > maxAllowedWidth) {
-                    centerValuePaint.textSize -= 1f
-                }
-            }
-
-            canvas.drawText(primaryValueText, width / 2f, primaryY, centerValuePaint)
-
-            // 4. Bottom 5-Zone or 7-Zone Gauge Bar (DRAWN ONLY WHEN zoneFormat == ZoneFormat.BAR)
+            // Bottom 5-Zone or 7-Zone Gauge Bar (DRAWN ONLY WHEN zoneFormat == ZoneFormat.BAR)
             if (zoneFormat == ZoneFormat.BAR) {
                 val barMarginX = width * 0.05f
                 val barWidth = width - (barMarginX * 2)
@@ -785,6 +611,186 @@ object KustomFieldRenderer {
             )
         }
     }
+
+    /**
+     * Offscreen ARGB_8888 canvas renderer for Target Power Corridor field.
+     * Displays target power range label, status pill badge (ON TARGET, LOW -XW, HIGH +XW),
+     * hero power digits, and horizontal corridor track with state-colored cursor needle.
+     */
+    fun renderTargetPowerCorridor(
+        context: Context,
+        config: ViewConfig,
+        currentPower: Float?,
+        minTarget: Float?,
+        maxTarget: Float?,
+        targetWatts: Float?,
+        labelTypography: TypographyConfig,
+        valueTypography: TypographyConfig,
+        isDarkTheme: Boolean = false,
+        globalColors: GlobalColorConfig = GlobalColorConfig(),
+        isMock: Boolean = false,
+    ): Bitmap {
+        return runCatching {
+            val width = config.viewSize.first.coerceAtLeast(10)
+            val height = config.viewSize.second.coerceAtLeast(10)
+
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+
+            val defaultBgColor = if (isDarkTheme) globalColors.getDarkColorInt() else globalColors.getLightColorInt()
+            val defaultTextColor = KustomColorGradeMapper.getContrastingTextColor(defaultBgColor)
+
+            // Draw Background Frame
+            if (config.boundariesEnabled) {
+                val insetRect = RectF(1.5f, 1.5f, width.toFloat() - 1.5f, height.toFloat() - 1.5f)
+                val cornerRadius = height * 0.12f
+                val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = defaultBgColor
+                    style = Paint.Style.FILL
+                }
+                canvas.drawRoundRect(insetRect, cornerRadius, cornerRadius, bgPaint)
+            } else {
+                if (defaultBgColor != 0x00000000) canvas.drawColor(defaultBgColor)
+            }
+
+            val barLeft = width * 0.08f
+            val barRight = width * 0.92f
+            val barWidth = barRight - barLeft
+
+            val minT = minTarget ?: targetWatts
+            val maxT = maxTarget ?: targetWatts
+
+            val cPower = currentPower ?: (if (isMock) 142f else 0f)
+            val lowBound = minT ?: (targetWatts ?: 130f)
+            val highBound = maxT ?: (targetWatts ?: 160f)
+
+            val leftSlot = HeaderSlot.MetricStack(
+                label = "TARGET",
+                value = when {
+                    minT != null && maxT != null && minT != maxT -> "${minT.toInt()}-${maxT.toInt()}"
+                    targetWatts != null -> "${targetWatts.toInt()}W"
+                    else -> "--"
+                },
+            )
+
+            // Status Pill Badge on the Right
+            val (badgeText, badgeBgColor, badgeTextColor) = when {
+                currentPower == null && !isMock -> Triple("NO SENSOR", 0xFFC62828.toInt(), 0xFFFFFFFF.toInt())
+                cPower < lowBound -> Triple("LOW -${(lowBound - cPower).toInt()}W", 0xFF455A64.toInt(), 0xFFFFFFFF.toInt())
+                cPower > highBound -> Triple("HIGH +${(cPower - highBound).toInt()}W", 0xFFC62828.toInt(), 0xFFFFFFFF.toInt())
+                else -> Triple("ON TARGET", 0xFF2E7D32.toInt(), 0xFFFFFFFF.toInt())
+            }
+
+            val rightSlot = HeaderSlot.StatusPill(
+                text = badgeText,
+                backgroundColor = badgeBgColor,
+                textColor = badgeTextColor,
+            )
+
+            val centerHero = HeaderSlot.HeroValue(
+                value = if (currentPower != null || isMock) cPower.toInt().toString() else "No Sensor",
+                hasBottomBar = true,
+            )
+
+            // Delegate header slot layout and drawing to global FullWidthLayoutEngine
+            FullWidthLayoutEngine.drawHeaderSlots(
+                canvas = canvas,
+                leftSlot = leftSlot,
+                centerHero = centerHero,
+                rightSlot = rightSlot,
+                width = width.toFloat(),
+                height = height.toFloat(),
+                defaultTextColor = defaultTextColor,
+                mutedTextColor = defaultTextColor,
+                labelTypography = labelTypography,
+                valueTypography = valueTypography,
+            )
+
+            // Target Corridor Track Geometry
+            val trackY = height * 0.80f
+            val trackHeight = height * 0.11f
+
+            val spanBuffer = if (minT != null && maxT != null && minT != maxT) ((maxT - minT) * 0.45f).coerceAtLeast(30f) else 40f
+            val scaleMin = ((lowBound - spanBuffer)).coerceAtLeast(0f)
+            val scaleMax = highBound + spanBuffer
+            val scaleSpan = (scaleMax - scaleMin).coerceAtLeast(1f)
+
+            val tLeftFrac = ((lowBound - scaleMin) / scaleSpan).coerceIn(0f, 1f)
+            val tRightFrac = ((highBound - scaleMin) / scaleSpan).coerceIn(0f, 1f)
+            val tLeftX = barLeft + (tLeftFrac * barWidth)
+            val tRightX = barLeft + (tRightFrac * barWidth)
+
+            // Boundary Numbers (115 & 160) directly ABOVE corridor edges at y = trackY - 3% height (#CBD5E1)
+            val boundTextPx = (height * 0.11f).coerceIn(11f, 13f)
+            val boundY = trackY - (height * 0.03f)
+
+            val boundPaint = TextPaint().apply {
+                color = 0xFFCBD5E1.toInt()
+                textSize = boundTextPx
+                textAlign = Paint.Align.CENTER
+            }
+            KustomTypefaceResolver.applyTypography(boundPaint, labelTypography.font, 700, boundTextPx)
+
+            val bMetrics = boundPaint.fontMetrics
+            val finalBoundY = boundY - ((bMetrics.ascent + bMetrics.descent) / 2f)
+
+            canvas.drawText(lowBound.toInt().toString(), tLeftX, finalBoundY, boundPaint)
+            canvas.drawText(highBound.toInt().toString(), tRightX, finalBoundY, boundPaint)
+
+            // Base Track Capsule (Flat Solid Slate #1E262C)
+            val trackBasePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (isDarkTheme) 0xFF1E262C.toInt() else 0xFFE2E8F0.toInt()
+                style = Paint.Style.FILL
+            }
+            val trackRect = RectF(barLeft, trackY, barRight, trackY + trackHeight)
+            canvas.drawRoundRect(trackRect, trackHeight / 2f, trackHeight / 2f, trackBasePaint)
+
+            // Target Corridor Highlight Box (Matte Forest Green #388E3C)
+            val targetBoxRect = RectF(tLeftX, trackY, tRightX, trackY + trackHeight)
+            val targetFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0xFF388E3C.toInt()
+                style = Paint.Style.FILL
+            }
+            canvas.drawRoundRect(targetBoxRect, 6f, 6f, targetFillPaint)
+
+            // Solid WHITE Cursor Needle (extending 2dp above and below track)
+            if (currentPower != null || isMock) {
+                val cursorFrac = ((cPower - scaleMin) / scaleSpan).coerceIn(0f, 1f)
+                val cursorX = barLeft + (cursorFrac * barWidth)
+
+                val needleWidth = width * 0.020f
+                val needleExt = height * 0.02f
+                val needleRect = RectF(
+                    cursorX - (needleWidth / 2f),
+                    trackY - needleExt,
+                    cursorX + (needleWidth / 2f),
+                    trackY + trackHeight + needleExt
+                )
+
+                val needlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = 0xFFFFFFFF.toInt()
+                    style = Paint.Style.FILL
+                }
+                val needleBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = 0xFF000000.toInt()
+                    style = Paint.Style.STROKE
+                    strokeWidth = 1.8f
+                }
+                canvas.drawRoundRect(needleRect, needleWidth / 2f, needleWidth / 2f, needlePaint)
+                canvas.drawRoundRect(needleRect, needleWidth / 2f, needleWidth / 2f, needleBorderPaint)
+            }
+
+            bitmap
+        }.getOrElse { throwable ->
+            KustomLogger.e("Error rendering target power corridor bitmap", throwable)
+            createFallbackBitmap(
+                config.viewSize.first.coerceAtLeast(10),
+                config.viewSize.second.coerceAtLeast(10),
+            )
+        }
+    }
+
+
 
     /**
      * Constructs a smooth cubic Bézier curve path from an array of 2D data points (X, Y).

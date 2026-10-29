@@ -3,32 +3,22 @@
 ## 1. Project Identity, Package Structure & Gradle SDK Alignment
 - Package namespace: `com.hank.kustom`. Extension ID: `"kustom"`.
 - Primary extension service: `com.hank.kustom.extension.KustomExtension : KarooExtension("kustom", "1")`.
-- Key architecture layers:
-  - `data/model/`: `KustomSettings`, `KustomFieldCatalog`, `KustomFieldConfig`, `CustomComboInstance` (5 static 3-in-1 blocks: Block 1 Power, Block 2 HR, Block 3 Grade, Block 4 Workout, Block 5 Cadence), `GlobalTypographyConfig`, `GlobalColorConfig`, `ZonePalette`, `SmoothingOption`, `ZoneFormat`, `KustomFont`.
-  - `data/repository/`: `KarooSystemRepository` and `KustomSettingsRepository` (Preferences DataStore `"kustom_settings"`).
-  - `domain/`: `KustomFieldRenderer` (single fields, 3-in-1 combo blocks, and workout graph HUD), `WorkoutFileParser` (local `.fit` and `.zwo` parser), `KustomColorAndSmoothing`, `KustomTypefaceResolver`.
-  - `extension/`: `KustomExtension` and `types/KustomDataType`.
-  - `ui/`: `MainActivity` and `KustomSettingsViewModel`.
 - **CRITICAL `app/build.gradle.kts` SDK Levels**:
   - Karoo 2 runs Android 8.1 (API 27) and Karoo 3 runs Android 12 (API 31/32).
   - Keep `minSdk = 26` and `targetSdk = 34` (with `compileSdk = 35` or `release(37)`).
 
-## 2. 3-In-One Configurable Blocks & Workout Target Center Alignment Rules
-- **Static 3-In-One Blocks**: `combo-block-1` through `combo-block-5` are pre-registered in `res/xml/extension_info.xml` and `KustomFieldCatalog`.
-- **Center-Only Workout Target Logic**:
-  - Workout target metrics (`"workout-target-power"`, `"workout-primary-target"`) MUST ONLY be selectable in the **Center** position of a 3-in-1 block (never in Left or Right corner dropdowns).
-  - When a workout target metric is selected in the Center position of a 3-in-1 block:
-    1. **Top Center Label (`comboCenterLabel`)**: Dynamically renders the active workout target range or wattage extracted from `DataType.Type.WORKOUT_POWER_TARGET` / `WORKOUT_PRIMARY_TARGET` (e.g., `"117-146W"`, falling back to `"117-146"` in preview/mock mode).
-    2. **Primary Center Value (`primaryValText`)**: Streams live Power telemetry (`KustomFieldCatalog.POWER.resolveSdkDataTypeId(smoothing)`), displaying live watts when paired or `"No Sensor"` in red when unpaired.
-- **Explicit `DataType.Field` Extraction (No Blanket Loops)**:
-  - Never use `val targetDp = priDp ?: pDp` (which selects a non-null `0.0` `WORKOUT_PRIMARY_TARGET` `DataPoint` over a valid `WORKOUT_POWER_TARGET` `DataPoint`). Always evaluate `extractTargetPowerString(pDp) ?: extractTargetPowerString(priDp)` using explicit `DataType.Field` keys (`WORKOUT_TARGET_MIN_VALUE`, `WORKOUT_TARGET_MAX_VALUE`, `WORKOUT_TARGET_VALUE`, `WORKOUT_TARGET_OUTPUT_VALUE`, `SINGLE`).
+## 2. Workout Target & Corridor Fields
+- **Target Power Corridor (`workout-target-corridor`)**:
+  - Renders a top status badge (`ON TARGET` in `#00E676`, `LOW -XW` in `#00B0FF`, `HIGH +XW` in `#FF5252`), a large centered hero power value, and a horizontal target corridor track.
+  - The cursor needle MUST use 3-second smoothed power to ensure visual stability, while the target range is extracted from `DataType.Type.WORKOUT_POWER_TARGET` and `WORKOUT_PRIMARY_TARGET` (falling back to `WorkoutFileParser.resolveActiveWorkoutFile`).
+- **3-In-One Blocks Center Target Alignment**:
+  - When `"workout-target-power"` or `"workout-primary-target"` is selected in the Center position of a 3-in-1 block, the top center label (`comboCenterLabel`) renders the target range (e.g., `"117-146W"`), while the primary center value streams live power telemetry.
 
 ## 3. Workout Graph Field & FIT/ZWO Storage Rules
 - **Mandatory In-Memory Caching in `WorkoutFileParser`**:
-  - NEVER re-scan directories or re-parse `.fit`/`.zwo` files on every 1 Hz frame. Cache the parsed `ParsedWorkout` keyed by `(filePath, lastModified, ftp)` and throttle directory timestamp checks to at most once every 10 seconds.
-  - Always wrap `FileInputStream` in `BufferedInputStream(..., 8192).use { ... }`.
-- **Multi-Trace Stream Subscription**:
-  - For `"workout-graph"`, `KustomDataType` must subscribe concurrently to `POWER`, `HEART_RATE`, and `CADENCE` streams (plus workout elapsed/remaining duration) and pass immutable list snapshots (`.toList()`) to `KustomFieldRenderer.renderWorkoutGraph`.
+  - NEVER re-scan directories or re-parse `.fit`/`.zwo` files on every 1 Hz frame. Cache the parsed `ParsedWorkout` keyed by `(filePath, lastModified, ftp)` with a 10-second scan throttle.
+  - Wrap `FileInputStream` in `BufferedInputStream(..., 8192).use { ... }`.
+- **Permissions**: Keep `<uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />` in `AndroidManifest.xml` for Karoo 3 Scoped Storage compatibility.
 
 ## 4. True 1:1 Font Scaling, State Isolation & `karoo-ext` Lifecycle Rules
 - **NEVER Stretch Fonts**: Keep `paint.textScaleX = 1.0f` and use `ContentScale.Fit` with exact container pixel dimensions on all preview `Image` composables.
