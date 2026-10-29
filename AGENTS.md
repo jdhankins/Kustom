@@ -14,13 +14,13 @@
     - Keep minSdk = 26 and targetSdk = 34 (with compileSdk = 35 or release(37)).
 
 ## 2. STRICT LIVE-RIDE vs. MOCK-PREVIEW ISOLATION (Zero Leaked Mock Data in Rides)
-- NEVER Leak Mock/Fallback Values When isMock == false:
-    - Mock sample numbers ("117-146", "152-168", 214.0 watts, 142.0 watts, etc.) are ONLY permitted when isMock == true (in-app preview or page editor preview).
-    - During an actual ride (isMock == false):
-        1. NEVER fall back to "117-146" or WorkoutFileParser.resolveActiveWorkoutFile(...) for target power ranges when Karoo's live workout target stream (extractTargetPowerString(targetDataPoint)) is null.
-        2. On a 3-In-One Combo Block where Center is set to Workout Target ("workout-target-power" or "workout-primary-target"): if isMock == false and extractTargetPowerString(targetDataPoint) == null (no workout is running),comboCenterLabel MUST fall back to KustomFieldCatalog.POWER.resolveDynamicLabel(resolvedConfig.smoothingOption) (e.g., "3S POWER" or "POWER").
-        3. On Target Power Corridor ("workout-target-corridor"): if isMock == false and no live workout target is streaming from targetDataPoint, leftSlot.value MUST be "--" (not a parsed file from disk), and the corridor bar must not show a fake green range.
-        4. In KustomFieldRenderer.kt, NEVER use powerValueWatts ?: 214.0 when mappedColor is null. If mappedColor is null or isSensorStatusText is true, activeZoneColor MUST be null, and when backgroundColor is not filled with a zone color, defaultCornerValueColor and all text colors MUST use the theme's standard contrast color (dark charcoal in Day Mode, white in Night Mode) so a card never renders white text on a white background!
+- How isMockMode Must Be Defined in KustomDataType.kt:
+    - Set val isMockMode = config.preview (NEVER !isInRide || config.preview). Mock numbers are ONLY allowed in the in-app configuration screens (MainActivity) and Karoo's Page Editor preview (config.preview == true). On the actual ride screen (config.preview == false), isMockMode MUST ALWAYS be false (both pre-ride and in-ride).
+- NEVER Leak Hardcoded or Disk-Parsed Target Ranges When isMock == false:
+    - In KustomFieldCatalog.kt, resolveDynamicLabel MUST NEVER return "117-146". It must return "TARGET POWER" or "TARGET".
+    - In KustomDataType.kt, NEVER use extractTargetPowerString(targetDataPoint) ?: "117-146" unguarded. When isMock == false and extractTargetPowerString(targetDataPoint) == null (regular ride without a workout), comboCenterLabel on a 3-in-1 block MUST fall back to KustomFieldCatalog.POWER.resolveDynamicLabel(resolvedConfig.smoothingOption) (e.g. "3S POWER" or "POWER").
+    - In KustomDataType.kt inside the workout-target-corridor branch, NEVER call WorkoutFileParser.resolveActiveWorkoutFile(...). A file sitting on the SD card does not mean a workout is active! When isMock == false, workout-target-corridor must ONLY use live values from targetDataPoint; if no workout is active during the ride, minTarget, maxTarget, and targetWatts must be null, displaying "--" under "TARGET" and hiding the green target zone on the bottom bar.
+    - In KustomFieldRenderer.kt, NEVER use powerValueWatts ?: 214.0 when mappedColor is null.
 
 ## 3. Centralized Full-Width Layout Engine (FullWidthLayoutEngine.kt)
 - Single Layout Engine: All full-width composite fields (renderComboBlock, renderTargetPowerCorridor, and future full-width HUDs) MUST use FullWidthLayoutEngine.
@@ -33,7 +33,7 @@
 - LABELS NEVER AUTO-SCALE; ONLY VALUES AUTO-SCALE:
     - Labels (leftSlot.label, centerHero.label, rightSlot.label) MUST NEVER be passed through a shrinking while loop. All labels across every card must be drawn via drawFixedLabel at the exact same fixed pixel size fixedLabelPx and top-anchored to labelTopY = height * 0.07f.
     - Only Values (leftSlot.value, rightSlot.value, centerHero.value) auto-scale via drawTextInBox to fit their bounding box.
-    - Reference Digit Height ("88") for Vertical Measurement in drawTextInBox: Always measure vertical height (refBounds.height()) and vertical baseline (refBounds.top / refBounds.exactCenterY()) using paint.getTextBounds("88", 0, 2, refBounds) while measuring renderText for horizontal width (widthBounds.width()). This prevents low-height characters like "--" from blowing up to 100px font size and bloating into solid black rectangles.
+    - Reference Digit Height ("88") for Vertical Measurement in drawTextInBox: Always measure vertical height (refBounds.height()) and vertical baseline (refBounds.top / refBounds.exactCenterY()) using paint.getTextBounds("88", 0, 2, refBounds) while measuring renderText for horizontal width (widthBounds.width()). When renderText == "--", use Paint.Style.FILL and strokeWidth = 0f so dashes never bloat into thick black bricks.
 
 ## 4. Workout Graph Field & FIT/ZWO Storage Rules
 - Mandatory In-Memory Caching in WorkoutFileParser:
@@ -45,3 +45,4 @@
 - NEVER Stretch Fonts: Keep paint.textScaleX = 1.0f and use ContentScale.Fit with exact container pixel dimensions on all preview Image composables.
 - State Isolation: Always use rememberUpdatedState inside custom gesture controls (KarooSteppedSlider) and atomic DataStore updates in KustomSettingsRepository.
 - Strict karoo-ext Cleanup: Always emit UpdateGraphicConfig(showHeader = false) at the start of startView, and cancel all coroutines/consumers inside emitter.setCancellable { job.cancel() }.
+

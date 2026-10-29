@@ -107,7 +107,7 @@ class KustomDataType(
                     fieldConfig
                 }
 
-                val isMockMode = !isInRide || config.preview
+                val isMockMode = config.preview
 
                 if (isMockMode) {
                     // Page Setup / Profile Design / Off-Ride Mode: Loop animated mock values with full slot support
@@ -320,9 +320,9 @@ class KustomDataType(
                     null
                 }
 
-                val dynamicLabel = if (definition.typeId == "workout-target-power") {
+                val dynamicLabel = if (definition.typeId == "workout-target-power" || definition.typeId == "workout-primary-target") {
                     val targetText = extractTargetPowerString(targetDataPoint)
-                    targetText ?: "Target Power"
+                    targetText ?: if (isMock) "117-146" else definition.resolveDynamicLabel(fieldConfig.smoothingOption)
                 } else {
                     definition.resolveDynamicLabel(fieldConfig.smoothingOption)
                 }
@@ -428,7 +428,7 @@ class KustomDataType(
                         if (targetV != null) targetWattsVal = targetV.toFloat()
                     }
 
-                    if (minTargetWatts == null && maxTargetWatts == null && targetWattsVal == null && activeWorkout.steps.isNotEmpty()) {
+                    if (isMock && minTargetWatts == null && maxTargetWatts == null && targetWattsVal == null && activeWorkout.steps.isNotEmpty()) {
                         val currentStep = activeWorkout.steps.firstOrNull()
                         if (currentStep != null) {
                             minTargetWatts = currentStep.targetWattsMin.toFloat()

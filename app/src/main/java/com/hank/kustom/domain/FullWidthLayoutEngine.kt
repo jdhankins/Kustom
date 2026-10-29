@@ -133,6 +133,14 @@ object FullWidthLayoutEngine {
         paint.textAlign = Paint.Align.LEFT // Always draw using exact LEFT offset from getTextBounds
         paint.textScaleX = 1.0f
 
+        var strokeRatio = if (maxStartTextSizePx > 0f && paint.strokeWidth > 0f) (paint.strokeWidth / maxStartTextSizePx).coerceAtMost(0.028f) else 0f
+
+        if (renderText == "--") {
+            paint.style = Paint.Style.FILL
+            paint.strokeWidth = 0f
+            strokeRatio = 0f
+        }
+
         // Check if text has decimal point or time colon for superscript rendering (e.g. "18.1" -> 18¹ or "02:50" -> 02:⁵⁰)
         val isSuperscriptEligible = (renderText.contains(".") || renderText.contains(":")) && 
             !renderText.contains("-") && !renderText.contains(" ")
@@ -140,9 +148,6 @@ object FullWidthLayoutEngine {
         if (isSuperscriptEligible) {
             val (primary, secondary) = parsePrimaryAndSecondary(renderText)
             if (secondary.isNotEmpty()) {
-                val initialStroke = paint.strokeWidth
-                val strokeRatio = if (maxStartTextSizePx > 0f && initialStroke > 0f) (initialStroke / maxStartTextSizePx).coerceAtMost(0.028f) else 0f
-
                 var size = maxStartTextSizePx.coerceAtLeast(minTextSizePx)
                 paint.textSize = size
                 if (strokeRatio > 0f) {
@@ -156,16 +161,19 @@ object FullWidthLayoutEngine {
                     }
                 }
 
-                val priBounds = Rect()
-                paint.getTextBounds(primary, 0, primary.length, priBounds)
+                val priWidthBounds = Rect()
+                paint.getTextBounds(primary, 0, primary.length, priWidthBounds)
 
-                val secBounds = Rect()
-                secPaint.getTextBounds(secondary, 0, secondary.length, secBounds)
+                val priHeightBounds = Rect()
+                paint.getTextBounds("88", 0, 2, priHeightBounds)
 
-                var totalW = priBounds.width() + secBounds.width()
-                var totalH = priBounds.height()
+                val secWidthBounds = Rect()
+                secPaint.getTextBounds(secondary, 0, secondary.length, secWidthBounds)
 
-                while (size > minTextSizePx && (totalW > boxW || totalH > boxH)) {
+                var totalW = priWidthBounds.width() + secWidthBounds.width()
+                var totalH = priHeightBounds.height()
+
+                while (size > minTextSizePx && (totalW + paint.strokeWidth > boxW || totalH + paint.strokeWidth > boxH)) {
                     size -= 1f
                     paint.textSize = size
                     secPaint.textSize = size * 0.58f
@@ -173,10 +181,11 @@ object FullWidthLayoutEngine {
                         paint.strokeWidth = size * strokeRatio
                         secPaint.strokeWidth = (size * 0.58f) * strokeRatio
                     }
-                    paint.getTextBounds(primary, 0, primary.length, priBounds)
-                    secPaint.getTextBounds(secondary, 0, secondary.length, secBounds)
-                    totalW = priBounds.width() + secBounds.width()
-                    totalH = priBounds.height()
+                    paint.getTextBounds(primary, 0, primary.length, priWidthBounds)
+                    paint.getTextBounds("88", 0, 2, priHeightBounds)
+                    secPaint.getTextBounds(secondary, 0, secondary.length, secWidthBounds)
+                    totalW = priWidthBounds.width() + secWidthBounds.width()
+                    totalH = priHeightBounds.height()
                 }
 
                 val secGap = (paint.textSize * 0.035f).coerceIn(1.2f, 2.2f)
@@ -185,67 +194,69 @@ object FullWidthLayoutEngine {
                 val totalAdvanceWidth = primaryW + secGap + secondaryW
 
                 val priX = when (align) {
-                    Paint.Align.LEFT -> boxLeft - priBounds.left + (paint.strokeWidth / 2f)
-                    Paint.Align.RIGHT -> boxRight - totalAdvanceWidth - priBounds.left - (paint.strokeWidth / 2f)
-                    else -> ((boxLeft + boxRight) / 2f) - (totalAdvanceWidth / 2f) - priBounds.left
+                    Paint.Align.LEFT -> boxLeft - priWidthBounds.left + (paint.strokeWidth / 2f)
+                    Paint.Align.RIGHT -> boxRight - totalAdvanceWidth - priWidthBounds.left - (paint.strokeWidth / 2f)
+                    else -> ((boxLeft + boxRight) / 2f) - (totalAdvanceWidth / 2f) - priWidthBounds.left
                 }
 
                 val priY = when (verticalAlign) {
-                    VerticalAlign.TOP -> boxTop - priBounds.top + (paint.strokeWidth / 2f)
-                    VerticalAlign.CENTER -> ((boxTop + boxBottom) / 2f) - priBounds.exactCenterY()
+                    VerticalAlign.TOP -> boxTop - priHeightBounds.top + (paint.strokeWidth / 2f)
+                    VerticalAlign.CENTER -> ((boxTop + boxBottom) / 2f) - priHeightBounds.exactCenterY()
                 }
 
                 canvas.drawText(primary, priX, priY, paint)
 
                 val secX = priX + primaryW + secGap
-                val secY = priY + priBounds.top - secBounds.top
+                val secY = priY + priHeightBounds.top - secWidthBounds.top
 
                 canvas.drawText(secondary, secX, secY, secPaint)
 
                 return Rect(
-                    priBounds.left,
-                    priBounds.top,
-                    (totalAdvanceWidth).toInt(),
-                    priBounds.bottom
+                    priWidthBounds.left,
+                    priHeightBounds.top,
+                    totalAdvanceWidth.toInt(),
+                    priHeightBounds.bottom
                 )
             }
         }
 
         // Standard Single-Paint Text Drawing (No Superscript)
-        val initialStroke = paint.strokeWidth
-        val strokeRatio = if (maxStartTextSizePx > 0f && initialStroke > 0f) (initialStroke / maxStartTextSizePx).coerceAtMost(0.028f) else 0f
-
         var size = maxStartTextSizePx.coerceAtLeast(minTextSizePx)
         paint.textSize = size
         if (strokeRatio > 0f) {
             paint.strokeWidth = size * strokeRatio
         }
 
-        val bounds = Rect()
-        paint.getTextBounds(renderText, 0, renderText.length, bounds)
+        val widthBounds = Rect()
+        paint.getTextBounds(renderText, 0, renderText.length, widthBounds)
 
-        while (size > minTextSizePx && (bounds.width() > boxW || bounds.height() > boxH)) {
+        val heightBounds = Rect()
+        paint.getTextBounds("88", 0, 2, heightBounds)
+
+        while (size > minTextSizePx && (widthBounds.width() + paint.strokeWidth > boxW || heightBounds.height() + paint.strokeWidth > boxH)) {
             size -= 1f
             paint.textSize = size
             if (strokeRatio > 0f) {
                 paint.strokeWidth = size * strokeRatio
             }
-            paint.getTextBounds(renderText, 0, renderText.length, bounds)
+            paint.getTextBounds(renderText, 0, renderText.length, widthBounds)
+            paint.getTextBounds("88", 0, 2, heightBounds)
         }
 
+        val halfStroke = paint.strokeWidth / 2f
         val drawX = when (align) {
-            Paint.Align.LEFT -> boxLeft - bounds.left + (paint.strokeWidth / 2f)
-            Paint.Align.RIGHT -> boxRight - bounds.right - (paint.strokeWidth / 2f)
-            else -> ((boxLeft + boxRight) / 2f) - bounds.exactCenterX()
+            Paint.Align.LEFT -> boxLeft - widthBounds.left + halfStroke
+            Paint.Align.RIGHT -> boxRight - widthBounds.right - halfStroke
+            else -> ((boxLeft + boxRight) / 2f) - widthBounds.exactCenterX()
         }
 
         val drawY = when (verticalAlign) {
-            VerticalAlign.TOP -> boxTop - bounds.top + (paint.strokeWidth / 2f)
-            VerticalAlign.CENTER -> ((boxTop + boxBottom) / 2f) - bounds.exactCenterY()
+            VerticalAlign.TOP -> boxTop - heightBounds.top + halfStroke
+            VerticalAlign.CENTER -> ((boxTop + boxBottom) / 2f) - heightBounds.exactCenterY()
         }
 
         canvas.drawText(renderText, drawX, drawY, paint)
-        return bounds
+        return widthBounds
     }
 
     /**
