@@ -907,7 +907,7 @@ object KustomFieldRenderer {
      */
     private fun parsePrimaryAndSecondary(valueText: String): Pair<String, String> {
         if (valueText.contains(":")) {
-            val idx = valueText.indexOf(":")
+            val idx = valueText.lastIndexOf(":")
             val primary = valueText.substring(0, idx)
             val secondary = valueText.substring(idx)
             return Pair(primary, secondary)
