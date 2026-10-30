@@ -250,6 +250,7 @@ class KustomDataType(
                             fieldConfig = fieldConfig,
                             isMock = false,
                             targetDataPoint = targetDp ?: durDp,
+                            isInRide = isInRide,
                         )
                     }
                 } else if (definition.typeId == "workout-target-power") {
@@ -270,6 +271,7 @@ class KustomDataType(
                             fieldConfig = fieldConfig,
                             isMock = false,
                             targetDataPoint = targetDp,
+                            isInRide = isInRide,
                         )
                     }
                 } else {
@@ -282,11 +284,12 @@ class KustomDataType(
                             settings = settings,
                             fieldConfig = fieldConfig,
                             isMock = false,
+                            isInRide = isInRide,
                         )
                     }
                 }
             }.collect { payload ->
-                val (streamState, leftStreamState, rightStreamState, userProfile, settings, fieldConfig, isMock, mockValue, mockIndex, targetDataPoint) = payload
+                val (streamState, leftStreamState, rightStreamState, userProfile, settings, fieldConfig, isMock, mockValue, mockIndex, targetDataPoint, isInRide) = payload
 
                 if (fieldConfig.smoothingOption.seconds != lastSmoothingSec) {
                     lastSmoothingSec = fieldConfig.smoothingOption.seconds
@@ -325,9 +328,11 @@ class KustomDataType(
                 }
 
                 val hasDiskWorkout = activeWorkout?.steps?.isNotEmpty() == true
-                val isWorkoutActiveOnKaroo = isMock || hasDiskWorkout || (liveWorkoutTotalSec != null || liveWorkoutIntSec != null || liveWorkoutTargetStr != null || liveWorkoutStepInfo != null)
+                val hasLiveWorkoutStream = liveWorkoutTotalSec != null || liveWorkoutIntSec != null || liveWorkoutTargetStr != null || liveWorkoutStepInfo != null
+                val canUsePreRideDiskWorkout = !isInRide && hasDiskWorkout
+                val isWorkoutActiveOnKaroo = isMock || hasLiveWorkoutStream || canUsePreRideDiskWorkout
 
-                val preRideWorkoutDuration: Double? = if (isMock || hasDiskWorkout) {
+                val preRideWorkoutDuration: Double? = if (isMock || canUsePreRideDiskWorkout) {
                     when (definition.typeId) {
                         "workout-interval-time-remaining" -> liveWorkoutIntSec ?: activeWorkout?.steps?.firstOrNull()?.durationSeconds?.toDouble()
                         "workout-duration-remaining" -> liveWorkoutTotalSec ?: activeWorkout?.totalDurationSeconds?.toDouble()
@@ -338,8 +343,8 @@ class KustomDataType(
                 val dynamicValue: Double? = if (isMock) {
                     mockValue
                 } else when (definition.typeId) {
-                    "workout-duration-remaining" -> liveWorkoutTotalSec ?: preRideWorkoutDuration
-                    "workout-interval-time-remaining" -> liveWorkoutIntSec ?: preRideWorkoutDuration
+                    "workout-duration-remaining" -> liveWorkoutTotalSec ?: (if (canUsePreRideDiskWorkout) preRideWorkoutDuration else null)
+                    "workout-interval-time-remaining" -> liveWorkoutIntSec ?: (if (canUsePreRideDiskWorkout) preRideWorkoutDuration else null)
                     "workout-interval-count" -> liveWorkoutStepInfo?.first?.toDouble()
                     else -> {
                         if (streamState is StreamState.Streaming) {
@@ -741,6 +746,7 @@ class KustomDataType(
         val mockValue: Double? = null,
         val mockIndex: Int = 0,
         val targetDataPoint: DataPoint? = null,
+        val isInRide: Boolean = false,
     )
 
     private fun extractTargetPowerString(dataPoint: DataPoint?): String? {
