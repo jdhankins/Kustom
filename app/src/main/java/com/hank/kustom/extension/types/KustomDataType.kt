@@ -181,12 +181,16 @@ class KustomDataType(
                         centerFlow,
                         leftFlow,
                         rightFlow,
-                        karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET),
-                        karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_PRIMARY_TARGET),
-                    ) { centerState, leftState, rightState, targetPowerState, primaryTargetState ->
-                        val pDp = (targetPowerState as? StreamState.Streaming)?.dataPoint
-                        val priDp = (primaryTargetState as? StreamState.Streaming)?.dataPoint
-                        val targetDp = if (extractTargetPowerString(pDp) != null) pDp else (if (extractTargetPowerString(priDp) != null) priDp else pDp ?: priDp)
+                        combine(
+                            karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_PRIMARY_TARGET),
+                            karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET),
+                            karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_SECONDARY_TARGET),
+                        ) { pr, pt, sec -> Triple(pr, pt, sec) },
+                    ) { centerState, leftState, rightState, (priState, pState, secState) ->
+                        val priDp = (priState as? StreamState.Streaming)?.dataPoint
+                        val pDp = (pState as? StreamState.Streaming)?.dataPoint
+                        val secDp = (secState as? StreamState.Streaming)?.dataPoint
+                        val targetDp = listOfNotNull(priDp, pDp, secDp).firstOrNull { extractTargetPowerString(it) != null } ?: priDp ?: pDp ?: secDp
                         RenderPayload(
                             streamState = centerState,
                             leftStreamState = leftState,
@@ -196,21 +200,24 @@ class KustomDataType(
                             fieldConfig = resolvedConfig,
                             isMock = false,
                             targetDataPoint = targetDp,
+                            isInRide = isInRide,
                         )
                     }
                 } else if (definition.typeId == "workout-target-corridor") {
                     // Target Power Corridor: Stream live smoothed Power AND Workout Targets concurrently
                     val powerSdkId = KustomFieldCatalog.POWER.resolveSdkDataTypeId(fieldConfig.smoothingOption)
-                    val pTargetFlow = karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET)
                     val priTargetFlow = karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_PRIMARY_TARGET)
+                    val pTargetFlow = karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET)
+                    val secTargetFlow = karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_SECONDARY_TARGET)
 
                     combine(
                         karooSystemRepository.streamDataFlow(powerSdkId),
-                        combine(pTargetFlow, priTargetFlow) { pt, pr -> Pair(pt, pr) },
-                    ) { powerState, (targetPowerState, primaryTargetState) ->
-                        val pDp = (targetPowerState as? StreamState.Streaming)?.dataPoint
-                        val priDp = (primaryTargetState as? StreamState.Streaming)?.dataPoint
-                        val targetDp = if (extractTargetPowerString(pDp) != null) pDp else (if (extractTargetPowerString(priDp) != null) priDp else pDp ?: priDp)
+                        combine(priTargetFlow, pTargetFlow, secTargetFlow) { pr, pt, sec -> Triple(pr, pt, sec) },
+                    ) { powerState, (priState, pState, secState) ->
+                        val priDp = (priState as? StreamState.Streaming)?.dataPoint
+                        val pDp = (pState as? StreamState.Streaming)?.dataPoint
+                        val secDp = (secState as? StreamState.Streaming)?.dataPoint
+                        val targetDp = listOfNotNull(priDp, pDp, secDp).firstOrNull { extractTargetPowerString(it) != null } ?: priDp ?: pDp ?: secDp
                         RenderPayload(
                             streamState = powerState,
                             userProfile = userProfile,
@@ -218,6 +225,7 @@ class KustomDataType(
                             fieldConfig = fieldConfig,
                             isMock = false,
                             targetDataPoint = targetDp,
+                            isInRide = isInRide,
                         )
                     }
                 } else if (definition.typeId == "workout-graph") {
@@ -229,18 +237,18 @@ class KustomDataType(
                     val powerFlow = karooSystemRepository.streamDataFlow(powerSdkId)
                     val hrFlow = karooSystemRepository.streamDataFlow(hrSdkId)
                     val cadenceFlow = karooSystemRepository.streamDataFlow(cadenceSdkId)
-                    val pTargetFlow = karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET)
                     val priTargetFlow = karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_PRIMARY_TARGET)
+                    val pTargetFlow = karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET)
                     val durRemFlow = karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_REMAINING_TOTAL_DURATION)
 
                     combine(
                         combine(powerFlow, hrFlow, cadenceFlow) { p, h, c -> Triple(p, h, c) },
-                        combine(pTargetFlow, priTargetFlow, durRemFlow) { pt, pr, dr -> Triple(pt, pr, dr) },
-                    ) { (p, h, c), (pt, pr, dr) ->
-                        val pDp = (pt as? StreamState.Streaming)?.dataPoint
+                        combine(priTargetFlow, pTargetFlow, durRemFlow) { pr, pt, dr -> Triple(pr, pt, dr) },
+                    ) { (p, h, c), (pr, pt, dr) ->
                         val priDp = (pr as? StreamState.Streaming)?.dataPoint
+                        val pDp = (pt as? StreamState.Streaming)?.dataPoint
                         val durDp = (dr as? StreamState.Streaming)?.dataPoint
-                        val targetDp = if (extractTargetPowerString(pDp) != null) pDp else (if (extractTargetPowerString(priDp) != null) priDp else pDp ?: priDp ?: durDp)
+                        val targetDp = listOfNotNull(priDp, pDp, durDp).firstOrNull { extractTargetPowerString(it) != null } ?: priDp ?: pDp ?: durDp
                         RenderPayload(
                             streamState = p,
                             leftStreamState = h,
@@ -258,12 +266,14 @@ class KustomDataType(
                     val sdkTypeId = definition.resolveSdkDataTypeId(fieldConfig.smoothingOption)
                     combine(
                         karooSystemRepository.streamDataFlow(sdkTypeId),
-                        karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET),
                         karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_PRIMARY_TARGET),
-                    ) { powerState, targetPowerState, primaryTargetState ->
-                        val pDp = (targetPowerState as? StreamState.Streaming)?.dataPoint
-                        val priDp = (primaryTargetState as? StreamState.Streaming)?.dataPoint
-                        val targetDp = priDp ?: pDp
+                        karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET),
+                        karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_SECONDARY_TARGET),
+                    ) { powerState, priState, pState, secState ->
+                        val priDp = (priState as? StreamState.Streaming)?.dataPoint
+                        val pDp = (pState as? StreamState.Streaming)?.dataPoint
+                        val secDp = (secState as? StreamState.Streaming)?.dataPoint
+                        val targetDp = listOfNotNull(priDp, pDp, secDp).firstOrNull { extractTargetPowerString(it) != null } ?: priDp ?: pDp ?: secDp
                         RenderPayload(
                             streamState = powerState,
                             userProfile = userProfile,
@@ -272,6 +282,66 @@ class KustomDataType(
                             isMock = false,
                             targetDataPoint = targetDp,
                             isInRide = isInRide,
+                        )
+                    }
+                } else if (definition.typeId.startsWith("debug-")) {
+                    // Debug Mode: Concurrently stream category-specific Karoo SDK telemetry flows
+                    val debugFlowList = when (definition.typeId) {
+                        "debug-workout" -> listOf(
+                            "WORKOUT_POWER_TARGET" to DataType.Type.WORKOUT_POWER_TARGET,
+                            "WORKOUT_PRIMARY_TARGET" to DataType.Type.WORKOUT_PRIMARY_TARGET,
+                            "WORKOUT_SECONDARY_TARGET" to DataType.Type.WORKOUT_SECONDARY_TARGET,
+                            "WORKOUT_REMAINING_TOTAL_DURATION" to DataType.Type.WORKOUT_REMAINING_TOTAL_DURATION,
+                            "WORKOUT_REMAINING_INTERVAL_DURATION" to DataType.Type.WORKOUT_REMAINING_INTERVAL_DURATION,
+                            "WORKOUT_INTERVAL_COUNT" to DataType.Type.WORKOUT_INTERVAL_COUNT,
+                        )
+                        "debug-power" -> listOf(
+                            "POWER" to DataType.Type.POWER,
+                            "AVERAGE_POWER" to DataType.Type.AVERAGE_POWER,
+                            "MAX_POWER" to DataType.Type.MAX_POWER,
+                            "NORMALIZED_POWER" to DataType.Type.NORMALIZED_POWER,
+                            "POWER_BALANCE" to DataType.Type.PEDAL_POWER_BALANCE,
+                            "POWER_ZONE" to DataType.Type.POWER_ZONE,
+                        )
+                        "debug-hr" -> listOf(
+                            "HEART_RATE" to DataType.Type.HEART_RATE,
+                            "AVERAGE_HR" to DataType.Type.AVERAGE_HR,
+                            "MAX_HR" to DataType.Type.MAX_HR,
+                            "HR_ZONE" to DataType.Type.HR_ZONE,
+                        )
+                        else -> listOf(
+                            "SPEED" to DataType.Type.SPEED,
+                            "CADENCE" to DataType.Type.CADENCE,
+                            "DISTANCE" to DataType.Type.DISTANCE,
+                            "ELAPSED_TIME" to DataType.Type.ELAPSED_TIME,
+                            "CLOCK_TIME" to DataType.Type.CLOCK_TIME,
+                            "BATTERY_PERCENT" to DataType.Type.BATTERY_PERCENT,
+                            "TEMPERATURE" to DataType.Type.TEMPERATURE,
+                            "ELEVATION_GRADE" to DataType.Type.ELEVATION_GRADE,
+                        )
+                    }
+
+                    val flows = debugFlowList.map { (name, typeId) ->
+                        karooSystemRepository.streamDataFlow(typeId).map { state -> name to state }
+                    }
+
+                    combine(flows) { statesArray ->
+                        val map = mutableMapOf<String, DataPoint>()
+                        statesArray.forEach { (name, state) ->
+                            val dp = (state as? StreamState.Streaming)?.dataPoint
+                            if (dp != null) {
+                                map[name] = dp
+                            }
+                        }
+
+                        RenderPayload(
+                            streamState = null,
+                            userProfile = userProfile,
+                            settings = settings,
+                            fieldConfig = fieldConfig,
+                            isMock = false,
+                            isInRide = isInRide,
+                            debugDps = map,
                         )
                     }
                 } else {
@@ -289,7 +359,7 @@ class KustomDataType(
                     }
                 }
             }.collect { payload ->
-                val (streamState, leftStreamState, rightStreamState, userProfile, settings, fieldConfig, isMock, mockValue, mockIndex, targetDataPoint, isInRide) = payload
+                val (streamState, leftStreamState, rightStreamState, userProfile, settings, fieldConfig, isMock, mockValue, mockIndex, targetDataPoint, isInRide, debugDps) = payload
 
                 if (fieldConfig.smoothingOption.seconds != lastSmoothingSec) {
                     lastSmoothingSec = fieldConfig.smoothingOption.seconds
@@ -427,7 +497,15 @@ class KustomDataType(
                 val customComboInst = settings.customComboInstances.firstOrNull { it.id == definition.typeId }
                 val isComboBlock = customComboInst != null || definition.typeId.startsWith("combo-block-") || definition.typeId == "power-combo" || definition.typeId == "custom-combo"
 
-                val bitmap = if (definition.typeId == "workout-target-corridor") {
+                val bitmap = if (definition.typeId.startsWith("debug-")) {
+                    KustomFieldRenderer.renderDebugCategoryField(
+                        context = context,
+                        config = config,
+                        categoryTitle = definition.childTitle,
+                        debugDps = debugDps,
+                        isDarkTheme = isDarkTheme,
+                    )
+                } else if (definition.typeId == "workout-target-corridor") {
                     val userFtp = userProfile?.ftp?.toDouble() ?: 250.0
                     val activeWorkout = if (isMock) {
                         WorkoutFileParser.getDefaultSampleWorkout(userFtp, settings.globalColors.globalZonePalette)
@@ -439,22 +517,36 @@ class KustomDataType(
                     var maxTargetWatts: Float? = null
                     var targetWattsVal: Float? = null
 
-                    if (targetDataPoint != null && targetDataPoint.values.isNotEmpty()) {
+                    val liveCorridorTargetStr = extractTargetPowerString(targetDataPoint)
+                    if (liveCorridorTargetStr != null && liveCorridorTargetStr.contains("-")) {
+                        val parts = liveCorridorTargetStr.split("-")
+                        if (parts.size == 2) {
+                            minTargetWatts = parts[0].trim().toFloatOrNull()
+                            maxTargetWatts = parts[1].trim().toFloatOrNull()
+                        }
+                    } else if (liveCorridorTargetStr != null) {
+                        targetWattsVal = liveCorridorTargetStr.trim().toFloatOrNull()
+                    }
+
+                    if (minTargetWatts == null && maxTargetWatts == null && targetWattsVal == null && targetDataPoint != null && targetDataPoint.values.isNotEmpty()) {
                         val minV = targetDataPoint.values[DataType.Field.WORKOUT_TARGET_MIN_VALUE]
                             ?: targetDataPoint.values["FIELD_WORKOUT_TARGET_MIN_VALUE_ID"]
+                            ?: targetDataPoint.values.entries.firstOrNull { it.key.contains("MIN", ignoreCase = true) }?.value
                         val maxV = targetDataPoint.values[DataType.Field.WORKOUT_TARGET_MAX_VALUE]
                             ?: targetDataPoint.values["FIELD_WORKOUT_TARGET_MAX_VALUE_ID"]
+                            ?: targetDataPoint.values.entries.firstOrNull { it.key.contains("MAX", ignoreCase = true) }?.value
                         val targetV = targetDataPoint.values[DataType.Field.WORKOUT_TARGET_VALUE]
                             ?: targetDataPoint.values[DataType.Field.WORKOUT_TARGET_OUTPUT_VALUE]
                             ?: targetDataPoint.values[DataType.Field.SINGLE]
                             ?: targetDataPoint.values["FIELD_WORKOUT_TARGET_VALUE_ID"]
+                            ?: targetDataPoint.values.entries.firstOrNull { it.key.contains("TARGET", ignoreCase = true) || it.key.contains("OUTPUT", ignoreCase = true) }?.value
 
                         if (minV != null) minTargetWatts = minV.toFloat()
                         if (maxV != null) maxTargetWatts = maxV.toFloat()
                         if (targetV != null) targetWattsVal = targetV.toFloat()
                     }
 
-                    if (minTargetWatts == null && maxTargetWatts == null && targetWattsVal == null && activeWorkout?.steps?.isNotEmpty() == true) {
+                    if (canUsePreRideDiskWorkout && minTargetWatts == null && maxTargetWatts == null && targetWattsVal == null && activeWorkout?.steps?.isNotEmpty() == true) {
                         val currentStep = activeWorkout.steps.firstOrNull()
                         if (currentStep != null) {
                             minTargetWatts = currentStep.targetWattsMin.toFloat()
@@ -747,6 +839,7 @@ class KustomDataType(
         val mockIndex: Int = 0,
         val targetDataPoint: DataPoint? = null,
         val isInRide: Boolean = false,
+        val debugDps: Map<String, DataPoint>? = null,
     )
 
     private fun extractTargetPowerString(dataPoint: DataPoint?): String? {

@@ -12,7 +12,9 @@ import com.hank.kustom.data.model.GlobalColorConfig
 import com.hank.kustom.data.model.TypographyConfig
 import com.hank.kustom.data.model.ZoneFormat
 import com.hank.kustom.util.KustomLogger
+import io.hammerhead.karooext.models.DataPoint
 import io.hammerhead.karooext.models.ViewConfig
+import java.util.Locale
 
 /**
  * Offscreen bitmap renderer that draws label and value text onto an ARGB_8888 canvas.
@@ -900,6 +902,305 @@ object KustomFieldRenderer {
 
         val drawSecondaryPaint = TextPaint(secondaryPaint).apply { textAlign = Paint.Align.LEFT }
         canvas.drawText(secondaryPart, secondaryStartX, secondaryY, drawSecondaryPaint)
+    }
+
+    /**
+     * Renders an unformatted plain-text diagnostic list for raw debugging.
+     * Line 1: STREAM_NAME
+     * Line 2: key1:val1 | key2:val2 | key3:val3...
+     * Single line return between sets.
+     */
+    fun renderDebugCategoryField(
+        context: Context,
+        config: ViewConfig,
+        categoryTitle: String,
+        debugDps: Map<String, DataPoint>?,
+        isDarkTheme: Boolean = false,
+    ): Bitmap {
+        val width = config.viewSize.first.coerceAtLeast(10)
+        val height = config.viewSize.second.coerceAtLeast(10)
+
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        val bgColor = if (isDarkTheme) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
+        val textColor = if (isDarkTheme) 0xFFFFFFFF.toInt() else 0xFF000000.toInt()
+        val keyColor = if (isDarkTheme) 0xFF00E5FF.toInt() else 0xFF0055FF.toInt()
+
+        canvas.drawColor(bgColor)
+
+        val titlePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = keyColor
+            textSize = (height * 0.075f).coerceIn(12f, 18f)
+            isFakeBoldText = true
+        }
+        canvas.drawText(categoryTitle.uppercase(), width * 0.03f, height * 0.08f, titlePaint)
+
+        val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (isDarkTheme) 0xFF444444.toInt() else 0xFFCCCCCC.toInt()
+            style = Paint.Style.STROKE
+            strokeWidth = 1.5f
+        }
+        canvas.drawLine(width * 0.03f, height * 0.095f, width * 0.97f, height * 0.095f, linePaint)
+
+        val streamKeyPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = keyColor
+            textSize = (height * 0.052f).coerceIn(11f, 16f)
+            isFakeBoldText = true
+        }
+
+        val valTextPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = textColor
+            textSize = (height * 0.046f).coerceIn(10f, 14f)
+        }
+
+        var startY = height * 0.15f
+        val entries = debugDps?.entries?.toList() ?: emptyList()
+
+        if (entries.isEmpty()) {
+            canvas.drawText("No active stream DataPoints received from Karoo", width * 0.03f, startY, valTextPaint)
+            return bitmap
+        }
+
+        entries.forEach { (streamName, dp) ->
+            val cleanName = streamName.replace("WORKOUT_", "").replace("_REMAINING", "")
+            // Line 1: Stream Name
+            canvas.drawText(cleanName, width * 0.03f, startY, streamKeyPaint)
+            startY += height * 0.050f
+
+            // Line 2: Values (Unformatted plain text)
+            if (dp.values.isEmpty()) {
+                canvas.drawText("No Signal / Empty", width * 0.03f, startY, valTextPaint)
+                startY += height * 0.055f
+            } else {
+                val entriesStr = dp.values.entries.joinToString(" | ") { (k, v) ->
+                    val kClean = k.replace("FIELD_WORKOUT_", "").replace("FIELD_", "").replace("_ID", "").replace("_VALUE", "")
+                    val vFormatted = if (v % 1.0 == 0.0) v.toInt().toString() else String.format(Locale.US, "%.1f", v)
+                    "$kClean:$vFormatted"
+                }
+
+                KustomLogger.d("[DEBUG HUD TRACE] $cleanName -> $entriesStr")
+
+                // Handle multi-line wrapping if text is long
+                if (entriesStr.length > 36) {
+                    val part1 = entriesStr.substring(0, 36)
+                    val part2 = if (entriesStr.length > 72) entriesStr.substring(36, 72) else entriesStr.substring(36)
+                    canvas.drawText(part1, width * 0.03f, startY, valTextPaint)
+                    startY += height * 0.045f
+                    canvas.drawText(part2, width * 0.03f, startY, valTextPaint)
+                    startY += height * 0.050f
+                } else {
+                    canvas.drawText(entriesStr, width * 0.03f, startY, valTextPaint)
+                    startY += height * 0.050f
+                }
+            }
+
+            // Single line return / small vertical space between sets
+            startY += height * 0.025f
+        }
+
+        return bitmap
+    }
+    fun renderDebugAllFields(
+        context: Context,
+        config: ViewConfig,
+        debugDps: Map<String, DataPoint>?,
+        isDarkTheme: Boolean = false,
+    ): Bitmap {
+        val width = config.viewSize.first.coerceAtLeast(10)
+        val height = config.viewSize.second.coerceAtLeast(10)
+
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        val pageIndex = ((System.currentTimeMillis() / 3000L) % 3).toInt()
+
+        val bgColor = if (isDarkTheme) 0xFF0F172A.toInt() else 0xFFF8FAFC.toInt()
+        val cardBgColor = if (isDarkTheme) 0xFF1E293B.toInt() else 0xFFFFFFFF.toInt()
+        val textColor = if (isDarkTheme) 0xFFF8FAFC.toInt() else 0xFF0F172A.toInt()
+        val titleColor = if (isDarkTheme) 0xFF38BDF8.toInt() else 0xFF0284C7.toInt()
+        val keyColor = if (isDarkTheme) 0xFF94A3B8.toInt() else 0xFF334155.toInt()
+
+        canvas.drawColor(bgColor)
+
+        // Draw Outer Boundary Card Inset
+        val insetRect = RectF(2f, 2f, width.toFloat() - 2f, height.toFloat() - 2f)
+        val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = cardBgColor
+            style = Paint.Style.FILL
+        }
+        canvas.drawRoundRect(insetRect, 12f, 12f, cardPaint)
+
+        // 1. Header Banner
+        val headerHeight = height * 0.12f
+        val headerBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (isDarkTheme) 0xFF334155.toInt() else 0xFFE2E8F0.toInt()
+            style = Paint.Style.FILL
+        }
+        val headerRect = RectF(2f, 2f, width.toFloat() - 2f, headerHeight)
+        canvas.drawRoundRect(headerRect, 12f, 12f, headerBgPaint)
+
+        val titlePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = titleColor
+            textSize = (height * 0.065f).coerceIn(12f, 18f)
+            isFakeBoldText = true
+        }
+        canvas.drawText("DEBUG HUD", width * 0.04f, headerHeight * 0.68f, titlePaint)
+
+        val pageTitle = when (pageIndex) {
+            0 -> "PG 1/3: WORKOUT"
+            1 -> "PG 2/3: POWER & HR"
+            else -> "PG 3/3: SENSORS"
+        }
+
+        val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = titleColor
+            style = Paint.Style.FILL
+        }
+        val badgeTextPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFFFFFFF.toInt()
+            textSize = (height * 0.052f).coerceIn(11f, 15f)
+            isFakeBoldText = true
+        }
+
+        val badgeWidth = badgeTextPaint.measureText(pageTitle) + (width * 0.04f)
+        val badgeRect = RectF(
+            width * 0.94f - badgeWidth,
+            headerHeight * 0.15f,
+            width * 0.94f,
+            headerHeight * 0.85f
+        )
+        canvas.drawRoundRect(badgeRect, 8f, 8f, badgePaint)
+        canvas.drawText(
+            pageTitle,
+            badgeRect.left + (width * 0.02f),
+            badgeRect.top + (badgeRect.height() * 0.72f),
+            badgeTextPaint
+        )
+
+        // Define Page Groups
+        val pageGroup0Keys = listOf(
+            "WORKOUT_POWER_TARGET",
+            "WORKOUT_PRIMARY_TARGET",
+            "WORKOUT_SECONDARY_TARGET",
+            "WORKOUT_REMAINING_TOTAL_DURATION",
+            "WORKOUT_REMAINING_INTERVAL_DURATION",
+            "WORKOUT_INTERVAL_COUNT",
+        )
+
+        val pageGroup1Keys = listOf(
+            "POWER",
+            "HEART_RATE",
+            "AVERAGE_POWER",
+            "MAX_POWER",
+            "NORMALIZED_POWER",
+            "AVERAGE_HR",
+            "MAX_HR",
+        )
+
+        val pageGroup2Keys = listOf(
+            "SPEED",
+            "CADENCE",
+            "DISTANCE",
+            "ELAPSED_TIME",
+            "CLOCK_TIME",
+            "BATTERY_PERCENT",
+            "TEMPERATURE",
+            "ELEVATION_GRADE",
+        )
+
+        val activeKeys = when (pageIndex) {
+            0 -> pageGroup0Keys
+            1 -> pageGroup1Keys
+            else -> pageGroup2Keys
+        }
+
+        var startY = headerHeight + (height * 0.02f)
+        val rowHeight = (height - headerHeight - (height * 0.03f)) / activeKeys.size.coerceAtLeast(1)
+
+        val keyPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = keyColor
+            textSize = (rowHeight * 0.48f).coerceIn(13f, 22f)
+            isFakeBoldText = true
+        }
+
+        val valTextPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = textColor
+            textSize = (rowHeight * 0.48f).coerceIn(13f, 22f)
+        }
+
+        val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (isDarkTheme) 0xFF334155.toInt() else 0xFFE2E8F0.toInt()
+            style = Paint.Style.STROKE
+            strokeWidth = 1.5f
+        }
+
+        activeKeys.forEachIndexed { idx, streamName ->
+            val dp = debugDps?.get(streamName)
+            val shortName = streamName.replace("WORKOUT_", "").replace("_REMAINING", "")
+
+            canvas.drawText(shortName, width * 0.04f, startY + (rowHeight * 0.65f), keyPaint)
+
+            val valBoxLeft = width * 0.46f
+            val valBoxRight = width * 0.96f
+            val valBoxTop = startY + (rowHeight * 0.08f)
+            val valBoxBottom = startY + (rowHeight * 0.92f)
+
+            if (dp == null || dp.values.isEmpty()) {
+                val inactivePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = if (isDarkTheme) 0xFF334155.toInt() else 0xFFF1F5F9.toInt()
+                    style = Paint.Style.FILL
+                }
+                val pillRect = RectF(valBoxLeft, valBoxTop, valBoxRight, valBoxBottom)
+                canvas.drawRoundRect(pillRect, 6f, 6f, inactivePaint)
+
+                val nullPaint = TextPaint(valTextPaint).apply {
+                    color = if (isDarkTheme) 0xFF64748B.toInt() else 0xFF94A3B8.toInt()
+                }
+                canvas.drawText("No Signal", valBoxLeft + (width * 0.03f), valBoxTop + (pillRect.height() * 0.70f), nullPaint)
+            } else {
+                val entriesStr = dp.values.entries.joinToString(" ") { (k, v) ->
+                    val kClean = k.replace("FIELD_WORKOUT_", "").replace("FIELD_", "").replace("_ID", "").replace("_VALUE", "")
+                    val vFormatted = if (v % 1.0 == 0.0) v.toInt().toString() else String.format(Locale.US, "%.1f", v)
+                    "$kClean:$vFormatted"
+                }
+
+                val hasNonZeroVal = dp.values.values.any { it > 0.0 }
+                val pillBgColor = if (hasNonZeroVal) {
+                    if (isDarkTheme) 0xFF0284C7.toInt() else 0xFFE0F2FE.toInt()
+                } else {
+                    if (isDarkTheme) 0xFF334155.toInt() else 0xFFF1F5F9.toInt()
+                }
+
+                val pillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = pillBgColor
+                    style = Paint.Style.FILL
+                }
+                val pillRect = RectF(valBoxLeft, valBoxTop, valBoxRight, valBoxBottom)
+                canvas.drawRoundRect(pillRect, 6f, 6f, pillPaint)
+
+                val activeValTextPaint = TextPaint(valTextPaint).apply {
+                    color = if (hasNonZeroVal) {
+                        if (isDarkTheme) 0xFFFFFFFF.toInt() else 0xFF0369A1.toInt()
+                    } else {
+                        if (isDarkTheme) 0xFF94A3B8.toInt() else 0xFF64748B.toInt()
+                    }
+                    isFakeBoldText = hasNonZeroVal
+                }
+
+                val cleanLine = if (entriesStr.length > 22) entriesStr.substring(0, 22) + "…" else entriesStr
+                canvas.drawText(cleanLine, valBoxLeft + (width * 0.02f), valBoxTop + (pillRect.height() * 0.70f), activeValTextPaint)
+            }
+
+            if (idx < activeKeys.size - 1) {
+                val lineY = startY + rowHeight
+                canvas.drawLine(width * 0.04f, lineY, width * 0.96f, lineY, linePaint)
+            }
+
+            startY += rowHeight
+        }
+
+        return bitmap
     }
 
     /**

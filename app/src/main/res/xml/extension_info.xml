@@ -36,6 +36,10 @@
     <DataType typeId="shift-rear" displayName="@string/field_shift_rear_name" description="@string/field_shift_rear_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="psi-rear" displayName="@string/field_psi_rear_name" description="@string/field_psi_rear_desc" graphical="true" icon="@drawable/ic_kustom_field" />
     <DataType typeId="temperature" displayName="@string/field_temperature_name" description="@string/field_temperature_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="debug-sensors" displayName="@string/field_debug_sensors_name" description="@string/field_debug_sensors_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="debug-workout" displayName="@string/field_debug_workout_name" description="@string/field_debug_workout_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="debug-power" displayName="@string/field_debug_power_name" description="@string/field_debug_power_desc" graphical="true" icon="@drawable/ic_kustom_field" />
+    <DataType typeId="debug-hr" displayName="@string/field_debug_hr_name" description="@string/field_debug_hr_desc" graphical="true" icon="@drawable/ic_kustom_field" />
 
     <!-- 4. HEART RATE -->
     <DataType typeId="percent-hrr" displayName="@string/field_percent_hrr_name" description="@string/field_percent_hrr_desc" graphical="true" icon="@drawable/ic_kustom_field" />

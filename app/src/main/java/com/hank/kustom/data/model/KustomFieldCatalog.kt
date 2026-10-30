@@ -432,14 +432,19 @@ object KustomFieldCatalog {
     val WORKOUT_GRAPH = KustomFieldDefinition("workout-graph", "Workout Graph", FieldCategory.WORKOUT, "Interactive workout profile graph with live Power, HR, and Cadence trace lines", supportsSmoothing = true, supportsZones = true, listOf(215.0, 228.0, 242.0, 260.0, 235.0))
     val WORKOUT_TARGET_CORRIDOR = KustomFieldDefinition("workout-target-corridor", "Target Corridor", FieldCategory.WORKOUT, "Target power range corridor & live power needle", supportsSmoothing = true, supportsZones = false, listOf(142.0, 155.0, 168.0, 138.0, 148.0))
 
-    /** Complete list of all 77 registered data fields sorted in alphabetical order by parent and child. */
+    val DEBUG_SENSORS = KustomFieldDefinition("debug-sensors", "DEBUG - SENSORS", FieldCategory.GENERAL, "Inspect all live Karoo SDK sensor DataPoints and values", supportsSmoothing = false, supportsZones = false, listOf(1.0))
+    val DEBUG_WORKOUT = KustomFieldDefinition("debug-workout", "DEBUG - WORKOUT", FieldCategory.GENERAL, "Inspect all live Karoo SDK workout DataPoints and values", supportsSmoothing = false, supportsZones = false, listOf(1.0))
+    val DEBUG_POWER = KustomFieldDefinition("debug-power", "DEBUG - POWER", FieldCategory.GENERAL, "Inspect all live Karoo SDK power DataPoints and values", supportsSmoothing = false, supportsZones = false, listOf(1.0))
+    val DEBUG_HR = KustomFieldDefinition("debug-hr", "DEBUG - HR", FieldCategory.GENERAL, "Inspect all live Karoo SDK heart rate DataPoints and values", supportsSmoothing = false, supportsZones = false, listOf(1.0))
+
+    /** Complete list of all 80 registered data fields sorted in alphabetical order by parent and child. */
     val allFields: List<KustomFieldDefinition> = listOf(
         // 1. CADENCE
         AVG_CADENCE, AVG_TORQUE, CADENCE, MAX_CADENCE, MAX_TORQUE, TORQUE,
         // 2. CLIMB
         ASCENT, AVG_VAM, CLIMB_NUMBER, DESCENT, DIST_TO_TOP, ELEV_TO_TOP, ELEVATION, GRADE, VAM,
         // 3. GENERAL
-        CORE_TEMP, SHIFT_BATT, EBIKE_BATT, EBIKE_RANGE, SHIFT_FRONT, PSI_FRONT, SHIFT_GEARS, BATTERY_PCT, SHIFT_REAR, PSI_REAR, TEMPERATURE,
+        CORE_TEMP, DEBUG_HR, DEBUG_POWER, DEBUG_SENSORS, DEBUG_WORKOUT, SHIFT_BATT, EBIKE_BATT, EBIKE_RANGE, SHIFT_FRONT, PSI_FRONT, SHIFT_GEARS, BATTERY_PCT, SHIFT_REAR, PSI_REAR, TEMPERATURE,
         // 4. HEART RATE
         PERCENT_HRR, PERCENT_MAX_HR, AVG_PERCENT_HRR, AVG_HR, HR, HR_ZONE, MAX_HR,
         // 5. LAP

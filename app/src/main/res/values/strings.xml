@@ -58,6 +58,14 @@
     <string name="field_psi_rear_name">General - Rear PSI</string>
     <string name="field_psi_rear_desc">Rear tire pressure</string>
     <string name="field_temperature_name">General - Temp</string>
+    <string name="field_debug_sensors_name">General - DEBUG - SENSORS</string>
+    <string name="field_debug_sensors_desc">Inspect all live Karoo SDK sensor DataPoints and values</string>
+    <string name="field_debug_workout_name">General - DEBUG - WORKOUT</string>
+    <string name="field_debug_workout_desc">Inspect all live Karoo SDK workout DataPoints and values</string>
+    <string name="field_debug_power_name">General - DEBUG - POWER</string>
+    <string name="field_debug_power_desc">Inspect all live Karoo SDK power DataPoints and values</string>
+    <string name="field_debug_hr_name">General - DEBUG - HR</string>
+    <string name="field_debug_hr_desc">Inspect all live Karoo SDK heart rate DataPoints and values</string>
     <string name="field_temperature_desc">Ambient air temperature</string>
 
     <!-- 4. HEART RATE -->
