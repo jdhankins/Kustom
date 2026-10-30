@@ -335,6 +335,7 @@ object KustomFieldRenderer {
                 mutedTextColor = mutedTextColor,
                 labelTypography = labelTypography,
                 valueTypography = valueTypography,
+                isDarkTheme = isDarkTheme,
             )
 
             // Bottom 5-Zone or 7-Zone Gauge Bar (DRAWN ONLY WHEN zoneFormat == ZoneFormat.BAR)
@@ -729,6 +730,7 @@ object KustomFieldRenderer {
                 mutedTextColor = defaultTextColor,
                 labelTypography = labelTypography,
                 valueTypography = valueTypography,
+                isDarkTheme = isDarkTheme,
             )
 
             // Unified Footer Band (78%..92% Height)

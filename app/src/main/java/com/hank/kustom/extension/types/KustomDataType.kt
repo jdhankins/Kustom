@@ -358,7 +358,10 @@ class KustomDataType(
                     WorkoutFileParser.resolveActiveWorkoutFile(userFtp, settings.globalColors.globalZonePalette)
                 }
 
-                val preRideWorkoutDuration: Double? = if (isMock || activeWorkout.steps.isNotEmpty()) {
+                val isWorkoutField = definition.typeId == "workout-interval-time-remaining" ||
+                    definition.typeId == "workout-duration-remaining"
+
+                val preRideWorkoutDuration: Double? = if (isMock) {
                     when (definition.typeId) {
                         "workout-interval-time-remaining" -> activeWorkout.steps.firstOrNull()?.durationSeconds?.toDouble()
                         "workout-duration-remaining" -> activeWorkout.totalDurationSeconds.toDouble()
@@ -366,9 +369,9 @@ class KustomDataType(
                     }
                 } else null
 
-                val effectiveValue: Double? = if (dynamicValue != null && dynamicValue >= 0.0) {
+                val effectiveValue: Double? = if (dynamicValue != null && dynamicValue > 0.0) {
                     dynamicValue
-                } else if (preRideWorkoutDuration != null && preRideWorkoutDuration >= 0.0) {
+                } else if (preRideWorkoutDuration != null && preRideWorkoutDuration > 0.0) {
                     preRideWorkoutDuration
                 } else {
                     dynamicValue
@@ -379,13 +382,15 @@ class KustomDataType(
                         val v = dynamicValue ?: 228.0
                         definition.formatNumericValueOnly(v, isImperial)
                     }
-                    effectiveValue != null && effectiveValue >= 0.0 -> {
+                    effectiveValue != null && effectiveValue > 0.0 -> {
                         definition.formatNumericValueOnly(effectiveValue, isImperial)
                     }
                     streamState is StreamState.Streaming -> {
                         val v = dynamicValue
-                        if (v != null) {
+                        if (v != null && v > 0.0) {
                             definition.formatNumericValueOnly(v, isImperial)
+                        } else if (isWorkoutField) {
+                            "No Workout"
                         } else if (isSensorField) {
                             "Searching..."
                         } else {
@@ -393,13 +398,13 @@ class KustomDataType(
                         }
                     }
                     streamState is StreamState.Searching -> {
-                        if (isSensorField) "Searching..." else definition.formatNumericValueOnly(0.0, isImperial)
+                        if (isWorkoutField) "No Workout" else if (isSensorField) "Searching..." else definition.formatNumericValueOnly(0.0, isImperial)
                     }
                     streamState is StreamState.NotAvailable || streamState is StreamState.Idle -> {
-                        if (isSensorField) "No Sensor" else definition.formatNumericValueOnly(0.0, isImperial)
+                        if (isWorkoutField) "No Workout" else if (isSensorField) "No Sensor" else definition.formatNumericValueOnly(0.0, isImperial)
                     }
                     else -> {
-                        if (isSensorField) "No Sensor" else "--"
+                        if (isWorkoutField) "No Workout" else if (isSensorField) "No Sensor" else "--"
                     }
                 }
 

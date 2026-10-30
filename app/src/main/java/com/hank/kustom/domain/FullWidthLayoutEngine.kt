@@ -259,6 +259,10 @@ object FullWidthLayoutEngine {
         return widthBounds
     }
 
+    private fun isSensorStatusText(text: String): Boolean {
+        return text == "Searching..." || text == "No Sensor" || text == "Searching"
+    }
+
     /**
      * Draws the standardized 3-slot header (Left, Center Hero, Right) on the provided Canvas
      * using strict non-overlapping bounding-box grid geometry and zero-scaling labels.
@@ -274,7 +278,9 @@ object FullWidthLayoutEngine {
         mutedTextColor: Int,
         labelTypography: TypographyConfig,
         valueTypography: TypographyConfig,
+        isDarkTheme: Boolean = false,
     ) {
+        val sensorRedColor = if (isDarkTheme) 0xFFFF5252.toInt() else 0xFFD32F2F.toInt()
         val hasLeft = leftSlot is HeaderSlot.MetricStack && leftSlot.label.isNotEmpty()
         val hasRight = rightSlot != null
         val sideSlotsPresent = hasLeft || hasRight
@@ -303,6 +309,7 @@ object FullWidthLayoutEngine {
         // 1. Draw Left Slot
         if (hasLeft && leftSlot is HeaderSlot.MetricStack) {
             val leftValColor = when {
+                isSensorStatusText(leftSlot.value) -> sensorRedColor
                 leftSlot.isZoneFilled && leftSlot.zoneColor != null -> KustomColorGradeMapper.getContrastingTextColor(leftSlot.zoneColor)
                 else -> defaultTextColor
             }
@@ -403,7 +410,11 @@ object FullWidthLayoutEngine {
                 is HeaderSlot.MetricStack -> {
                     if (rightSlot.label.isNotEmpty()) {
                         val isZoneFilled = rightSlot.isZoneFilled && rightSlot.zoneColor != null
-                        val rightValColor = if (isZoneFilled) 0xFFFFFFFF.toInt() else defaultTextColor
+                        val rightValColor = when {
+                            isSensorStatusText(rightSlot.value) -> sensorRedColor
+                            isZoneFilled -> 0xFFFFFFFF.toInt()
+                            else -> defaultTextColor
+                        }
                         val rightLabelColor = if (isZoneFilled) 0xFFFFFFFF.toInt() else defaultTextColor
 
                         val labelPaint = TextPaint().apply {
@@ -536,8 +547,9 @@ object FullWidthLayoutEngine {
             val heroValueBoxTop = if (hasHeaderLabel) height * 0.31f else height * 0.10f
             val heroValueBoxBottom = if (hasBottomBar) height * 0.74f else height * 0.90f
 
+            val heroValColor = if (isSensorStatusText(centerHero.value)) sensorRedColor else defaultTextColor
             val heroValPaint = TextPaint().apply {
-                color = defaultTextColor
+                color = heroValColor
             }
             KustomTypefaceResolver.applyTypography(heroValPaint, valueTypography.font, valueTypography.fontWeight, startValuePx)
 
