@@ -298,44 +298,67 @@ class KustomDataType(
 
                 val isImperial = userProfile?.preferredUnit?.distance == UserProfile.PreferredUnit.UnitType.IMPERIAL
 
+                val workoutDps = listOfNotNull(
+                    (streamState as? StreamState.Streaming)?.dataPoint,
+                    (leftStreamState as? StreamState.Streaming)?.dataPoint,
+                    (rightStreamState as? StreamState.Streaming)?.dataPoint,
+                    targetDataPoint,
+                )
+
+                val liveWorkoutTotalSec = extractWorkoutTotalRemainingSec(workoutDps)
+                val liveWorkoutIntSec = extractWorkoutIntervalRemainingSec(workoutDps)
+                val liveWorkoutTargetStr = extractTargetPowerString(targetDataPoint) ?: extractTargetPowerString((streamState as? StreamState.Streaming)?.dataPoint)
+                val liveWorkoutStepInfo = extractWorkoutStepInfo(workoutDps)
+
+                val userFtp = userProfile?.ftp?.toDouble() ?: 250.0
+                val activeWorkout = if (isMock) {
+                    WorkoutFileParser.getDefaultSampleWorkout(userFtp, settings.globalColors.globalZonePalette)
+                } else {
+                    WorkoutFileParser.resolveActiveWorkoutFile(
+                        ftpWatts = userFtp,
+                        palette = settings.globalColors.globalZonePalette,
+                        expectedTotalDurationSec = liveWorkoutTotalSec,
+                        expectedStepCount = liveWorkoutStepInfo?.second,
+                        expectedFirstStepSec = liveWorkoutIntSec,
+                        isMock = false,
+                    )
+                }
+
+                val hasDiskWorkout = activeWorkout?.steps?.isNotEmpty() == true
+                val isWorkoutActiveOnKaroo = isMock || hasDiskWorkout || (liveWorkoutTotalSec != null || liveWorkoutIntSec != null || liveWorkoutTargetStr != null || liveWorkoutStepInfo != null)
+
+                val preRideWorkoutDuration: Double? = if (isMock || hasDiskWorkout) {
+                    when (definition.typeId) {
+                        "workout-interval-time-remaining" -> liveWorkoutIntSec ?: activeWorkout?.steps?.firstOrNull()?.durationSeconds?.toDouble()
+                        "workout-duration-remaining" -> liveWorkoutTotalSec ?: activeWorkout?.totalDurationSeconds?.toDouble()
+                        else -> null
+                    }
+                } else null
+
                 val dynamicValue: Double? = if (isMock) {
                     mockValue
-                } else if (streamState is StreamState.Streaming) {
-                    val dp = streamState.dataPoint
-                    when (definition.typeId) {
-                        "workout-duration-remaining", "workout-interval-time-remaining" -> {
-                            val single = dp.singleValue
-                            if (single != null && single > 0.0) {
-                                single
-                            } else {
-                                dp.values[DataType.Field.WORKOUT_TARGET_VALUE]
-                                    ?: dp.values[DataType.Field.SINGLE]
-                                    ?: dp.values["FIELD_WORKOUT_REMAINING_TOTAL_DURATION_ID"]
-                                    ?: dp.values["FIELD_WORKOUT_REMAINING_INTERVAL_DURATION_ID"]
-                                    ?: dp.values["FIELD_WORKOUT_REMAINING_DURATION_ID"]
-                                    ?: dp.values.entries.firstOrNull { 
-                                        !it.key.contains("STATE", ignoreCase = true) && 
-                                        !it.key.contains("DIFFICULTY", ignoreCase = true) &&
-                                        it.value > 0.0
-                                    }?.value ?: single
-                            }
-                        }
-                        else -> {
-                            val rawVal = dp.singleValue
+                } else when (definition.typeId) {
+                    "workout-duration-remaining" -> liveWorkoutTotalSec ?: preRideWorkoutDuration
+                    "workout-interval-time-remaining" -> liveWorkoutIntSec ?: preRideWorkoutDuration
+                    "workout-interval-count" -> liveWorkoutStepInfo?.first?.toDouble()
+                    else -> {
+                        if (streamState is StreamState.Streaming) {
+                            val rawVal = streamState.dataPoint.singleValue
                             if (rawVal != null && definition.typeId == "grade") {
                                 gradeSmoother.addSample(rawVal)
                             } else {
                                 rawVal
                             }
-                        }
+                        } else null
                     }
-                } else {
-                    null
                 }
 
                 val dynamicLabel = if (definition.typeId == "workout-target-power" || definition.typeId == "workout-primary-target") {
-                    val targetText = extractTargetPowerString(targetDataPoint)
-                    targetText ?: if (isMock) "117-146" else definition.resolveDynamicLabel(fieldConfig.smoothingOption)
+                    when {
+                        liveWorkoutTargetStr != null -> liveWorkoutTargetStr
+                        isMock -> "117-146"
+                        else -> definition.resolveDynamicLabel(fieldConfig.smoothingOption)
+                    }
                 } else {
                     definition.resolveDynamicLabel(fieldConfig.smoothingOption)
                 }
@@ -351,45 +374,23 @@ class KustomDataType(
                     else -> false
                 }
 
-                val userFtp = userProfile?.ftp?.toDouble() ?: 250.0
-                val activeWorkout = if (isMock) {
-                    WorkoutFileParser.getDefaultSampleWorkout(userFtp, settings.globalColors.globalZonePalette)
-                } else {
-                    WorkoutFileParser.resolveActiveWorkoutFile(userFtp, settings.globalColors.globalZonePalette)
-                }
-
                 val isWorkoutField = definition.typeId == "workout-interval-time-remaining" ||
-                    definition.typeId == "workout-duration-remaining"
-
-                val preRideWorkoutDuration: Double? = if (isMock) {
-                    when (definition.typeId) {
-                        "workout-interval-time-remaining" -> activeWorkout.steps.firstOrNull()?.durationSeconds?.toDouble()
-                        "workout-duration-remaining" -> activeWorkout.totalDurationSeconds.toDouble()
-                        else -> null
-                    }
-                } else null
-
-                val effectiveValue: Double? = if (dynamicValue != null && dynamicValue > 0.0) {
-                    dynamicValue
-                } else if (preRideWorkoutDuration != null && preRideWorkoutDuration > 0.0) {
-                    preRideWorkoutDuration
-                } else {
-                    dynamicValue
-                }
+                    definition.typeId == "workout-duration-remaining" ||
+                    definition.typeId.startsWith("workout-")
 
                 val valueText = when {
                     isMock -> {
                         val v = dynamicValue ?: 228.0
                         definition.formatNumericValueOnly(v, isImperial)
                     }
-                    effectiveValue != null && effectiveValue > 0.0 -> {
-                        definition.formatNumericValueOnly(effectiveValue, isImperial)
+                    isWorkoutField && !isWorkoutActiveOnKaroo -> {
+                        "No Workout"
+                    }
+                    dynamicValue != null && dynamicValue >= 0.0 -> {
+                        definition.formatNumericValueOnly(dynamicValue, isImperial)
                     }
                     streamState is StreamState.Streaming -> {
-                        val v = dynamicValue
-                        if (v != null && v > 0.0) {
-                            definition.formatNumericValueOnly(v, isImperial)
-                        } else if (isWorkoutField) {
+                        if (isWorkoutField) {
                             "No Workout"
                         } else if (isSensorField) {
                             "Searching..."
@@ -448,7 +449,7 @@ class KustomDataType(
                         if (targetV != null) targetWattsVal = targetV.toFloat()
                     }
 
-                    if (minTargetWatts == null && maxTargetWatts == null && targetWattsVal == null && activeWorkout.steps.isNotEmpty()) {
+                    if (minTargetWatts == null && maxTargetWatts == null && targetWattsVal == null && activeWorkout?.steps?.isNotEmpty() == true) {
                         val currentStep = activeWorkout.steps.firstOrNull()
                         if (currentStep != null) {
                             minTargetWatts = currentStep.targetWattsMin.toFloat()
@@ -498,8 +499,17 @@ class KustomDataType(
                     val userFtp = userProfile?.ftp?.toDouble() ?: 250.0
                     val activeWorkout = if (isMock) {
                         WorkoutFileParser.getDefaultSampleWorkout(userFtp, settings.globalColors.globalZonePalette)
+                    } else if (isWorkoutActiveOnKaroo) {
+                        WorkoutFileParser.resolveActiveWorkoutFile(
+                            ftpWatts = userFtp,
+                            palette = settings.globalColors.globalZonePalette,
+                            expectedTotalDurationSec = liveWorkoutTotalSec,
+                            expectedStepCount = liveWorkoutStepInfo?.second,
+                            expectedFirstStepSec = liveWorkoutIntSec,
+                            isMock = false,
+                        ) ?: WorkoutFileParser.getDefaultSampleWorkout(userFtp, settings.globalColors.globalZonePalette)
                     } else {
-                        WorkoutFileParser.resolveActiveWorkoutFile(userFtp, settings.globalColors.globalZonePalette)
+                        com.hank.kustom.data.model.ParsedWorkout(steps = emptyList(), totalDurationSeconds = 0)
                     }
 
                     val durationRemSec = (targetDataPoint?.singleValue ?: 0.0).toFloat()
@@ -644,9 +654,10 @@ class KustomDataType(
                     } else null
 
                     val comboCenterLabel = if (centerDef.typeId == "workout-target-power" || centerDef.typeId == "workout-primary-target") {
-                        val liveTargetStr = extractTargetPowerString(targetDataPoint)
+                        val firstStepTargetStr = activeWorkout?.steps?.firstOrNull()?.let { "${it.targetWattsMin.toInt()}-${it.targetWattsMax.toInt()}" }
                         when {
-                            liveTargetStr != null -> liveTargetStr
+                            liveWorkoutTargetStr != null -> liveWorkoutTargetStr
+                            isWorkoutActiveOnKaroo && firstStepTargetStr != null -> firstStepTargetStr
                             isMock -> "117-146"
                             else -> centerDef.resolveDynamicLabel(resolvedConfig.smoothingOption)
                         }
@@ -764,6 +775,47 @@ class KustomDataType(
             }
             else -> null
         }
+    }
+
+    private fun extractWorkoutTotalRemainingSec(dps: List<DataPoint>): Double? {
+        for (dp in dps) {
+            val v = dp.values[DataType.Field.WORKOUT_REMAINING_TIME]
+                ?: dp.values["FIELD_WORKOUT_REMAINING_TIME_ID"]
+                ?: dp.values["FIELD_WORKOUT_REMAINING_TOTAL_DURATION_ID"]
+                ?: if (dp.dataTypeId == DataType.Type.WORKOUT_REMAINING_TOTAL_DURATION) dp.singleValue else null
+
+            if (v != null && v > 0.0) {
+                return if (v > 86400.0) v / 1000.0 else v
+            }
+        }
+        return null
+    }
+
+    private fun extractWorkoutIntervalRemainingSec(dps: List<DataPoint>): Double? {
+        for (dp in dps) {
+            val v = dp.values[DataType.Field.WORKOUT_TIME_TO_STEP_FINISH]
+                ?: dp.values["FIELD_WORKOUT_TIME_TO_STEP_FINISH_ID"]
+                ?: dp.values["FIELD_WORKOUT_REMAINING_INTERVAL_DURATION_ID"]
+                ?: if (dp.dataTypeId == DataType.Type.WORKOUT_REMAINING_INTERVAL_DURATION) (dp.singleValue ?: dp.values[DataType.Field.WORKOUT_REMAINING_TIME]) else null
+
+            if (v != null && v > 0.0) {
+                return if (v > 86400.0) v / 1000.0 else v
+            }
+        }
+        return null
+    }
+
+    private fun extractWorkoutStepInfo(dps: List<DataPoint>): Pair<Int, Int>? {
+        for (dp in dps) {
+            val cur = dp.values[DataType.Field.WORKOUT_CURRENT_STEP] ?: dp.values["FIELD_WORKOUT_CURRENT_STEP_ID"]
+            val tot = dp.values[DataType.Field.WORKOUT_STEP_COUNT] ?: dp.values["FIELD_WORKOUT_STEP_COUNT_ID"]
+            if (tot != null && tot > 0.0) {
+                val currentStep = (cur?.toInt() ?: 0) + 1
+                val totalSteps = tot.toInt()
+                return Pair(currentStep, totalSteps)
+            }
+        }
+        return null
     }
 
     private fun computeMappedColor(

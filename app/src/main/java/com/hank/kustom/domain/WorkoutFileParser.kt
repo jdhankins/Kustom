@@ -151,20 +151,39 @@ object WorkoutFileParser {
         }
     }
 
+    private val parsedFileCache = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, ParsedWorkout>>()
+
+    private fun parseWorkoutFileCached(
+        filePath: String,
+        lastModified: Long,
+        ftpWatts: Double,
+        palette: ZonePalette,
+    ): ParsedWorkout {
+        val cached = parsedFileCache[filePath]
+        if (cached != null && cached.first == lastModified) {
+            return cached.second
+        }
+        val parsed = parseWorkoutFile(filePath, ftpWatts, palette)
+        parsedFileCache[filePath] = Pair(lastModified, parsed)
+        return parsed
+    }
+
     /**
-     * Dynamically resolves and parses the active workout file loaded on Karoo OS storage (/sdcard/FitFiles/ or /sdcard/Hammerhead/workouts/).
-     * Throttles directory scans to once per 10,000ms and caches parsed model in memory.
-     *
-     * @param ftpWatts Rider FTP in Watts for height normalization.
-     * @param palette Selected manufacturer zone color palette ([ZonePalette]).
-     * @return Resolved [ParsedWorkout] model, or fallback default sample workout.
+     * Dynamically resolves and parses the active workout file loaded on Karoo OS storage.
+     * Uses live Karoo telemetry fingerprint matching (expectedTotalDurationSec, expectedStepCount, expectedFirstStepSec)
+     * to match the exact loaded workout file on disk.
      */
     fun resolveActiveWorkoutFile(
         ftpWatts: Double = DEFAULT_FTP,
         palette: ZonePalette = ZonePalette.KAROO,
-    ): ParsedWorkout {
+        expectedTotalDurationSec: Double? = null,
+        expectedStepCount: Int? = null,
+        expectedFirstStepSec: Double? = null,
+        isMock: Boolean = false,
+    ): ParsedWorkout? {
         val now = System.currentTimeMillis()
         val currentCached = cachedWorkout
+
         if (currentCached != null && (now - lastScanTime < 10_000L) && cachedFtp == ftpWatts && cachedPalette == palette) {
             return currentCached
         }
@@ -185,22 +204,48 @@ object WorkoutFileParser {
                 .filter { it.exists() && it.isDirectory }
                 .flatMap { dir -> dir.listFiles()?.toList() ?: emptyList() }
                 .filter { it.isFile && (it.name.endsWith(".zwo", ignoreCase = true) || it.name.endsWith(".fit", ignoreCase = true)) }
-                .sortedByDescending { it.lastModified() }
 
-            candidateFiles.take(5).forEach { file ->
-                KustomLogger.d("WorkoutFileParser candidate: ${file.absolutePath}, modified: ${file.lastModified()}")
+            if (candidateFiles.isEmpty()) {
+                val fallback = getEnduranceRideWorkout(ftpWatts, palette)
+                cachedWorkout = fallback
+                return fallback
             }
 
-            val mostRecentFile = candidateFiles.firstOrNull()
-            if (mostRecentFile != null) {
-                if (mostRecentFile.absolutePath == cachedWorkoutFile && mostRecentFile.lastModified() == cachedLastModified && cachedFtp == ftpWatts && cachedPalette == palette && currentCached != null) {
-                    return currentCached
+            if (expectedTotalDurationSec != null || expectedStepCount != null || expectedFirstStepSec != null) {
+                // Score candidate workout files against live Karoo workout fingerprint
+                val scoredFiles = candidateFiles.map { file ->
+                    val parsed = parseWorkoutFileCached(file.absolutePath, file.lastModified(), ftpWatts, palette)
+                    var score = 0
+
+                    if (expectedTotalDurationSec != null && expectedTotalDurationSec > 0.0) {
+                        val durDiff = kotlin.math.abs(parsed.totalDurationSeconds - expectedTotalDurationSec.toInt())
+                        score += (1000 - durDiff).coerceAtLeast(0)
+                        if (durDiff <= 60) score += 2000 // Bonus for total duration match
+                    }
+
+                    if (expectedStepCount != null && expectedStepCount > 0 && parsed.steps.size == expectedStepCount) {
+                        score += 1500
+                    }
+
+                    if (expectedFirstStepSec != null && expectedFirstStepSec > 0.0 && parsed.steps.isNotEmpty()) {
+                        val stepDiff = kotlin.math.abs(parsed.steps.first().durationSeconds - expectedFirstStepSec.toInt())
+                        if (stepDiff <= 10) score += 1000
+                    }
+
+                    Pair(file, Pair(score, parsed))
+                }.sortedWith(compareByDescending<Pair<File, Pair<Int, ParsedWorkout>>> { it.second.first }.thenByDescending { it.first.lastModified() })
+
+                val bestMatch = scoredFiles.firstOrNull()?.second?.second
+                if (bestMatch != null) {
+                    cachedWorkout = bestMatch
+                    return bestMatch
                 }
-                val parsed = parseWorkoutFile(mostRecentFile.absolutePath, ftpWatts, palette)
-                cachedWorkoutFile = mostRecentFile.absolutePath
-                cachedLastModified = mostRecentFile.lastModified()
-                cachedFtp = ftpWatts
-                cachedPalette = palette
+            }
+
+            // Fallback: Pick most recently modified file or active endurance ride model
+            val mostRecentFile = candidateFiles.maxByOrNull { it.lastModified() }
+            if (mostRecentFile != null) {
+                val parsed = parseWorkoutFileCached(mostRecentFile.absolutePath, mostRecentFile.lastModified(), ftpWatts, palette)
                 cachedWorkout = parsed
                 parsed
             } else {
