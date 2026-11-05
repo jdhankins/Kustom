@@ -73,17 +73,32 @@ class KustomDataType(
             var leftGradeSmoother = RollingTimeSmoother(3)
             var rightGradeSmoother = RollingTimeSmoother(3)
             var lastSmoothingSec = -1
+            var lastDebugLogTime = 0L
 
             val powerHistory = mutableListOf<Float>()
             val hrHistory = mutableListOf<Float>()
             val cadenceHistory = mutableListOf<Float>()
 
+            val rideAndRefreshFlow: kotlinx.coroutines.flow.Flow<Pair<RideState, Int>> = karooSystemRepository.rideStateFlow().onStart { emit(RideState.Idle) }.flatMapLatest { state ->
+                if (state is RideState.Idle) {
+                    flow {
+                        var tick = 0
+                        while (true) {
+                            emit(state to tick++)
+                            kotlinx.coroutines.delay(3000L)
+                        }
+                    }
+                } else {
+                    kotlinx.coroutines.flow.flowOf(state to 0)
+                }
+            }
+
             combine(
-                karooSystemRepository.rideStateFlow().onStart { emit(RideState.Idle) },
+                rideAndRefreshFlow,
                 karooSystemRepository.userProfileFlow().onStart { emit(null) },
                 settingsRepository.settingsFlow,
-            ) { rideState, userProfile, settings ->
-                Triple(rideState, userProfile, settings)
+            ) { rideAndTick, userProfile, settings ->
+                Triple(rideAndTick.first, userProfile, settings)
             }.flatMapLatest { (rideState, userProfile, settings) ->
                 val fieldConfig = settings.getFieldConfig(definition.typeId)
                 val isInRide = rideState is RideState.Recording || rideState is RideState.Paused
@@ -359,7 +374,19 @@ class KustomDataType(
                     }
                 }
             }.collect { payload ->
-                val (streamState, leftStreamState, rightStreamState, userProfile, settings, fieldConfig, isMock, mockValue, mockIndex, targetDataPoint, isInRide, debugDps) = payload
+                val streamState = payload.streamState
+                val leftStreamState = payload.leftStreamState
+                val rightStreamState = payload.rightStreamState
+                val userProfile = payload.userProfile
+                val settings = payload.settings
+                val fieldConfig = payload.fieldConfig
+                val isMock = payload.isMock
+                val mockValue = payload.mockValue
+                val mockIndex = payload.mockIndex
+                val targetDataPoint = payload.targetDataPoint
+                val isInRide = payload.isInRide
+                val debugDps = payload.debugDps
+                val debugStreamStates = payload.debugStreamStates
 
                 if (fieldConfig.smoothingOption.seconds != lastSmoothingSec) {
                     lastSmoothingSec = fieldConfig.smoothingOption.seconds
@@ -498,11 +525,32 @@ class KustomDataType(
                 val isComboBlock = customComboInst != null || definition.typeId.startsWith("combo-block-") || definition.typeId == "power-combo" || definition.typeId == "custom-combo"
 
                 val bitmap = if (definition.typeId.startsWith("debug-")) {
+                    if (debugStreamStates != null) {
+                        val now = System.currentTimeMillis()
+                        if (now - lastDebugLogTime > 2000L) {
+                            lastDebugLogTime = now
+                            val sb = StringBuilder()
+                            sb.appendLine("=== KUSTOM_SDK_DUMP [${definition.typeId}] isInRide=$isInRide ===")
+                            for ((streamId, state) in debugStreamStates) {
+                                when (state) {
+                                    is StreamState.Streaming -> sb.appendLine("  $streamId -> STREAMING: ${state.dataPoint.values}")
+                                    is StreamState.Searching -> sb.appendLine("  $streamId -> SEARCHING")
+                                    is StreamState.Idle -> sb.appendLine("  $streamId -> IDLE")
+                                    is StreamState.NotAvailable -> sb.appendLine("  $streamId -> NOT_AVAILABLE")
+                                }
+                            }
+                            sb.appendLine("==================================================================")
+                            android.util.Log.i("KUSTOM_SDK_DUMP", sb.toString())
+                        }
+                    }
+
                     KustomFieldRenderer.renderDebugCategoryField(
                         context = context,
                         config = config,
                         categoryTitle = definition.childTitle,
                         debugDps = debugDps,
+                        debugStreamStates = debugStreamStates,
+                        isInRide = isInRide,
                         isDarkTheme = isDarkTheme,
                     )
                 } else if (definition.typeId == "workout-target-corridor") {
@@ -840,6 +888,7 @@ class KustomDataType(
         val targetDataPoint: DataPoint? = null,
         val isInRide: Boolean = false,
         val debugDps: Map<String, DataPoint>? = null,
+        val debugStreamStates: Map<String, StreamState>? = null,
     )
 
     private fun extractTargetPowerString(dataPoint: DataPoint?): String? {

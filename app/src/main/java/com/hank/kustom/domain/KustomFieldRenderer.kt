@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.text.TextPaint
 import com.hank.kustom.data.model.ColorMode
 import com.hank.kustom.data.model.GlobalColorConfig
@@ -904,17 +905,29 @@ object KustomFieldRenderer {
         canvas.drawText(secondaryPart, secondaryStartX, secondaryY, drawSecondaryPaint)
     }
 
+    private fun shortenSdkKey(raw: String): String {
+        return raw.removePrefix("TYPE_").removePrefix("FIELD_").removeSuffix("_ID")
+            .replace("WORKOUT_", "W_")
+            .replace("REMAINING_", "REM_")
+            .replace("DURATION", "DUR")
+            .replace("INTERVAL", "INT")
+            .replace("TARGET", "TGT")
+            .replace("PRIMARY", "PRI")
+            .replace("SECONDARY", "SEC")
+            .replace("SMOOTHED_", "SM_")
+            .replace("AVERAGE_", "AVG_")
+    }
+
     /**
-     * Renders an unformatted plain-text diagnostic list for raw debugging.
-     * Line 1: STREAM_NAME
-     * Line 2: key1:val1 | key2:val2 | key3:val3...
-     * Single line return between sets.
+     * Renders a 2-column monospace grid fitting 16-20 key-value rows on screen with zero overflow.
      */
     fun renderDebugCategoryField(
         context: Context,
         config: ViewConfig,
         categoryTitle: String,
         debugDps: Map<String, DataPoint>?,
+        debugStreamStates: Map<String, io.hammerhead.karooext.models.StreamState>? = null,
+        isInRide: Boolean = false,
         isDarkTheme: Boolean = false,
     ): Bitmap {
         val width = config.viewSize.first.coerceAtLeast(10)
@@ -923,80 +936,104 @@ object KustomFieldRenderer {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        val bgColor = if (isDarkTheme) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
-        val textColor = if (isDarkTheme) 0xFFFFFFFF.toInt() else 0xFF000000.toInt()
-        val keyColor = if (isDarkTheme) 0xFF00E5FF.toInt() else 0xFF0055FF.toInt()
+        val bgColor = if (isDarkTheme) 0xFF0B0F19.toInt() else 0xFFFFFFFF.toInt()
+        val textColor = if (isDarkTheme) 0xFFF1F5F9.toInt() else 0xFF0F172A.toInt()
+        val keyColor = if (isDarkTheme) 0xFF38BDF8.toInt() else 0xFF0284C7.toInt()
+        val mutedColor = if (isDarkTheme) 0xFF64748B.toInt() else 0xFF94A3B8.toInt()
 
         canvas.drawColor(bgColor)
 
-        val titlePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+        // Header bar (top 14% height)
+        val headerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             color = keyColor
-            textSize = (height * 0.075f).coerceIn(12f, 18f)
+            typeface = Typeface.MONOSPACE
+            textSize = (height * 0.070f).coerceIn(11f, 15f)
             isFakeBoldText = true
         }
-        canvas.drawText(categoryTitle.uppercase(), width * 0.03f, height * 0.08f, titlePaint)
+        val rideStateLabel = if (isInRide) "IN-RIDE" else "PRE-RIDE"
+        canvas.drawText("${categoryTitle.uppercase()} ($rideStateLabel)", width * 0.03f, height * 0.09f, headerPaint)
 
         val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (isDarkTheme) 0xFF444444.toInt() else 0xFFCCCCCC.toInt()
+            color = if (isDarkTheme) 0xFF334155.toInt() else 0xFFCBD5E1.toInt()
             style = Paint.Style.STROKE
             strokeWidth = 1.5f
         }
-        canvas.drawLine(width * 0.03f, height * 0.095f, width * 0.97f, height * 0.095f, linePaint)
+        canvas.drawLine(width * 0.03f, height * 0.12f, width * 0.97f, height * 0.12f, linePaint)
 
-        val streamKeyPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = keyColor
-            textSize = (height * 0.052f).coerceIn(11f, 16f)
-            isFakeBoldText = true
+        // Build flat list of (shortKey, shortValue) rows
+        val rows = mutableListOf<Pair<String, String>>()
+
+        debugStreamStates?.forEach { (streamId, state) ->
+            val shortStream = shortenSdkKey(streamId).take(10)
+            when (state) {
+                is io.hammerhead.karooext.models.StreamState.Streaming -> {
+                    val dp = state.dataPoint
+                    if (dp.values.isEmpty()) {
+                        rows.add(shortStream to "Empty")
+                    } else {
+                        dp.values.forEach { (k, v) ->
+                            val shortKey = shortenSdkKey(k).take(10)
+                            val numStr = if (v % 1.0 == 0.0) v.toLong().toString() else String.format(Locale.US, "%.1f", v)
+                            rows.add("$shortStream.$shortKey" to numStr)
+                        }
+                    }
+                }
+                is io.hammerhead.karooext.models.StreamState.Searching -> rows.add(shortStream to "Searching")
+                is io.hammerhead.karooext.models.StreamState.Idle -> rows.add(shortStream to "Idle")
+                is io.hammerhead.karooext.models.StreamState.NotAvailable -> rows.add(shortStream to "NotAvail")
+            }
         }
 
-        val valTextPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = textColor
-            textSize = (height * 0.046f).coerceIn(10f, 14f)
+        if (rows.isEmpty() && !debugDps.isNullOrEmpty()) {
+            debugDps.forEach { (streamId, dp) ->
+                val shortStream = shortenSdkKey(streamId).take(10)
+                dp.values.forEach { (k, v) ->
+                    val shortKey = shortenSdkKey(k).take(10)
+                    val numStr = if (v % 1.0 == 0.0) v.toLong().toString() else String.format(Locale.US, "%.1f", v)
+                    rows.add("$shortStream.$shortKey" to numStr)
+                }
+            }
         }
 
-        var startY = height * 0.15f
-        val entries = debugDps?.entries?.toList() ?: emptyList()
-
-        if (entries.isEmpty()) {
-            canvas.drawText("No active stream DataPoints received from Karoo", width * 0.03f, startY, valTextPaint)
+        if (rows.isEmpty()) {
+            val emptyPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = mutedColor
+                typeface = Typeface.MONOSPACE
+                textSize = (height * 0.06f).coerceIn(10f, 14f)
+            }
+            canvas.drawText("No Stream States Active", width * 0.03f, height * 0.25f, emptyPaint)
             return bitmap
         }
 
-        entries.forEach { (streamName, dp) ->
-            val cleanName = streamName.replace("WORKOUT_", "").replace("_REMAINING", "")
-            // Line 1: Stream Name
-            canvas.drawText(cleanName, width * 0.03f, startY, streamKeyPaint)
-            startY += height * 0.050f
+        // Draw 2-Column Monospace Grid
+        val gridPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = textColor
+            typeface = Typeface.MONOSPACE
+            textSize = (height * 0.082f).coerceIn(9.5f, 13f)
+        }
 
-            // Line 2: Values (Unformatted plain text)
-            if (dp.values.isEmpty()) {
-                canvas.drawText("No Signal / Empty", width * 0.03f, startY, valTextPaint)
-                startY += height * 0.055f
-            } else {
-                val entriesStr = dp.values.entries.joinToString(" | ") { (k, v) ->
-                    val kClean = k.replace("FIELD_WORKOUT_", "").replace("FIELD_", "").replace("_ID", "").replace("_VALUE", "")
-                    val vFormatted = if (v % 1.0 == 0.0) v.toInt().toString() else String.format(Locale.US, "%.1f", v)
-                    "$kClean:$vFormatted"
-                }
+        val col0X = width * 0.03f
+        val col1X = width * 0.51f
+        val maxColW = width * 0.46f
 
-                KustomLogger.d("[DEBUG HUD TRACE] $cleanName -> $entriesStr")
+        val maxRowsPerCol = 8
+        val totalMaxRows = maxRowsPerCol * 2
+        val rowStepY = (height * 0.84f) / maxRowsPerCol.toFloat()
 
-                // Handle multi-line wrapping if text is long
-                if (entriesStr.length > 36) {
-                    val part1 = entriesStr.substring(0, 36)
-                    val part2 = if (entriesStr.length > 72) entriesStr.substring(36, 72) else entriesStr.substring(36)
-                    canvas.drawText(part1, width * 0.03f, startY, valTextPaint)
-                    startY += height * 0.045f
-                    canvas.drawText(part2, width * 0.03f, startY, valTextPaint)
-                    startY += height * 0.050f
-                } else {
-                    canvas.drawText(entriesStr, width * 0.03f, startY, valTextPaint)
-                    startY += height * 0.050f
-                }
+        val displayRows = rows.take(totalMaxRows)
+        displayRows.forEachIndexed { i, (k, v) ->
+            val col = i / maxRowsPerCol
+            val row = i % maxRowsPerCol
+            val x = if (col == 0) col0X else col1X
+            val y = (height * 0.20f) + (row * rowStepY)
+
+            val fullLine = "$k:$v"
+            var clampedLine = fullLine
+            while (clampedLine.length > 3 && gridPaint.measureText(clampedLine) > maxColW) {
+                clampedLine = clampedLine.substring(0, clampedLine.length - 1)
             }
 
-            // Single line return / small vertical space between sets
-            startY += height * 0.025f
+            canvas.drawText(clampedLine, x, y, gridPaint)
         }
 
         return bitmap
