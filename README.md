@@ -96,7 +96,7 @@ Customize every label and value with popular cycling typefaces and outdoor-optim
 - **Custom Units & Conversions**: Automatic $m/s \rightarrow m/h$ VAM climbing speed conversions, negative grade superscripts (`-3.4%`), and metric/imperial support.
 
 <p align="center">
-  <img src="docs/images/01_global_settings.png" width="280" alt="Kustom Global Typography Settings" />
+  <img src="docs/images/01_typography_config.png" width="280" alt="Kustom Typography Configuration" />
 </p>
 
 ---
@@ -109,9 +109,9 @@ Tailor your ride display to match your preferred eco-system or visual style with
 - **3D "Neon Glass" Shader Option**: Enjoy an optional 3-pass glossy liquid-glass shader (`ZonePalette.NEON_GLASS`) featuring vertical neon gradients, top specular glass reflection, and luminous neon rims.
 
 <p align="center">
-  <img src="docs/images/05_zone_palette_config.png" width="260" alt="Kustom Zone Palette Configuration" />
+  <img src="docs/images/03_zone_palette.png" width="260" alt="Kustom Zone Palette Configuration" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="docs/images/04_field_background_config.png" width="260" alt="Kustom Field Background Configuration" />
+  <img src="docs/images/02_field_background.png" width="260" alt="Kustom Field Background Configuration" />
 </p>
 
 ---
@@ -124,9 +124,9 @@ Consolidate **3 metrics on 1 card** to maximize screen efficiency:
 - **Universal Customization**: Pick ANY metric from Kustom's full 76+ catalog for the Center, Left, and Right slots!
 
 <p align="center">
-  <img src="docs/images/02_fields_category_list.png" width="260" alt="Kustom Field Category Accordion" />
+  <img src="docs/images/04_fields_category_list.png" width="260" alt="Kustom Field Category Accordion" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="docs/images/03_power_field_config.png" width="260" alt="Kustom Individual Field Configuration" />
+  <img src="docs/images/05_power_field_config.png" width="260" alt="Kustom Individual Field Configuration" />
 </p>
 
 ---
