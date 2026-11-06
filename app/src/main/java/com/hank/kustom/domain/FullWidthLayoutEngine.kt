@@ -287,25 +287,25 @@ object FullWidthLayoutEngine {
         val sideSlotsPresent = hasLeft || hasRight
 
         // Strict Horizontal Column Coordinates (Sum = 100%)
-        val leftColLeft = width * 0.035f
-        val leftColRight = width * 0.280f
+        val leftColLeft = width * 0.030f
+        val leftColRight = width * 0.305f
 
-        val rightColLeft = width * 0.720f
-        val rightColRight = width * 0.965f
+        val rightColLeft = width * 0.695f
+        val rightColRight = width * 0.970f
 
-        val heroColLeft = if (sideSlotsPresent) width * 0.295f else width * 0.080f
-        val heroColRight = if (sideSlotsPresent) width * 0.705f else width * 0.920f
+        val heroColLeft = if (sideSlotsPresent) width * 0.320f else width * 0.080f
+        val heroColRight = if (sideSlotsPresent) width * 0.680f else width * 0.920f
 
         // Top Cap-Line for All Labels across the card (6% height)
         val labelTopY = height * 0.06f
 
-        // Value Box for Left/Right Corner Values (26%..58% height)
+        // Value Box for Left/Right Corner Values
         val valueBoxTop = height * 0.26f
-        val valueBoxBottom = height * 0.58f
+        val valueBoxBottom = if (centerHero?.hasBottomBar == true) height * 0.72f else height * 0.82f
 
         // Unified fixed label font size across ALL 3 labels on the card (16.5%..22.5% height)
         val unifiedLabelPx = height * (0.165f + ((labelTypography.fontSizeSp - 10f).coerceIn(0f, 10f) * 0.006f))
-        val startValuePx = (height * (valueTypography.fontSizeSp / 86f)).coerceAtLeast(18f)
+        val startValuePx = (height * (valueTypography.fontSizeSp / 74f)).coerceAtLeast(20f)
 
         // 1. Draw Left Slot
         if (hasLeft && leftSlot is HeaderSlot.MetricStack) {

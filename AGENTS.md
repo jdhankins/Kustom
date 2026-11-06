@@ -22,26 +22,25 @@
 
 ## 3. Centralized Full-Width Layout Engine (FullWidthLayoutEngine.kt)
 - Single Layout Engine: All full-width composite fields (renderComboBlock, renderTargetPowerCorridor, and future full-width HUDs) MUST use FullWidthLayoutEngine.
+- Horizontal & Vertical Column Allocation (Maximized Corner Value Readability):
+    - Left Column: 3.0% to 30.5% (27.5% width), strictly left-aligned (Paint.Align.LEFT).
+    - Center Hero Column: 32.0% to 68.0% (36.0% width when side slots are present; 8.0% to 92.0% when both side slots are Empty).
+    - Right Column: 69.5% to 97.0% (27.5% width), right-aligned (Paint.Align.RIGHT) when plain text.
+    - Corner Value Vertical Box: valueBoxTop = height * 0.26f, and valueBoxBottom = if (centerHero.hasBottomBar) height * 0.72f else height * 0.82f (so corner values have generous vertical height to scale up with valueTypography.fontSizeSp).
 - UNIFIED HEADER LABEL TYPOGRAPHY & OUTDOOR VISIBILITY (Left, Middle, and Right Labels):
-    - Left (leftSlot.label), Middle (centerHero.label), and Right (rightSlot.label) labels MUST all use the EXACT SAME font family (labelTypography.font), the EXACT SAME font weight (labelTypography.fontWeight), the EXACT SAME pixel font size (unifiedLabelPx, computed strictly from labelTypography.fontSizeSp without multiplying centerHero.label by 1.5f), and the EXACT SAME high-contrast text color (defaultTextColor: pure black in Day Mode, pure white in Night Mode).
+    - Left (leftSlot.label), Middle (centerHero.label), and Right (rightSlot.label) labels MUST all use the EXACT SAME font family (labelTypography.font), the EXACT SAME font weight (labelTypography.fontWeight), the EXACT SAME pixel font size (unifiedLabelPx, computed strictly from labelTypography.fontSizeSp), and the EXACT SAME high-contrast text color (defaultTextColor: pure black in Day Mode, pure white in Night Mode).
     - All three labels must be drawn via drawFixedLabel (no auto-scaling while loop) anchored to the exact same top line (labelTopY = height * 0.06f): Left Paint.Align.LEFT, Middle Paint.Align.CENTER, Right Paint.Align.RIGHT.
 
 ## 4. NEON GLASS ZONE PALETTE & 3-PASS GLOSS SHADER (ZonePalette.NEON_GLASS)
 - ZonePalette.NEON_GLASS ("Neon Glass") 7-Zone Color Definitions:
-    - Z1 (Frosted Ice Blue): top #94A3B8, core #38BDF8, rim #7DD3FC
-    - Z2 (Electric Cyan): top #00F0FF, core #0284C7, rim #38BDF8
-    - Z3 (Neon Emerald): top #00FF87, core #059669, rim #34D399
-    - Z4 (Laser Amber Gold): top #FFE600, core #D97706, rim #FDE047
-    - Z5 (Solar Blaze Orange): top #FF6B00, core #EA580C, rim #FB923C
-    - Z6 (Hot Neon Crimson): top #FF0055, core #E11D48, rim #FB7185
-    - Z7 (Ultraviolet Purple): top #D946EF, core #9333EA, rim #E879F9
-- MUST Apply 3-Pass Glossy Glass Shader to ALL Zone Surfaces (Including Full-Card & Single-Field Backgrounds):
-    - Whenever globalZonePalette == ZonePalette.NEON_GLASS, drawNeonGlassRoundRect MUST be used for:
-        1. Single-metric field backgrounds (KustomFieldRenderer.render when zoneFormat == ZoneFormat.BACKGROUND).
-        2. 3-in-1 full-card backgrounds (KustomFieldRenderer.renderComboBlock when zoneFormat == ZoneFormat.BACKGROUND).
-        3. 3-in-1 corner slot zone pills and status badges (FullWidthLayoutEngine.drawHeaderSlots when isZoneFilled == true or isStatusBadge == true).
-        4. 7-zone bottom bar pills, workout graph bars, and target corridor boxes.
-    - Ensure KustomFieldRenderer.render(...) accepts globalZonePalette: ZonePalette so single-metric fields know when ZonePalette.NEON_GLASS is active.
+    - Z1: top #94A3B8, core #38BDF8, rim #7DD3FC
+    - Z2: top #00F0FF, core #0284C7, rim #38BDF8
+    - Z3: top #00FF87, core #059669, rim #34D399
+    - Z4: top #FFE600, core #D97706, rim #FDE047
+    - Z5: top #FF6B00, core #EA580C, rim #FB923C
+    - Z6: top #FF0055, core #E11D48, rim #FB7185
+    - Z7: top #D946EF, core #9333EA, rim #E879F9
+- MUST Apply 3-Pass Glossy Glass Shader to ALL Zone Surfaces (Including Full-Card & Single-Field Backgrounds).
 
 ## 5. KAROO OS WORKOUT IPC MAPPING, CACHING & LIFECYCLE RULES
 - Inverted Karoo OS Duration Stream Identifiers (Keep Locked in KustomFieldCatalog.kt):
