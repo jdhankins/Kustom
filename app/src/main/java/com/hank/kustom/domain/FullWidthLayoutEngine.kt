@@ -143,7 +143,7 @@ object FullWidthLayoutEngine {
 
         // Check if text has decimal point or time colon for superscript rendering (e.g. "18.1" -> 18¹ or "02:50" -> 02:⁵⁰)
         val isSuperscriptEligible = (renderText.contains(".") || renderText.contains(":")) && 
-            !renderText.contains("-") && !renderText.contains(" ")
+            !renderText.drop(1).contains("-") && !renderText.contains(" ")
 
         if (isSuperscriptEligible) {
             val (primary, secondary) = parsePrimaryAndSecondary(renderText)
@@ -295,15 +295,15 @@ object FullWidthLayoutEngine {
         val heroColLeft = if (sideSlotsPresent) width * 0.295f else width * 0.080f
         val heroColRight = if (sideSlotsPresent) width * 0.705f else width * 0.920f
 
-        // Top Cap-Line for All Labels across the card (7% height)
-        val labelTopY = height * 0.07f
+        // Top Cap-Line for All Labels across the card (6% height)
+        val labelTopY = height * 0.06f
 
-        // Value Box for Left/Right Corner Values (25%..58% height)
-        val valueBoxTop = height * 0.25f
+        // Value Box for Left/Right Corner Values (26%..58% height)
+        val valueBoxTop = height * 0.26f
         val valueBoxBottom = height * 0.58f
 
-        // Uniform fixed label font size across ALL labels on the card (13.5%..17.0% height)
-        val fixedLabelPx = height * (0.135f + ((labelTypography.fontSizeSp - 10f).coerceIn(0f, 10f) * 0.0035f))
+        // Unified fixed label font size across ALL 3 labels on the card (16.5%..22.5% height)
+        val unifiedLabelPx = height * (0.165f + ((labelTypography.fontSizeSp - 10f).coerceIn(0f, 10f) * 0.006f))
         val startValuePx = (height * (valueTypography.fontSizeSp / 86f)).coerceAtLeast(18f)
 
         // 1. Draw Left Slot
@@ -318,7 +318,7 @@ object FullWidthLayoutEngine {
             val labelPaint = TextPaint().apply {
                 color = leftLabelColor
             }
-            KustomTypefaceResolver.applyTypography(labelPaint, labelTypography.font, 700, fixedLabelPx)
+            KustomTypefaceResolver.applyTypography(labelPaint, labelTypography.font, labelTypography.fontWeight, unifiedLabelPx)
 
             val valPaint = TextPaint().apply {
                 color = leftValColor
@@ -332,7 +332,7 @@ object FullWidthLayoutEngine {
                 topY = labelTopY,
                 paint = labelPaint,
                 align = Paint.Align.LEFT,
-                fixedTextSizePx = fixedLabelPx
+                fixedTextSizePx = unifiedLabelPx
             )
 
             val vBounds = drawTextInBox(
@@ -420,7 +420,7 @@ object FullWidthLayoutEngine {
                         val labelPaint = TextPaint().apply {
                             color = rightLabelColor
                         }
-                        KustomTypefaceResolver.applyTypography(labelPaint, labelTypography.font, 700, fixedLabelPx)
+                        KustomTypefaceResolver.applyTypography(labelPaint, labelTypography.font, labelTypography.fontWeight, unifiedLabelPx)
 
                         val valPaint = TextPaint().apply {
                             color = rightValColor
@@ -466,7 +466,7 @@ object FullWidthLayoutEngine {
                                 paint = labelPaint,
                                 align = Paint.Align.CENTER,
                                 verticalAlign = VerticalAlign.CENTER,
-                                maxStartTextSizePx = fixedLabelPx * 1.1f,
+                                maxStartTextSizePx = unifiedLabelPx * 1.1f,
                                 minTextSizePx = 9f
                             )
 
@@ -491,7 +491,7 @@ object FullWidthLayoutEngine {
                                 topY = labelTopY,
                                 paint = labelPaint,
                                 align = Paint.Align.RIGHT,
-                                fixedTextSizePx = fixedLabelPx
+                                fixedTextSizePx = unifiedLabelPx
                             )
 
                             drawTextInBox(
@@ -520,31 +520,24 @@ object FullWidthLayoutEngine {
             val hasHeaderLabel = !headerLabelText.isNullOrEmpty()
             val hasBottomBar = centerHero.hasBottomBar
 
-            // Draw header label if present: scales up to fill available center space without overlapping
             if (hasHeaderLabel) {
                 val heroLabelPaint = TextPaint().apply {
-                    color = mutedTextColor
+                    color = defaultTextColor
                 }
-                val startHeroLabelPx = (fixedLabelPx * 1.5f).coerceAtLeast(fixedLabelPx)
-                KustomTypefaceResolver.applyTypography(heroLabelPaint, labelTypography.font, labelTypography.fontWeight, startHeroLabelPx)
+                KustomTypefaceResolver.applyTypography(heroLabelPaint, labelTypography.font, labelTypography.fontWeight, unifiedLabelPx)
 
-                drawTextInBox(
+                drawFixedLabel(
                     canvas = canvas,
                     text = headerLabelText,
-                    boxLeft = heroColLeft,
-                    boxTop = labelTopY,
-                    boxRight = heroColRight,
-                    boxBottom = height * 0.26f,
+                    anchorX = width / 2f,
+                    topY = labelTopY,
                     paint = heroLabelPaint,
                     align = Paint.Align.CENTER,
-                    verticalAlign = VerticalAlign.TOP,
-                    maxStartTextSizePx = startHeroLabelPx,
-                    minTextSizePx = 10f
+                    fixedTextSizePx = unifiedLabelPx
                 )
             }
 
-            // Calculate exact bounding box for Center Hero Value (Shift heroValueBoxTop down to 31% when header label is present to give clear vertical separation)
-            val heroValueBoxTop = if (hasHeaderLabel) height * 0.31f else height * 0.10f
+            val heroValueBoxTop = if (hasHeaderLabel) height * 0.26f else height * 0.10f
             val heroValueBoxBottom = if (hasBottomBar) height * 0.74f else height * 0.90f
 
             val heroValColor = if (isSensorStatusText(centerHero.value)) sensorRedColor else defaultTextColor

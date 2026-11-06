@@ -168,6 +168,10 @@ data class KustomFieldDefinition(
             "grade" -> {
                 if (kotlin.math.abs(rawValue) < 0.1) "0" else String.format(Locale.US, "%.1f", rawValue)
             }
+            "vam", "avg-vam" -> {
+                val vamMetersPerHour = if (kotlin.math.abs(rawValue) < 25.0) rawValue * 3600.0 else rawValue
+                kotlin.math.round(vamMetersPerHour).toInt().coerceAtLeast(0).toString()
+            }
             "elevation", "ascent", "descent", "lap-ascent", "elev-to-top", "nav-elev-rem" -> {
                 val multiplier = if (isImperial) 3.28084 else 1.0
                 val converted = rawValue * multiplier
