@@ -53,8 +53,8 @@ class KustomSettingsRepository(context: Context) {
                 fontFamily = parseEnum(prefs[Keys.GLOBAL_FONT_FAMILY], KustomFont.KAROO),
                 labelSizeSp = prefs[Keys.GLOBAL_LABEL_SIZE_SP] ?: 18,
                 labelWeight = prefs[Keys.GLOBAL_LABEL_WEIGHT] ?: 700,
-                valueSizeSp = prefs[Keys.GLOBAL_VALUE_SIZE_SP] ?: 48,
-                valueWeight = prefs[Keys.GLOBAL_VALUE_WEIGHT] ?: 700,
+                valueSizeSp = prefs[Keys.GLOBAL_VALUE_SIZE_SP] ?: 64,
+                valueWeight = prefs[Keys.GLOBAL_VALUE_WEIGHT] ?: 900,
             )
 
             val globalColors = GlobalColorConfig(
@@ -260,11 +260,15 @@ class KustomSettingsRepository(context: Context) {
             CustomComboInstance(
                 id = "combo-block-1",
                 name = "Block 1",
-                centerMetric = "workout-target-power",
-                leftMetric = "avg-speed",
-                rightMetric = "distance",
-                centerZoneFormat = ZoneFormat.BAR,
+                centerMetric = "power",
+                leftMetric = "avg-power",
+                rightMetric = "max-power",
+                centerZoneFormat = ZoneFormat.BACKGROUND,
                 centerSmoothing = SmoothingOption.THREE_SEC,
+                leftZoneFormat = ZoneFormat.NONE,
+                rightZoneFormat = ZoneFormat.NONE,
+                leftSmoothing = SmoothingOption.NONE,
+                rightSmoothing = SmoothingOption.NONE,
             ),
             CustomComboInstance(
                 id = "combo-block-2",
@@ -279,7 +283,7 @@ class KustomSettingsRepository(context: Context) {
                 id = "combo-block-3",
                 name = "Block 3",
                 centerMetric = "grade",
-                leftMetric = "vam",
+                leftMetric = "elevation",
                 rightMetric = "ascent",
                 centerZoneFormat = ZoneFormat.BACKGROUND,
                 centerSmoothing = SmoothingOption.NONE,
@@ -316,11 +320,21 @@ class KustomSettingsRepository(context: Context) {
                 val rawId = obj.optString("id", "combo-block-${i + 1}")
                 val normalizedId = if (rawId.startsWith("combo_")) "combo-block-${i + 1}" else rawId
                 val defaultCenter = when (normalizedId) {
-                    "combo-block-1", "combo-block-4" -> "workout-target-power"
+                    "combo-block-1" -> "power"
+                    "combo-block-4" -> "workout-target-power"
                     else -> "power"
                 }
-                val defaultLeft = if (normalizedId == "combo-block-4") "tss" else "np"
-                val defaultRight = if (normalizedId == "combo-block-4") "hr" else "max-power"
+                val defaultLeft = when (normalizedId) {
+                    "combo-block-1" -> "avg-power"
+                    "combo-block-3" -> "elevation"
+                    "combo-block-4" -> "tss"
+                    else -> "avg-power"
+                }
+                val defaultRight = when (normalizedId) {
+                    "combo-block-1" -> "max-power"
+                    "combo-block-4" -> "hr"
+                    else -> "max-power"
+                }
                 val defaultRightZone = if (normalizedId == "combo-block-4") ZoneFormat.BACKGROUND else ZoneFormat.NONE
                 val defaultRightSmooth = if (normalizedId == "combo-block-4") 3 else 0
 

@@ -20,8 +20,8 @@ data class GlobalTypographyConfig(
     val labelWeight: Int = 700,
 
     /** Base font size in SP for main numeric values. */
-    val valueSizeSp: Int = 48,
+    val valueSizeSp: Int = 64,
 
     /** Font weight for main numeric values. */
-    val valueWeight: Int = 700,
+    val valueWeight: Int = 900,
 )

@@ -1447,11 +1447,7 @@ fun UniversalFieldComboControls(
 
                 // Dynamic Zone Format Controls for Center Metric
                 if (centerDef.supportsZones) {
-                    val supportedFormats = if (selectedCenterId == "power" || selectedCenterId == "power-combo" || selectedCenterId.contains("combo")) {
-                        listOf(ZoneFormat.NONE, ZoneFormat.TEXT, ZoneFormat.BACKGROUND, ZoneFormat.BAR)
-                    } else {
-                        listOf(ZoneFormat.NONE, ZoneFormat.TEXT, ZoneFormat.BACKGROUND)
-                    }
+                    val supportedFormats = listOf(ZoneFormat.NONE, ZoneFormat.TEXT, ZoneFormat.BACKGROUND, ZoneFormat.BAR)
 
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
