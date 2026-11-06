@@ -52,3 +52,8 @@
 - NEVER Stretch Fonts: Keep paint.textScaleX = 1.0f and use ContentScale.Fit with exact container pixel dimensions on all preview Image composables.
 - State Isolation: Always use rememberUpdatedState inside custom gesture controls (KarooSteppedSlider) and atomic DataStore updates in KustomSettingsRepository.
 - Strict karoo-ext Cleanup: Always emit UpdateGraphicConfig(showHeader = false) at the start of startView, and cancel all coroutines/consumers inside emitter.setCancellable { job.cancel() }.
+
+## 7. AUTOMATIC RELEASE APK BUILD ON COMMIT/PUSH
+- Mandatory Fresh APK Binary Copy (releases/app-debug.apk):
+    - Before EVERY git commit and git push, you MUST run ./gradlew app:assembleDebug and copy app/build/outputs/apk/debug/app-debug.apk to releases/app-debug.apk in the repository root.
+    - Stage releases/app-debug.apk along with your code changes so GitHub always hosts the exact latest compiled binary matching the main branch code.

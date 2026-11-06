@@ -2,7 +2,7 @@
 
 [![Platform](https://img.shields.io/badge/Platform-Karoo_2_|_Karoo_3-00A3FF.svg)](https://hammerhead.io)
 [![SDK](https://img.shields.io/badge/Karoo_Ext-1.1.9-132B4C.svg)](https://hammerheadnav.github.io/karoo-ext/)
-[![Download APK](https://img.shields.io/badge/Download-Latest_APK-00E676.svg)](https://github.com/jdhankins/Kustom/releases/latest/download/app-debug.apk)
+[![Download APK](https://img.shields.io/badge/Download-Latest_APK-00E676.svg)](https://raw.githubusercontent.com/jdhankins/Kustom/main/releases/app-debug.apk)
 [![Releases](https://img.shields.io/badge/GitHub-Releases-181717.svg)](https://github.com/jdhankins/Kustom/releases)
 
 **Kustom** is a native Karoo Extension (`io.hammerhead.karooext`) engineered specifically for **Hammerhead Karoo 2** and **Karoo 3** bike computers. Transform your Karoo ride screens with high-visibility, fully customizable data fields designed for maximum outdoor legibility at a glance.
@@ -81,7 +81,7 @@ An interactive workout profile graph for structured `.fit` and `.zwo` workouts:
 Getting **Kustom** onto your Hammerhead Karoo is quick and straightforward. Choose your device below for step-by-step sideloading instructions.
 
 ### 📥 1. Download Latest APK
-- **Direct Download**: [app-debug.apk](https://github.com/jdhankins/Kustom/releases/latest/download/app-debug.apk)
+- **Direct Download**: [app-debug.apk](https://raw.githubusercontent.com/jdhankins/Kustom/main/releases/app-debug.apk)
 - **All Releases**: [GitHub Releases Page](https://github.com/jdhankins/Kustom/releases)
 
 ---
@@ -98,7 +98,7 @@ Before sideloading from any platform, enable USB Debugging on your Karoo unit:
 
 #### 💻 Option 1: Computer (Mac, Windows, Linux) — Terminal ADB
 1. Connect your Karoo 2 or Karoo 3 to your computer using a USB-C data cable.
-2. Download [app-debug.apk](https://github.com/jdhankins/Kustom/releases/latest/download/app-debug.apk).
+2. Download [app-debug.apk](https://raw.githubusercontent.com/jdhankins/Kustom/main/releases/app-debug.apk).
 3. Open Terminal (Mac/Linux) or Command Prompt / PowerShell (Windows) and run:
    ```bash
    # Confirm device connection
@@ -113,7 +113,7 @@ Before sideloading from any platform, enable USB Debugging on your Karoo unit:
 
 #### 🌐 Option 2: Computer or Tablet — Web ADB (No Command Line Needed)
 Works on Chrome, Edge, Brave, or Opera browsers without installing ADB tools:
-1. Download [app-debug.apk](https://github.com/jdhankins/Kustom/releases/latest/download/app-debug.apk) to your computer.
+1. Download [app-debug.apk](https://raw.githubusercontent.com/jdhankins/Kustom/main/releases/app-debug.apk) to your computer.
 2. Connect your Karoo via USB cable.
 3. Open [webadb.js.org](https://webadb.js.org/) in your browser.
 4. Click **Start $\rightarrow$ Add Device**, select your Karoo unit, and authorize connection on your Karoo screen.
@@ -123,7 +123,7 @@ Works on Chrome, Edge, Brave, or Opera browsers without installing ADB tools:
 
 #### 📱 Option 3: Android Smartphone (via Bugjaeger & USB-C Cable)
 You can sideload **Kustom** directly from an Android phone without needing a computer!
-1. Download [app-debug.apk](https://github.com/jdhankins/Kustom/releases/latest/download/app-debug.apk) to your Android phone's Downloads folder.
+1. Download [app-debug.apk](https://raw.githubusercontent.com/jdhankins/Kustom/main/releases/app-debug.apk) to your Android phone's Downloads folder.
 2. Install **Bugjaeger Mobile ADB** (free on Google Play Store) on your phone.
 3. Connect your Android phone directly to your Karoo using a USB-C to USB-C cable (OTG).
 4. Open **Bugjaeger** on your phone, accept USB permission prompts, tap the **Packages** tab, tap the **`+`** icon, select **Select APK File**, choose `app-debug.apk`, and tap **Install**.
@@ -131,7 +131,7 @@ You can sideload **Kustom** directly from an Android phone without needing a com
 ---
 
 #### 🍎 Option 4: iPhone / iPad (iOS) — Web ADB via Wi-Fi or USB-C
-1. Download [app-debug.apk](https://github.com/jdhankins/Kustom/releases/latest/download/app-debug.apk) to the **Files** app on your iPhone or iPad.
+1. Download [app-debug.apk](https://raw.githubusercontent.com/jdhankins/Kustom/main/releases/app-debug.apk) to the **Files** app on your iPhone or iPad.
 2. **For USB-C iPad / iPhone 15+**: Connect your iPhone/iPad directly to your Karoo using a USB-C cable.
    **For Wireless ADB**: Enable **Wireless Debugging** under Karoo **Developer Options**, note the IP address and Port, and connect Karoo to the same Wi-Fi network as your iPhone.
 3. Open [webadb.js.org](https://webadb.js.org/) in Safari or Chrome on iOS.
@@ -141,11 +141,10 @@ You can sideload **Kustom** directly from an Android phone without needing a com
 
 #### 🚴 Option 5: Directly on Karoo Unit (Native On-Device Installation)
 If you have a Web Browser app (e.g. Chrome, Kiwi) or a File Manager app (e.g. Amaze, AnExplorer) installed on your Karoo:
-1. Open the web browser on your Karoo and navigate to [github.com/jdhankins/Kustom/releases](https://github.com/jdhankins/Kustom/releases).
+1. Open the web browser on your Karoo and navigate to [raw.githubusercontent.com/jdhankins/Kustom/main/releases/app-debug.apk](https://raw.githubusercontent.com/jdhankins/Kustom/main/releases/app-debug.apk).
 2. Download `app-debug.apk` directly to Karoo storage.
 3. Open your File Manager app on Karoo, navigate to `/sdcard/Download/`, tap `app-debug.apk`, and select **Install**.
 
----
 ---
 
 ## 🛠️ Developer Guide (Building & Maintaining)
