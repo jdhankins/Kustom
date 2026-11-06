@@ -9,6 +9,9 @@
 
 Whether you're executing structured interval workouts, climbing steep alpine passes, or pacing long endurance rides, **Kustom** delivers pixel-exact typography, customizable zone color palettes, multi-metric combo blocks, and real-time telemetry overlays that make your Karoo display truly yours.
 
+<img width="249" height="408" alt="Screenshot 2026-11-06 at 8 28 33 AM" src="https://github.com/user-attachments/assets/5d9ac7d8-2aea-4782-b2e9-c1a42d91c527" />
+
+
 ---
 
 ## 🚀 Download & Sideloading Guide
