@@ -7,7 +7,7 @@
 
 **Kustom** is a native Karoo Extension (`io.hammerhead.karooext`) engineered specifically for **Hammerhead Karoo 2** and **Karoo 3** cycling computers. Transform your Karoo ride screens with high-visibility, fully customizable data fields designed for instant outdoor legibility at speed.
 
-Whether you're executing structured intervals, climbing steep alpine passes, or pacing long endurance rides, **Kustom** delivers pixel-exact typography, customizable zone color palettes, multi-metric composite blocks, and real-time telemetry overlays that make your Karoo display truly yours.
+Whether you're climbing steep alpine passes, or pacing long endurance rides, **Kustom** delivers pixel-exact typography, customizable zone color palettes, multi-metric composite blocks, and real-time telemetry overlays that make your Karoo display truly yours.
 
 ---
 
@@ -15,7 +15,7 @@ Whether you're executing structured intervals, climbing steep alpine passes, or 
 
 | High-Contrast Day Mode | Neon Glass & Zone Fills | Multi-Metric Full Width | Target Corridor & Graphs |
 | :---: | :---: | :---: | :---: |
-| <img src="https://github.com/user-attachments/assets/5d9ac7d8-2aea-4782-b2e9-c1a42d91c527" width="230" alt="High-Contrast Day Mode" /> | <img src="https://github.com/user-attachments/assets/ea0feb45-1e46-4a6b-89fc-5e217b21cf72" width="230" alt="Neon Glass & Zone Fills" /> | <img src="https://github.com/user-attachments/assets/40b1b0ae-8656-47fe-8e91-1dc83b6d7a84" width="230" alt="Multi-Metric Full Width" /> | <img src="https://github.com/user-attachments/assets/4369f9fb-9e3e-4938-afad-95dee9729a81" width="230" alt="Target Corridor & Graphs" /> |
+| <img width="230" alt="High-Contrast Day Mode" src="https://github.com/user-attachments/assets/486d2b58-3d64-4ba7-9fa2-f69fb223dd76" /> | <img width="230" alt="Neon Glass Zone Fill" src="https://github.com/user-attachments/assets/54e7420a-6e16-4b54-95da-509852f64e21" /> | <img width="230" alt="Multi-Metric Full Width" src="https://github.com/user-attachments/assets/09f4ad68-cf17-4a83-a290-9024694a7313" /> |  <img width="230" alt="Target Corridor" src="https://github.com/user-attachments/assets/8a5bd915-c899-4790-9e88-cf34ec7c03fa" /> |
 
 ---
 
