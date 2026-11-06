@@ -15,7 +15,7 @@ Whether you're executing structured intervals, climbing steep alpine passes, or 
 
 | High-Contrast Day Mode | Neon Glass & Zone Fills | Multi-Metric Full Width | Target Corridor & Graphs |
 | :---: | :---: | :---: | :---: |
-| <img src="https://github.com/user-attachments/assets/cd69542a-a925-4c07-ba71-696f01da5629" width="230" alt="High-Contrast Day Mode" /> | <img src="https://github.com/user-attachments/assets/b3d881e2-b88d-4a17-b695-8d5aa4e71ffb" width="230" alt="Neon Glass & Zone Fills" /> | <img src="https://github.com/user-attachments/assets/d1f977bf-05a8-444c-9fcf-bca9495c3453" width="230" alt="Multi-Metric Full Width" /> | <img src="https://github.com/user-attachments/assets/d6951b14-0da6-4aa8-b4b9-e160e06008b4" width="230" alt="Target Corridor & Graphs" /> |
+| <img src="https://github.com/user-attachments/assets/5d9ac7d8-2aea-4782-b2e9-c1a42d91c527" width="230" alt="High-Contrast Day Mode" /> | <img src="https://github.com/user-attachments/assets/ea0feb45-1e46-4a6b-89fc-5e217b21cf72" width="230" alt="Neon Glass & Zone Fills" /> | <img src="https://github.com/user-attachments/assets/40b1b0ae-8656-47fe-8e91-1dc83b6d7a84" width="230" alt="Multi-Metric Full Width" /> | <img src="https://github.com/user-attachments/assets/4369f9fb-9e3e-4938-afad-95dee9729a81" width="230" alt="Target Corridor & Graphs" /> |
 
 ---
 
