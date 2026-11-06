@@ -124,17 +124,19 @@ object KustomColorGradeMapper {
         gradePercent: Double,
         colorMode: ColorMode,
         isDarkTheme: Boolean = false,
+        palette: ZonePalette = ZonePalette.KAROO,
     ): Int? {
         if (colorMode == ColorMode.NONE) return null
 
+        val colors = palette.get7ZoneColors()
         return when {
-            gradePercent < -2.0 -> 0xFF29B6F6.toInt() // Cool Sky Blue (descent)
-            gradePercent in -2.0..2.0 -> null // Neutral / Default
-            gradePercent in 2.0..4.0 -> if (colorMode == ColorMode.BACKGROUND_COLOR) 0xFF5AE0A0.toInt() else 0xFF66BB6A.toInt() // Mint Green (2-4%)
-            gradePercent in 4.0..7.0 -> 0xFFFBC02D.toInt() // Gold/Amber (4-7%)
-            gradePercent in 7.0..10.0 -> 0xFFFFA726.toInt() // Deep Orange (7-10%)
-            gradePercent in 10.0..14.0 -> 0xFFEF5350.toInt() // Coral Red (10-14%)
-            else -> 0xFFAB47BC.toInt() // Purple (>14%)
+            gradePercent < -2.0 -> colors[0]
+            gradePercent in -2.0..2.0 -> null
+            gradePercent in 2.0..4.0 -> colors[2]
+            gradePercent in 4.0..7.0 -> colors[3]
+            gradePercent in 7.0..10.0 -> colors[4]
+            gradePercent in 10.0..14.0 -> colors[5]
+            else -> colors[6]
         }
     }
 

@@ -279,6 +279,7 @@ object FullWidthLayoutEngine {
         labelTypography: TypographyConfig,
         valueTypography: TypographyConfig,
         isDarkTheme: Boolean = false,
+        globalZonePalette: com.hank.kustom.data.model.ZonePalette = com.hank.kustom.data.model.ZonePalette.KAROO,
     ) {
         val sensorRedColor = if (isDarkTheme) 0xFFFF5252.toInt() else 0xFFD32F2F.toInt()
         val hasLeft = leftSlot is HeaderSlot.MetricStack && leftSlot.label.isNotEmpty()
@@ -356,11 +357,15 @@ object FullWidthLayoutEngine {
                     leftColLeft + vBounds.width().toFloat() + width * 0.020f,
                     valueBoxBottom + height * 0.02f
                 )
-                val lPillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = leftSlot.zoneColor
-                    style = Paint.Style.FILL
+                if (globalZonePalette == com.hank.kustom.data.model.ZonePalette.NEON_GLASS) {
+                    KustomFieldRenderer.drawNeonGlassRoundRect(canvas, lPillRect, 8f, leftSlot.zoneColor, isActiveHighlight = false, palette = globalZonePalette)
+                } else {
+                    val lPillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = leftSlot.zoneColor
+                        style = Paint.Style.FILL
+                    }
+                    canvas.drawRoundRect(lPillRect, 8f, 8f, lPillPaint)
                 }
-                canvas.drawRoundRect(lPillRect, 8f, 8f, lPillPaint)
             }
         }
 
@@ -386,11 +391,15 @@ object FullWidthLayoutEngine {
                     val pLeft = (pRight - pillW).coerceAtLeast(pillBoxLeft)
 
                     val badgePillRect = RectF(pLeft, pillBoxTop, pRight, pillBoxBottom)
-                    val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = rightSlot.backgroundColor
-                        style = Paint.Style.FILL
+                    if (globalZonePalette == com.hank.kustom.data.model.ZonePalette.NEON_GLASS) {
+                        KustomFieldRenderer.drawNeonGlassRoundRect(canvas, badgePillRect, pillH / 2f, rightSlot.backgroundColor, isActiveHighlight = false, palette = globalZonePalette)
+                    } else {
+                        val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                            color = rightSlot.backgroundColor
+                            style = Paint.Style.FILL
+                        }
+                        canvas.drawRoundRect(badgePillRect, pillH / 2f, pillH / 2f, badgePaint)
                     }
-                    canvas.drawRoundRect(badgePillRect, pillH / 2f, pillH / 2f, badgePaint)
 
                     drawTextInBox(
                         canvas = canvas,
@@ -438,17 +447,21 @@ object FullWidthLayoutEngine {
                             val pH = pBottom - pTop
 
                             val rPillRect = RectF(pBoxL, pTop, pBoxR, pBottom)
-                            val rPillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                                color = rightSlot.zoneColor
-                                style = Paint.Style.FILL
+                            if (globalZonePalette == com.hank.kustom.data.model.ZonePalette.NEON_GLASS) {
+                                KustomFieldRenderer.drawNeonGlassRoundRect(canvas, rPillRect, 12f, rightSlot.zoneColor, isActiveHighlight = false, palette = globalZonePalette)
+                            } else {
+                                val rPillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                                    color = rightSlot.zoneColor
+                                    style = Paint.Style.FILL
+                                }
+                                val rPillBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                                    color = 0x4DFFFFFF.toInt() // 30% semi-transparent white outline
+                                    style = Paint.Style.STROKE
+                                    strokeWidth = 1.5f
+                                }
+                                canvas.drawRoundRect(rPillRect, 12f, 12f, rPillPaint)
+                                canvas.drawRoundRect(rPillRect, 12f, 12f, rPillBorderPaint)
                             }
-                            val rPillBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                                color = 0x4DFFFFFF.toInt() // 30% semi-transparent white outline
-                                style = Paint.Style.STROKE
-                                strokeWidth = 1.5f
-                            }
-                            canvas.drawRoundRect(rPillRect, 12f, 12f, rPillPaint)
-                            canvas.drawRoundRect(rPillRect, 12f, 12f, rPillBorderPaint)
 
                             val line1Top = pTop + (pH * 0.08f)
                             val line1Bottom = pTop + (pH * 0.50f)

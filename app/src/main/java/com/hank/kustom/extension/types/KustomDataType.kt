@@ -862,6 +862,7 @@ class KustomDataType(
                         mappedColor = mappedColor,
                         isDarkTheme = isDarkTheme,
                         globalColors = settings.globalColors,
+                        globalZonePalette = settings.globalColors.globalZonePalette,
                     )
                 }
 

@@ -425,6 +425,7 @@ fun KustomStickyHeaderSection(
                             mappedColor = null,
                             isDarkTheme = previewIsDark,
                             globalColors = settings.globalColors,
+                            globalZonePalette = settings.globalColors.globalZonePalette,
                         )
 
                         Image(
@@ -2507,6 +2508,7 @@ fun FieldCardItem(
                             mappedColor = mappedColor,
                             isDarkTheme = colors.isDark,
                             globalColors = settings.globalColors,
+                            globalZonePalette = settings.globalColors.globalZonePalette,
                         )
                     }
 

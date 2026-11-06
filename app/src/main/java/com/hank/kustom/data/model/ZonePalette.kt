@@ -56,9 +56,18 @@ enum class ZonePalette(val displayName: String) {
         val idx = colors7.indexOf(baseColor)
         if (idx >= 0) return getNeonGlassSpec(idx)
 
-        val top = 0xFFFFFFFF.toInt()
-        val core = baseColor
-        val rim = 0xFFE2E8F0.toInt()
-        return NeonGlassSpec(top, core, rim)
+        val hsv = FloatArray(3)
+        android.graphics.Color.colorToHSV(baseColor, hsv)
+        // Top highlight: boost saturation slightly and boost brightness
+        val topHsv = floatArrayOf(hsv[0], (hsv[1] * 0.85f).coerceIn(0f, 1f), (hsv[2] * 1.25f).coerceIn(0.6f, 1f))
+        // Deep core: full saturation and rich deeper value
+        val coreHsv = floatArrayOf(hsv[0], (hsv[1] * 1.10f).coerceIn(0f, 1f), (hsv[2] * 0.78f).coerceIn(0.25f, 0.9f))
+        // Luminous rim: bright neon edge
+        val rimHsv = floatArrayOf(hsv[0], (hsv[1] * 0.70f).coerceIn(0f, 1f), 1.0f)
+        return NeonGlassSpec(
+            topColor = android.graphics.Color.HSVToColor(topHsv),
+            coreColor = android.graphics.Color.HSVToColor(coreHsv),
+            rimColor = android.graphics.Color.HSVToColor(rimHsv),
+        )
     }
 }

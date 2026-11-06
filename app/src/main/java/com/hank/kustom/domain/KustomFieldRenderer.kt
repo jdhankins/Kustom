@@ -35,6 +35,7 @@ object KustomFieldRenderer {
         mappedColor: Int?,
         isDarkTheme: Boolean = false,
         globalColors: GlobalColorConfig = GlobalColorConfig(),
+        globalZonePalette: ZonePalette = ZonePalette.KAROO,
     ): Bitmap {
         return runCatching {
             val width = config.viewSize.first.coerceAtLeast(10)
@@ -59,6 +60,8 @@ object KustomFieldRenderer {
             val defaultTextColor = KustomColorGradeMapper.getContrastingTextColor(defaultBgColor)
             val mutedLabelColor = defaultTextColor
 
+            val isBgZoneFilled = colorMode == ColorMode.BACKGROUND_COLOR && mappedColor != null && !isSensorStatusText
+
             val backgroundColor: Int
             val labelColor: Int
             val valueColor: Int
@@ -77,7 +80,9 @@ object KustomFieldRenderer {
                 ColorMode.BACKGROUND_COLOR -> {
                     backgroundColor = if (isSensorStatusText) defaultBgColor else (mappedColor ?: defaultBgColor)
                     val contrastColor = if (mappedColor != null && !isSensorStatusText) {
-                        KustomColorGradeMapper.getContrastingTextColor(mappedColor)
+                        val spec = globalZonePalette.getNeonGlassSpecForColor(mappedColor)
+                        val checkColor = if (globalZonePalette == ZonePalette.NEON_GLASS) spec.coreColor else mappedColor
+                        KustomColorGradeMapper.getContrastingTextColor(checkColor)
                     } else {
                         defaultTextColor
                     }
@@ -89,14 +94,33 @@ object KustomFieldRenderer {
             // Draw Background (Rounded cell fill sitting cleanly inside Karoo cell border)
             if (boundaries) {
                 val insetRect = RectF(1.5f, 1.5f, width.toFloat() - 1.5f, height.toFloat() - 1.5f)
-                val cornerRadius = height * 0.12f
+                val cornerRadius = (height * 0.12f).coerceIn(14f, 24f)
                 val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = if (backgroundColor != 0x00000000) backgroundColor else defaultBgColor
+                    color = defaultBgColor
                     style = Paint.Style.FILL
                 }
                 canvas.drawRoundRect(insetRect, cornerRadius, cornerRadius, bgPaint)
+
+                if (isBgZoneFilled) {
+                    if (globalZonePalette == ZonePalette.NEON_GLASS) {
+                        drawNeonGlassRoundRect(canvas, insetRect, cornerRadius, mappedColor!!, isActiveHighlight = false, palette = globalZonePalette)
+                    } else {
+                        val zoneBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                            color = mappedColor!!
+                            style = Paint.Style.FILL
+                        }
+                        canvas.drawRoundRect(insetRect, cornerRadius, cornerRadius, zoneBgPaint)
+                    }
+                }
             } else {
-                if (backgroundColor != 0x00000000) {
+                if (isBgZoneFilled) {
+                    val fullRect = RectF(0f, 0f, width.toFloat(), height.toFloat())
+                    if (globalZonePalette == ZonePalette.NEON_GLASS) {
+                        drawNeonGlassRoundRect(canvas, fullRect, 0f, mappedColor!!, isActiveHighlight = false, palette = globalZonePalette)
+                    } else {
+                        canvas.drawColor(mappedColor!!)
+                    }
+                } else if (backgroundColor != 0x00000000) {
                     canvas.drawColor(backgroundColor)
                 }
                 // When Data Boundaries is OFF: Draw 100% width bottom border line, 5.5px thick, dark shade of gray
