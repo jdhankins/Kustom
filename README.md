@@ -11,9 +11,71 @@ Whether you're executing structured interval workouts, climbing steep alpine pas
 
 <img width="249" height="408" alt="Screenshot 2026-11-06 at 8 28 33 AM" src="https://github.com/user-attachments/assets/5d9ac7d8-2aea-4782-b2e9-c1a42d91c527" />
 
+<img width="259" height="418" alt="Screenshot 2026-11-06 at 8 28 55 AM" src="https://github.com/user-attachments/assets/ea0feb45-1e46-4a6b-89fc-5e217b21cf72" />
+
+<img width="255" height="424" alt="Screenshot 2026-11-06 at 8 29 44 AM" src="https://github.com/user-attachments/assets/40b1b0ae-8656-47fe-8e91-1dc83b6d7a84" />
+
+<img width="250" height="416" alt="Screenshot 2026-11-06 at 8 29 21 AM" src="https://github.com/user-attachments/assets/4369f9fb-9e3e-4938-afad-95dee9729a81" />
+
 
 ---
 
+## ✨ Feature Showcase
+
+### 🎨 1. Universal Typography & Outdoor Visibility
+Customize every label and value with popular cycling typefaces and outdoor-optimized contrast:
+- **9 Cycling Typefaces**: **Wahoo Barlow**, **Garmin DIN**, **Karoo RBNo2.1a**, **Coros Dura**, **Athletic Teko**, **Clean Roboto**, **Eurostile**, **Oswald**, and **Monospace**.
+- **High-Contrast Outdoor Visibility**: Pure black/white header labels anchored to unified top cap-lines for maximum readability in direct sunlight.
+
+---
+
+### 🎨 2. Multiple Zone Color Palettes & Customization
+Tailor your ride display to match your preferred eco-system or visual style with support for **multiple manufacturer zone color palettes**:
+- **5 Zone Color Palettes**: Choose between **Karoo**, **Garmin**, **Wahoo**, **Zwift**, and **Neon Glass**.
+- **Power & Heart Rate Zones**: Select 5-zone or 7-zone color modes for Power output, Heart Rate, and Elevation Grade % metrics.
+- **Flexible Zone Color Modes**: Apply zone colors as **Full Card Background Fills**, **Text Color Accents**, or **Bottom Gauge Bars**.
+
+<img width="270" height="424" alt="Screenshot 2026-11-06 at 8 30 00 AM" src="https://github.com/user-attachments/assets/3ba8888a-a852-4c5c-9157-01db52015b27" />
+
+---
+
+### 🧩 3. Full-Width 3-In-One Composite Blocks
+Consolidate **3 metrics on 1 card** to maximize screen efficiency:
+- **Center Hero Primary Metric**: Large, bold main digits with auto-scaling font sizes.
+- **Top-Left & Top-Right Stacked Metrics**: Corner labels and values for NP, Avg HR, Max Power, TSS, W/kg, Cadence, Grade %, etc.
+- **Bottom 7-Zone Gauge Bar**: Live power/HR zone bar showing your current intensity zone.
+- **Universal Customization**: Pick ANY metric from Kustom's full 76+ catalog for the Center, Left, and Right slots!
+  
+<img width="285" height="220" alt="Screenshot 2026-11-06 at 5 55 09 AM" src="https://github.com/user-attachments/assets/1da55e9c-8109-4688-ac80-47061ed879f8" />
+
+---
+
+### 🎯 4. Target Power Corridor (Experimental)
+A specialized pacing display for structured training rides and workouts:
+- **Live Target Range**: Displays your target watt corridor (e.g., **`117-146W`**).
+- **Target Cursor Track**: Horizontal track capsule with a real-time needle indicating whether you are on target, below target, or above target.
+- **State Badges**: High-contrast status badges (**`ON TARGET`**, **`BELOW TARGET`**, **`ABOVE TARGET`**) for instant feedback.
+
+<img width="273" height="90" alt="Screenshot 2026-11-06 at 9 11 15 AM" src="https://github.com/user-attachments/assets/cc8bed1a-cef4-46f4-b927-bb9eb0d5befa" />
+
+---
+
+### 📊 5. Workout Profile Graph HUD (Experimental)
+An interactive workout profile graph for structured `.fit` and `.zwo` workouts:
+- **Local FIT & ZWO Parsing**: Automatically parses active workout files from TrainingPeaks, TrainerRoad, and Zwift.
+- **Multi-Trace Telemetry Overlays**: 3 independent toggleable live trace lines for **Power**, **Heart Rate**, and **Cadence** rendered using smooth cubic Bézier curves.
+- **Live Progress Line & Cursor Pin**: A vertical progress line tracks your exact workout position in real-time.
+
+<img width="256" height="354" alt="Screenshot 2026-11-06 at 9 13 22 AM" src="https://github.com/user-attachments/assets/1397bdfe-c195-46c7-8da5-9be8994d3a87" />
+
+---
+
+### ⚠️ Known Karoo SDK (`karoo-ext`) Workout Stream Limitations
+> [!NOTE]
+> The current Hammerhead Karoo Extensions SDK (`karoo-ext:1.1.9`) does not yet broadcast `OnWorkoutLoaded`, `OnWorkoutUnloaded`, or `OnStepSkipped` lifecycle events to third-party extensions.
+> As a result, standalone workout text timers were removed in favor of pure live sensor telemetry. The visual **Target Corridor** and **Workout Graph** HUDs are marked **Experimental**: they sync live when an active workout ride is running, but may experience lag pre-ride or drift if workout intervals are manually skipped. Full 1:1 instant sync will be enabled as soon as Hammerhead expands the `karoo-ext` workout event API.
+
+---
 ## 🚀 Download & Sideloading Guide
 
 Getting **Kustom** onto your Hammerhead Karoo is quick and straightforward. Choose your device below for step-by-step sideloading instructions.
@@ -84,57 +146,6 @@ If you have a Web Browser app (e.g. Chrome, Kiwi) or a File Manager app (e.g. Am
 3. Open your File Manager app on Karoo, navigate to `/sdcard/Download/`, tap `app-debug.apk`, and select **Install**.
 
 ---
-
-## ✨ Feature Showcase
-
-### 🎨 1. Universal Typography & Outdoor Visibility
-Customize every label and value with popular cycling typefaces and outdoor-optimized contrast:
-- **9 Cycling Typefaces**: **Wahoo Barlow**, **Garmin DIN**, **Karoo RBNo2.1a**, **Coros Dura**, **Athletic Teko**, **Clean Roboto**, **Eurostile**, **Oswald**, and **Monospace**.
-- **High-Contrast Outdoor Visibility**: Pure black/white header labels anchored to unified top cap-lines for maximum readability in direct sunlight.
-- **Wahoo ELEMNT Superscript Formatting**: Trailing seconds and decimal digits render in clean superscript (`2:00:⁰⁰`, `10:⁰⁰`, `-3.⁴%`).
-- **Custom Units & Conversions**: Automatic $m/s \rightarrow m/h$ VAM climbing speed conversions, negative grade superscripts (`-3.4%`), and metric/imperial support.
-
----
-
-### 🎨 2. Multiple Zone Color Palettes & Customization
-Tailor your ride display to match your preferred eco-system or visual style with support for **multiple manufacturer zone color palettes**:
-- **5 Zone Color Palettes**: Choose between **Karoo**, **Garmin**, **Wahoo**, **Zwift**, and **Neon Glass**.
-- **Power & Heart Rate Zones**: Select 5-zone or 7-zone color modes for Power output, Heart Rate, and Elevation Grade % metrics.
-- **Flexible Zone Color Modes**: Apply zone colors as **Full Card Background Fills**, **Text Color Accents**, or **Bottom Gauge Bars**.
-- **3D "Neon Glass" Shader Option**: Enjoy an optional 3-pass glossy liquid-glass shader (`ZonePalette.NEON_GLASS`) featuring vertical neon gradients, top specular glass reflection, and luminous neon rims.
-
----
-
-### 🧩 3. Full-Width 3-In-One Composite Blocks
-Consolidate **3 metrics on 1 card** to maximize screen efficiency:
-- **Center Hero Primary Metric**: Large, bold main digits with auto-scaling font sizes.
-- **Top-Left & Top-Right Stacked Metrics**: Corner labels and values for NP, Avg HR, Max Power, TSS, W/kg, Cadence, Grade %, etc.
-- **Bottom 7-Zone Gauge Bar**: Live power/HR zone bar showing your current intensity zone.
-- **Universal Customization**: Pick ANY metric from Kustom's full 76+ catalog for the Center, Left, and Right slots!
-
----
-
-### 🎯 4. Target Power Corridor (Experimental)
-A specialized pacing display for structured training rides and workouts:
-- **Live Target Range**: Displays your target watt corridor (e.g., **`117-146W`**).
-- **Target Cursor Track**: Horizontal track capsule with a real-time needle indicating whether you are on target, below target, or above target.
-- **State Badges**: High-contrast status badges (**`ON TARGET`**, **`BELOW TARGET`**, **`ABOVE TARGET`**) for instant feedback.
-
----
-
-### 📊 5. Workout Profile Graph HUD (Experimental)
-An interactive workout profile graph for structured `.fit` and `.zwo` workouts:
-- **Local FIT & ZWO Parsing**: Automatically parses active workout files from TrainingPeaks, TrainerRoad, and Zwift.
-- **Multi-Trace Telemetry Overlays**: 3 independent toggleable live trace lines for **Power**, **Heart Rate**, and **Cadence** rendered using smooth cubic Bézier curves.
-- **Live Progress Line & Cursor Pin**: A vertical progress line tracks your exact workout position in real-time.
-
----
-
-### ⚠️ Known Karoo SDK (`karoo-ext`) Workout Stream Limitations
-> [!NOTE]
-> The current Hammerhead Karoo Extensions SDK (`karoo-ext:1.1.9`) does not yet broadcast `OnWorkoutLoaded`, `OnWorkoutUnloaded`, or `OnStepSkipped` lifecycle events to third-party extensions.
-> As a result, standalone workout text timers were removed in favor of pure live sensor telemetry. The visual **Target Corridor** and **Workout Graph** HUDs are marked **Experimental**: they sync live when an active workout ride is running, but may experience lag pre-ride or drift if workout intervals are manually skipped. Full 1:1 instant sync will be enabled as soon as Hammerhead expands the `karoo-ext` workout event API.
-
 ---
 
 ## 🛠️ Developer Guide (Building & Maintaining)
