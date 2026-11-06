@@ -9,10 +9,6 @@
 
 Whether you're executing structured interval workouts, climbing steep alpine passes, or pacing long endurance rides, **Kustom** delivers pixel-exact typography, customizable zone color palettes, multi-metric combo blocks, and real-time telemetry overlays that make your Karoo display truly yours.
 
-<p align="center">
-  <img src="docs/images/06_ride_page_kustom.png" width="300" alt="Kustom Fields on Karoo Ride Screen" />
-</p>
-
 ---
 
 ## 🚀 Download & Sideloading Guide
@@ -95,10 +91,6 @@ Customize every label and value with popular cycling typefaces and outdoor-optim
 - **Wahoo ELEMNT Superscript Formatting**: Trailing seconds and decimal digits render in clean superscript (`2:00:⁰⁰`, `10:⁰⁰`, `-3.⁴%`).
 - **Custom Units & Conversions**: Automatic $m/s \rightarrow m/h$ VAM climbing speed conversions, negative grade superscripts (`-3.4%`), and metric/imperial support.
 
-<p align="center">
-  <img src="docs/images/01_typography_config.png" width="280" alt="Kustom Typography Configuration" />
-</p>
-
 ---
 
 ### 🎨 2. Multiple Zone Color Palettes & Customization
@@ -108,26 +100,14 @@ Tailor your ride display to match your preferred eco-system or visual style with
 - **Flexible Zone Color Modes**: Apply zone colors as **Full Card Background Fills**, **Text Color Accents**, or **Bottom Gauge Bars**.
 - **3D "Neon Glass" Shader Option**: Enjoy an optional 3-pass glossy liquid-glass shader (`ZonePalette.NEON_GLASS`) featuring vertical neon gradients, top specular glass reflection, and luminous neon rims.
 
-<p align="center">
-  <img src="docs/images/03_zone_palette.png" width="260" alt="Kustom Zone Palette Configuration" />
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="docs/images/02_field_background.png" width="260" alt="Kustom Field Background Configuration" />
-</p>
-
 ---
 
-### 🧩 3. Full-Width 3-In-One Composite Blocks & Field Customization
+### 🧩 3. Full-Width 3-In-One Composite Blocks
 Consolidate **3 metrics on 1 card** to maximize screen efficiency:
 - **Center Hero Primary Metric**: Large, bold main digits with auto-scaling font sizes.
 - **Top-Left & Top-Right Stacked Metrics**: Corner labels and values for NP, Avg HR, Max Power, TSS, W/kg, Cadence, Grade %, etc.
 - **Bottom 7-Zone Gauge Bar**: Live power/HR zone bar showing your current intensity zone.
 - **Universal Customization**: Pick ANY metric from Kustom's full 76+ catalog for the Center, Left, and Right slots!
-
-<p align="center">
-  <img src="docs/images/04_fields_category_list.png" width="260" alt="Kustom Field Category Accordion" />
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="docs/images/05_power_field_config.png" width="260" alt="Kustom Individual Field Configuration" />
-</p>
 
 ---
 
