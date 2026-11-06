@@ -73,7 +73,6 @@ class KustomDataType(
             var leftGradeSmoother = RollingTimeSmoother(3)
             var rightGradeSmoother = RollingTimeSmoother(3)
             var lastSmoothingSec = -1
-            var lastDebugLogTime = 0L
 
             val powerHistory = mutableListOf<Float>()
             val hrHistory = mutableListOf<Float>()
@@ -299,66 +298,6 @@ class KustomDataType(
                             isInRide = isInRide,
                         )
                     }
-                } else if (definition.typeId.startsWith("debug-")) {
-                    // Debug Mode: Concurrently stream category-specific Karoo SDK telemetry flows
-                    val debugFlowList = when (definition.typeId) {
-                        "debug-workout" -> listOf(
-                            "WORKOUT_POWER_TARGET" to DataType.Type.WORKOUT_POWER_TARGET,
-                            "WORKOUT_PRIMARY_TARGET" to DataType.Type.WORKOUT_PRIMARY_TARGET,
-                            "WORKOUT_SECONDARY_TARGET" to DataType.Type.WORKOUT_SECONDARY_TARGET,
-                            "WORKOUT_REMAINING_TOTAL_DURATION" to DataType.Type.WORKOUT_REMAINING_TOTAL_DURATION,
-                            "WORKOUT_REMAINING_INTERVAL_DURATION" to DataType.Type.WORKOUT_REMAINING_INTERVAL_DURATION,
-                            "WORKOUT_INTERVAL_COUNT" to DataType.Type.WORKOUT_INTERVAL_COUNT,
-                        )
-                        "debug-power" -> listOf(
-                            "POWER" to DataType.Type.POWER,
-                            "AVERAGE_POWER" to DataType.Type.AVERAGE_POWER,
-                            "MAX_POWER" to DataType.Type.MAX_POWER,
-                            "NORMALIZED_POWER" to DataType.Type.NORMALIZED_POWER,
-                            "POWER_BALANCE" to DataType.Type.PEDAL_POWER_BALANCE,
-                            "POWER_ZONE" to DataType.Type.POWER_ZONE,
-                        )
-                        "debug-hr" -> listOf(
-                            "HEART_RATE" to DataType.Type.HEART_RATE,
-                            "AVERAGE_HR" to DataType.Type.AVERAGE_HR,
-                            "MAX_HR" to DataType.Type.MAX_HR,
-                            "HR_ZONE" to DataType.Type.HR_ZONE,
-                        )
-                        else -> listOf(
-                            "SPEED" to DataType.Type.SPEED,
-                            "CADENCE" to DataType.Type.CADENCE,
-                            "DISTANCE" to DataType.Type.DISTANCE,
-                            "ELAPSED_TIME" to DataType.Type.ELAPSED_TIME,
-                            "CLOCK_TIME" to DataType.Type.CLOCK_TIME,
-                            "BATTERY_PERCENT" to DataType.Type.BATTERY_PERCENT,
-                            "TEMPERATURE" to DataType.Type.TEMPERATURE,
-                            "ELEVATION_GRADE" to DataType.Type.ELEVATION_GRADE,
-                        )
-                    }
-
-                    val flows = debugFlowList.map { (name, typeId) ->
-                        karooSystemRepository.streamDataFlow(typeId).map { state -> name to state }
-                    }
-
-                    combine(flows) { statesArray ->
-                        val map = mutableMapOf<String, DataPoint>()
-                        statesArray.forEach { (name, state) ->
-                            val dp = (state as? StreamState.Streaming)?.dataPoint
-                            if (dp != null) {
-                                map[name] = dp
-                            }
-                        }
-
-                        RenderPayload(
-                            streamState = null,
-                            userProfile = userProfile,
-                            settings = settings,
-                            fieldConfig = fieldConfig,
-                            isMock = false,
-                            isInRide = isInRide,
-                            debugDps = map,
-                        )
-                    }
                 } else {
                     // Active Ride Page Mode: Stream live sensor telemetry states from Karoo OS for standard single-metric fields
                     val sdkTypeId = definition.resolveSdkDataTypeId(fieldConfig.smoothingOption)
@@ -385,8 +324,6 @@ class KustomDataType(
                 val mockIndex = payload.mockIndex
                 val targetDataPoint = payload.targetDataPoint
                 val isInRide = payload.isInRide
-                val debugDps = payload.debugDps
-                val debugStreamStates = payload.debugStreamStates
 
                 if (fieldConfig.smoothingOption.seconds != lastSmoothingSec) {
                     lastSmoothingSec = fieldConfig.smoothingOption.seconds
@@ -524,36 +461,7 @@ class KustomDataType(
                 val customComboInst = settings.customComboInstances.firstOrNull { it.id == definition.typeId }
                 val isComboBlock = customComboInst != null || definition.typeId.startsWith("combo-block-") || definition.typeId == "power-combo" || definition.typeId == "custom-combo"
 
-                val bitmap = if (definition.typeId.startsWith("debug-")) {
-                    if (debugStreamStates != null) {
-                        val now = System.currentTimeMillis()
-                        if (now - lastDebugLogTime > 2000L) {
-                            lastDebugLogTime = now
-                            val sb = StringBuilder()
-                            sb.appendLine("=== KUSTOM_SDK_DUMP [${definition.typeId}] isInRide=$isInRide ===")
-                            for ((streamId, state) in debugStreamStates) {
-                                when (state) {
-                                    is StreamState.Streaming -> sb.appendLine("  $streamId -> STREAMING: ${state.dataPoint.values}")
-                                    is StreamState.Searching -> sb.appendLine("  $streamId -> SEARCHING")
-                                    is StreamState.Idle -> sb.appendLine("  $streamId -> IDLE")
-                                    is StreamState.NotAvailable -> sb.appendLine("  $streamId -> NOT_AVAILABLE")
-                                }
-                            }
-                            sb.appendLine("==================================================================")
-                            android.util.Log.i("KUSTOM_SDK_DUMP", sb.toString())
-                        }
-                    }
-
-                    KustomFieldRenderer.renderDebugCategoryField(
-                        context = context,
-                        config = config,
-                        categoryTitle = definition.childTitle,
-                        debugDps = debugDps,
-                        debugStreamStates = debugStreamStates,
-                        isInRide = isInRide,
-                        isDarkTheme = isDarkTheme,
-                    )
-                } else if (definition.typeId == "workout-target-corridor") {
+                val bitmap = if (definition.typeId == "workout-target-corridor") {
                     val userFtp = userProfile?.ftp?.toDouble() ?: 250.0
                     val activeWorkout = if (isMock) {
                         WorkoutFileParser.getDefaultSampleWorkout(userFtp, settings.globalColors.globalZonePalette)
@@ -888,8 +796,6 @@ class KustomDataType(
         val mockIndex: Int = 0,
         val targetDataPoint: DataPoint? = null,
         val isInRide: Boolean = false,
-        val debugDps: Map<String, DataPoint>? = null,
-        val debugStreamStates: Map<String, StreamState>? = null,
     )
 
     private fun extractTargetPowerString(dataPoint: DataPoint?): String? {
