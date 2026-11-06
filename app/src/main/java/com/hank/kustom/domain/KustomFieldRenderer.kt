@@ -12,6 +12,7 @@ import com.hank.kustom.data.model.ColorMode
 import com.hank.kustom.data.model.GlobalColorConfig
 import com.hank.kustom.data.model.TypographyConfig
 import com.hank.kustom.data.model.ZoneFormat
+import com.hank.kustom.data.model.ZonePalette
 import com.hank.kustom.util.KustomLogger
 import io.hammerhead.karooext.models.DataPoint
 import io.hammerhead.karooext.models.ViewConfig
@@ -208,6 +209,68 @@ object KustomFieldRenderer {
     /**
      * Renders multi-metric Power Combo Block with clean un-cluttered corner labels, small smoothing badge, and zone bar.
      */
+    /**
+     * Renders a 3-layer glossy liquid-glass effect (vertical neon gradient + top specular glass reflection + luminous neon rim).
+     */
+    fun drawNeonGlassRoundRect(
+        canvas: Canvas,
+        rect: RectF,
+        cornerRadius: Float,
+        baseColor: Int,
+        isActiveHighlight: Boolean = false,
+        palette: ZonePalette = ZonePalette.NEON_GLASS,
+    ) {
+        val spec = palette.getNeonGlassSpecForColor(baseColor)
+
+        // Pass 1: Vertical Neon Gradient Base
+        val basePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = android.graphics.LinearGradient(
+                rect.left, rect.top, rect.left, rect.bottom,
+                spec.topColor, spec.coreColor,
+                android.graphics.Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, basePaint)
+
+        // Pass 2: Specular Top Glass Reflection (Curved Glossy Shine)
+        val glossInset = (rect.width() * 0.03f).coerceIn(1.5f, 6f)
+        val glossH = (rect.height() * 0.44f).coerceAtLeast(3f)
+        val glossRect = RectF(
+            rect.left + glossInset,
+            rect.top + (rect.height() * 0.04f),
+            rect.right - glossInset,
+            rect.top + glossH
+        )
+
+        if (glossRect.width() > 2f && glossRect.height() > 2f) {
+            val glossPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                shader = android.graphics.LinearGradient(
+                    glossRect.left, glossRect.top, glossRect.left, glossRect.bottom,
+                    0x70FFFFFF.toInt(), 0x00FFFFFF.toInt(),
+                    android.graphics.Shader.TileMode.CLAMP
+                )
+            }
+            canvas.drawRoundRect(glossRect, (cornerRadius * 0.7f).coerceAtLeast(2f), (cornerRadius * 0.7f).coerceAtLeast(2f), glossPaint)
+        }
+
+        // Pass 3: Luminous Neon Rim Border
+        val strokeW = if (isActiveHighlight) 3.0f else 1.5f
+        val rimColor = if (isActiveHighlight) 0xFFFFFFFF.toInt() else spec.rimColor
+
+        val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = strokeW
+            color = rimColor
+        }
+        val insetBorderRect = RectF(
+            rect.left + (strokeW / 2f),
+            rect.top + (strokeW / 2f),
+            rect.right - (strokeW / 2f),
+            rect.bottom - (strokeW / 2f)
+        )
+        canvas.drawRoundRect(insetBorderRect, cornerRadius, cornerRadius, rimPaint)
+    }
+
     fun renderComboBlock(
         context: Context,
         config: ViewConfig,
@@ -390,20 +453,24 @@ object KustomFieldRenderer {
                     val rect = RectF(segLeft, currentTop, segRight, currentBottom)
                     val cornerRadius = baseBarHeight * 0.35f
 
-                    val segPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = zoneColor
-                        style = Paint.Style.FILL
-                    }
-                    canvas.drawRoundRect(rect, cornerRadius, cornerRadius, segPaint)
-
-                    // Crisp high-contrast border outline over active zone segment
-                    if (isActive) {
-                        val activeBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                            color = if (isDarkTheme) 0xFFFFFFFF.toInt() else 0xFF1E2225.toInt()
-                            style = Paint.Style.STROKE
-                            strokeWidth = 2.5f
+                    if (palette == ZonePalette.NEON_GLASS) {
+                        drawNeonGlassRoundRect(canvas, rect, cornerRadius, zoneColor, isActiveHighlight = isActive, palette = palette)
+                    } else {
+                        val segPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                            color = zoneColor
+                            style = Paint.Style.FILL
                         }
-                        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, activeBorderPaint)
+                        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, segPaint)
+
+                        // Crisp high-contrast border outline over active zone segment
+                        if (isActive) {
+                            val activeBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                                color = if (isDarkTheme) 0xFFFFFFFF.toInt() else 0xFF1E2225.toInt()
+                                style = Paint.Style.STROKE
+                                strokeWidth = 2.5f
+                            }
+                            canvas.drawRoundRect(rect, cornerRadius, cornerRadius, activeBorderPaint)
+                        }
                     }
                 }
             }
@@ -485,17 +552,21 @@ object KustomFieldRenderer {
 
                 val isPast = activeRatio > 0.01f && (currentBarX + barW) <= dividerX
 
-                val barPath = android.graphics.Path().apply {
-                    addRoundRect(barRect, cornerRadii, android.graphics.Path.Direction.CW)
-                }
+                if (globalColors.globalZonePalette == ZonePalette.NEON_GLASS) {
+                    drawNeonGlassRoundRect(canvas, barRect, 6f, step.zoneColorInt, isActiveHighlight = false, palette = globalColors.globalZonePalette)
+                } else {
+                    val barPath = android.graphics.Path().apply {
+                        addRoundRect(barRect, cornerRadii, android.graphics.Path.Direction.CW)
+                    }
 
-                // 100% solid fill for all interval blocks with flat bottom
-                val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = step.zoneColorInt
-                    style = Paint.Style.FILL
-                    if (isPast) alpha = 180
+                    // 100% solid fill for all interval blocks with flat bottom
+                    val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = step.zoneColorInt
+                        style = Paint.Style.FILL
+                        if (isPast) alpha = 180
+                    }
+                    canvas.drawPath(barPath, barPaint)
                 }
-                canvas.drawPath(barPath, barPaint)
 
                 currentBarX += barW
             }
@@ -766,11 +837,15 @@ object KustomFieldRenderer {
 
             // Target Corridor Highlight Box (Matte Forest Green #388E3C)
             val targetBoxRect = RectF(tLeftX, trackY, tRightX, trackY + trackHeight)
-            val targetFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0xFF388E3C.toInt()
-                style = Paint.Style.FILL
+            if (globalColors.globalZonePalette == ZonePalette.NEON_GLASS) {
+                drawNeonGlassRoundRect(canvas, targetBoxRect, 6f, 0xFF059669.toInt(), isActiveHighlight = true, palette = globalColors.globalZonePalette)
+            } else {
+                val targetFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = 0xFF388E3C.toInt()
+                    style = Paint.Style.FILL
+                }
+                canvas.drawRoundRect(targetBoxRect, 6f, 6f, targetFillPaint)
             }
-            canvas.drawRoundRect(targetBoxRect, 6f, 6f, targetFillPaint)
 
             // Crisp Vertical Boundary Gate Tick Lines at tLeftX and tRightX
             val gateTickPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
