@@ -4,9 +4,9 @@
 - Package namespace: com.hank.kustom. Extension ID: "kustom".
 - Primary extension service: com.hank.kustom.extension.KustomExtension : KarooExtension("kustom", "1").
 - Key architecture layers:
-    - data/model/: KustomSettings, KustomFieldCatalog, KustomFieldConfig, CustomComboInstance (5 static 3-in-1 blocks: Block 1 Power, Block 2 HR, Block 3 Grade, Block 4 Workout, Block 5 Cadence), GlobalTypographyConfig, GlobalColorConfig, ZonePalette (including NEON_GLASS "Neon Glass"), SmoothingOption, ZoneFormat, KustomFont.
+    - data/model/: KustomSettings, KustomFieldCatalog, KustomFieldConfig, CustomComboInstance (5 static 3-in-1 blocks), GlobalTypographyConfig, GlobalColorConfig, ZonePalette (including NEON_GLASS "Neon Glass"), SmoothingOption, ZoneFormat, KustomFont.
     - data/repository/: KarooSystemRepository and KustomSettingsRepository (Preferences DataStore "kustom_settings").
-    - domain/: FullWidthLayoutEngine (centralized full-width slot layout engine), KustomFieldRenderer (single fields, 3-in-1 combo blocks, target power corridor, workout graph HUD, and 2-column debug terminal), WorkoutFileParser (local .fit and .zwo parser), KustomColorAndSmoothing, KustomTypefaceResolver.
+    - domain/: FullWidthLayoutEngine (centralized full-width slot layout engine), KustomFieldRenderer (single fields, 3-in-1 combo blocks, experimental target power corridor & workout graph HUD, and 2-column debug terminal), WorkoutFileParser (local .fit and .zwo parser), KustomColorAndSmoothing, KustomTypefaceResolver.
     - extension/: KustomExtension and types/KustomDataType.
     - ui/: MainActivity and KustomSettingsViewModel.
 - CRITICAL app/build.gradle.kts SDK Levels:
@@ -22,11 +22,11 @@
 
 ## 3. Centralized Full-Width Layout Engine (FullWidthLayoutEngine.kt)
 - Single Layout Engine: All full-width composite fields (renderComboBlock, renderTargetPowerCorridor, and future full-width HUDs) MUST use FullWidthLayoutEngine.
-- Horizontal & Vertical Column Allocation (Maximized Corner Value Readability):
+- Horizontal & Vertical Column Allocation:
     - Left Column: 3.0% to 30.5% (27.5% width), strictly left-aligned (Paint.Align.LEFT).
     - Center Hero Column: 32.0% to 68.0% (36.0% width when side slots are present; 8.0% to 92.0% when both side slots are Empty).
     - Right Column: 69.5% to 97.0% (27.5% width), right-aligned (Paint.Align.RIGHT) when plain text.
-    - Corner Value Vertical Box: valueBoxTop = height * 0.26f, and valueBoxBottom = if (centerHero.hasBottomBar) height * 0.72f else height * 0.82f (so corner values have generous vertical height to scale up with valueTypography.fontSizeSp).
+    - Corner Value Vertical Box: valueBoxTop = height * 0.26f, and valueBoxBottom = if (centerHero.hasBottomBar) height * 0.72f else height * 0.82f.
 - UNIFIED HEADER LABEL TYPOGRAPHY & OUTDOOR VISIBILITY (Left, Middle, and Right Labels):
     - Left (leftSlot.label), Middle (centerHero.label), and Right (rightSlot.label) labels MUST all use the EXACT SAME font family (labelTypography.font), the EXACT SAME font weight (labelTypography.fontWeight), the EXACT SAME pixel font size (unifiedLabelPx, computed strictly from labelTypography.fontSizeSp), and the EXACT SAME high-contrast text color (defaultTextColor: pure black in Day Mode, pure white in Night Mode).
     - All three labels must be drawn via drawFixedLabel (no auto-scaling while loop) anchored to the exact same top line (labelTopY = height * 0.06f): Left Paint.Align.LEFT, Middle Paint.Align.CENTER, Right Paint.Align.RIGHT.
@@ -42,10 +42,13 @@
     - Z7: top #D946EF, core #9333EA, rim #E879F9
 - MUST Apply 3-Pass Glossy Glass Shader to ALL Zone Surfaces (Including Full-Card & Single-Field Backgrounds).
 
-## 5. KAROO OS WORKOUT IPC MAPPING, CACHING & LIFECYCLE RULES
-- Inverted Karoo OS Duration Stream Identifiers (Keep Locked in KustomFieldCatalog.kt):
-    - "workout-duration-remaining" (WRK REM) maps to DataType.Type.WORKOUT_REMAINING_INTERVAL_DURATION.
-    - "workout-interval-time-remaining" (INT REM) maps to DataType.Type.WORKOUT_REMAINING_TOTAL_DURATION.
+## 5. EXPERIMENTAL WORKOUT FIELDS SCOPE (workout-target-corridor & workout-graph ONLY)
+- Only Two Workout Fields Are Supported:
+    - Kustom ONLY exposes "workout-target-corridor" (Target Corridor) and "workout-graph" (Workout Graph) under FieldCategory.WORKOUT.
+    - Do NOT register standalone workout timer or target text fields ("workout-duration-remaining", "workout-interval-time-remaining", "workout-interval-count", "workout-target-power", "workout-primary-target", "workout-next-target"), and do NOT include workout target metrics in the 3-in-1 Combo Block dropdowns (3-in-1 blocks must use pure live sensor telemetry only).
+    - Document in UI descriptions and README.md that "workout-target-corridor" and "workout-graph" are Experimental and may get out of sync pre-ride or when skipping steps due to current karoo-ext SDK workout event limitations.
+
+## 6. True 1:1 Font Scaling, State Isolation & karoo-ext Lifecycle Rules
 - NEVER Stretch Fonts: Keep paint.textScaleX = 1.0f and use ContentScale.Fit with exact container pixel dimensions on all preview Image composables.
 - State Isolation: Always use rememberUpdatedState inside custom gesture controls (KarooSteppedSlider) and atomic DataStore updates in KustomSettingsRepository.
 - Strict karoo-ext Cleanup: Always emit UpdateGraphicConfig(showHeader = false) at the start of startView, and cancel all coroutines/consumers inside emitter.setCancellable { job.cancel() }.

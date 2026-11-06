@@ -178,12 +178,7 @@ class KustomDataType(
                     val leftDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboLeftMetric) ?: KustomFieldCatalog.NP
                     val rightDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboRightMetric) ?: KustomFieldCatalog.MAX_POWER
 
-                    val isCenterWorkoutTarget = centerDef.typeId == "workout-target-power" || centerDef.typeId == "workout-primary-target"
-                    val centerSdkId = if (isCenterWorkoutTarget) {
-                        KustomFieldCatalog.POWER.resolveSdkDataTypeId(resolvedConfig.smoothingOption)
-                    } else {
-                        centerDef.resolveSdkDataTypeId(resolvedConfig.smoothingOption)
-                    }
+                    val centerSdkId = centerDef.resolveSdkDataTypeId(resolvedConfig.smoothingOption)
                     val leftSdkId = leftDef.resolveSdkDataTypeId(resolvedConfig.comboLeftSmoothing)
                     val rightSdkId = rightDef.resolveSdkDataTypeId(resolvedConfig.comboRightSmoothing)
 
@@ -195,16 +190,7 @@ class KustomDataType(
                         centerFlow,
                         leftFlow,
                         rightFlow,
-                        combine(
-                            karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_PRIMARY_TARGET),
-                            karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_POWER_TARGET),
-                            karooSystemRepository.streamDataFlow(DataType.Type.WORKOUT_SECONDARY_TARGET),
-                        ) { pr, pt, sec -> Triple(pr, pt, sec) },
-                    ) { centerState, leftState, rightState, (priState, pState, secState) ->
-                        val priDp = (priState as? StreamState.Streaming)?.dataPoint
-                        val pDp = (pState as? StreamState.Streaming)?.dataPoint
-                        val secDp = (secState as? StreamState.Streaming)?.dataPoint
-                        val targetDp = listOfNotNull(priDp, pDp, secDp).firstOrNull { extractTargetPowerString(it) != null } ?: priDp ?: pDp ?: secDp
+                    ) { centerState, leftState, rightState ->
                         RenderPayload(
                             streamState = centerState,
                             leftStreamState = leftState,
@@ -213,7 +199,6 @@ class KustomDataType(
                             settings = settings,
                             fieldConfig = resolvedConfig,
                             isMock = false,
-                            targetDataPoint = targetDp,
                             isInRide = isInRide,
                         )
                     }
@@ -706,17 +691,7 @@ class KustomDataType(
                         )
                     } else null
 
-                    val comboCenterLabel = if (centerDef.typeId == "workout-target-power" || centerDef.typeId == "workout-primary-target") {
-                        val firstStepTargetStr = activeWorkout?.steps?.firstOrNull()?.let { "${it.targetWattsMin.toInt()}-${it.targetWattsMax.toInt()}" }
-                        when {
-                            liveWorkoutTargetStr != null -> liveWorkoutTargetStr
-                            isWorkoutActiveOnKaroo && firstStepTargetStr != null -> firstStepTargetStr
-                            isMock -> "117-146"
-                            else -> centerDef.resolveDynamicLabel(resolvedConfig.smoothingOption)
-                        }
-                    } else {
-                        centerDef.resolveDynamicLabel(resolvedConfig.smoothingOption)
-                    }
+                    val comboCenterLabel = centerDef.resolveDynamicLabel(resolvedConfig.smoothingOption)
 
                     KustomFieldRenderer.renderComboBlock(
                         context = context,

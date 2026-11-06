@@ -2124,6 +2124,25 @@ fun FieldsTab(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
+                                if (category == FieldCategory.WORKOUT) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(colors.cardBg)
+                                            .border(1.dp, Color(0xFF0284C7), RoundedCornerShape(8.dp))
+                                            .padding(10.dp),
+                                    ) {
+                                        Text(
+                                            text = "Note: Workout fields are experimental. Because the Karoo Extensions SDK (karoo-ext) does not currently broadcast workout load/skip events or pre-ride workout state, these fields only sync once a workout ride is started and may drift if intervals are skipped.",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = colors.textPrimary,
+                                            lineHeight = 16.sp,
+                                        )
+                                    }
+                                }
+
                                 if (category == FieldCategory.COMBO) {
                                     settings.customComboInstances.forEach { instance ->
                                         CustomComboCardItem(

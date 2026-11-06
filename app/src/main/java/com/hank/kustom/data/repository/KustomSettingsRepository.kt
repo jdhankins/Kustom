@@ -291,7 +291,7 @@ class KustomSettingsRepository(context: Context) {
             CustomComboInstance(
                 id = "combo-block-4",
                 name = "Block 4",
-                centerMetric = "workout-target-power",
+                centerMetric = "power",
                 leftMetric = "tss",
                 rightMetric = "hr",
                 centerZoneFormat = ZoneFormat.BAR,
@@ -319,24 +319,14 @@ class KustomSettingsRepository(context: Context) {
                 val obj = jsonArray.getJSONObject(i)
                 val rawId = obj.optString("id", "combo-block-${i + 1}")
                 val normalizedId = if (rawId.startsWith("combo_")) "combo-block-${i + 1}" else rawId
-                val defaultCenter = when (normalizedId) {
-                    "combo-block-1" -> "power"
-                    "combo-block-4" -> "workout-target-power"
-                    else -> "power"
-                }
-                val defaultLeft = when (normalizedId) {
-                    "combo-block-1" -> "avg-power"
-                    "combo-block-3" -> "elevation"
-                    "combo-block-4" -> "tss"
-                    else -> "avg-power"
-                }
-                val defaultRight = when (normalizedId) {
-                    "combo-block-1" -> "max-power"
-                    "combo-block-4" -> "hr"
-                    else -> "max-power"
-                }
+                val defaultCenter = "power"
+                val defaultLeft = if (normalizedId == "combo-block-4") "tss" else "avg-power"
+                val defaultRight = if (normalizedId == "combo-block-4") "hr" else "max-power"
                 val defaultRightZone = if (normalizedId == "combo-block-4") ZoneFormat.BACKGROUND else ZoneFormat.NONE
                 val defaultRightSmooth = if (normalizedId == "combo-block-4") 3 else 0
+
+                val rawCenter = obj.optString("centerMetric", defaultCenter)
+                val safeCenter = if (rawCenter == "workout-target-power" || rawCenter == "workout-primary-target") "power" else rawCenter
 
                 val rawLeft = obj.optString("leftMetric", defaultLeft)
                 val rawRight = obj.optString("rightMetric", defaultRight)
@@ -347,7 +337,7 @@ class KustomSettingsRepository(context: Context) {
                     CustomComboInstance(
                         id = normalizedId,
                         name = obj.optString("name", "Block ${i + 1}"),
-                        centerMetric = obj.optString("centerMetric", defaultCenter),
+                        centerMetric = safeCenter,
                         leftMetric = safeLeft,
                         rightMetric = safeRight,
                         centerZoneFormat = parseEnum(obj.optString("centerZoneFormat"), ZoneFormat.BAR),

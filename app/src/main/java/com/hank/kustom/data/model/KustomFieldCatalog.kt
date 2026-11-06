@@ -425,18 +425,10 @@ object KustomFieldCatalog {
     val SUNSET = KustomFieldDefinition("sunset", "Sunset", FieldCategory.TIME, "Local sunset time", supportsSmoothing = false, supportsZones = false, listOf(72000.0, 72000.0, 72000.0, 72000.0, 72000.0))
 
     // 10. WORKOUT (FieldCategory.WORKOUT)
-    val WORKOUT_INTERVAL_COUNT = KustomFieldDefinition("workout-interval-count", "Int Count", FieldCategory.WORKOUT, "Current interval step count", supportsSmoothing = false, supportsZones = false, listOf(3.0, 3.0, 4.0, 4.0, 5.0))
-    val WORKOUT_INTERVAL_TIME = KustomFieldDefinition("workout-interval-time-remaining", "Int Rem", FieldCategory.WORKOUT, "Time remaining in current interval", supportsSmoothing = false, supportsZones = false, listOf(185.0, 180.0, 175.0, 170.0, 165.0))
-    val WORKOUT_NEXT_TARGET = KustomFieldDefinition("workout-next-target", "Next Target", FieldCategory.WORKOUT, "Upcoming interval target", supportsSmoothing = false, supportsZones = false, listOf(180.0, 180.0, 280.0, 280.0, 180.0))
-    val WORKOUT_POWER = KustomFieldDefinition("workout-target-power", "Target Power", FieldCategory.WORKOUT, "Target power label with current power value", supportsSmoothing = true, supportsZones = true, listOf(215.0, 228.0, 242.0, 260.0, 235.0))
-    val WORKOUT_PRIMARY_TARGET = KustomFieldDefinition("workout-primary-target", "Target", FieldCategory.WORKOUT, "Target power or heart rate", supportsSmoothing = false, supportsZones = true, listOf(250.0, 260.0, 270.0, 280.0, 265.0))
-    val WORKOUT_TARGET_CADENCE = KustomFieldDefinition("workout-target-cadence", "Target Cadence", FieldCategory.WORKOUT, "Target cadence label with current cadence value", supportsSmoothing = true, supportsZones = false, listOf(85.0, 88.0, 92.0, 95.0, 90.0))
-    val WORKOUT_TARGET_HR = KustomFieldDefinition("workout-target-hr", "Target HR", FieldCategory.WORKOUT, "Target HR label with current HR value", supportsSmoothing = false, supportsZones = true, listOf(145.0, 148.0, 152.0, 156.0, 150.0))
-    val WORKOUT_DURATION_REMAINING = KustomFieldDefinition("workout-duration-remaining", "Wrk Rem", FieldCategory.WORKOUT, "Remaining workout time", supportsSmoothing = false, supportsZones = false, listOf(1800.0, 1740.0, 1680.0, 1620.0, 1560.0))
-    val WORKOUT_GRAPH = KustomFieldDefinition("workout-graph", "Workout Graph", FieldCategory.WORKOUT, "Interactive workout profile graph with live Power, HR, and Cadence trace lines", supportsSmoothing = true, supportsZones = true, listOf(215.0, 228.0, 242.0, 260.0, 235.0))
-    val WORKOUT_TARGET_CORRIDOR = KustomFieldDefinition("workout-target-corridor", "Target Corridor", FieldCategory.WORKOUT, "Target power range corridor & live power needle", supportsSmoothing = true, supportsZones = false, listOf(142.0, 155.0, 168.0, 138.0, 148.0))
+    val WORKOUT_GRAPH = KustomFieldDefinition("workout-graph", "Workout Graph", FieldCategory.WORKOUT, "Experimental: Local FIT/ZWO interval graph & live traces (may drift if steps are skipped due to karoo-ext SDK limits)", supportsSmoothing = true, supportsZones = true, listOf(215.0, 228.0, 242.0, 260.0, 235.0))
+    val WORKOUT_TARGET_CORRIDOR = KustomFieldDefinition("workout-target-corridor", "Target Corridor", FieldCategory.WORKOUT, "Experimental: Target power corridor & live needle (may lag pre-ride or on skipped steps due to karoo-ext SDK limits)", supportsSmoothing = true, supportsZones = false, listOf(142.0, 155.0, 168.0, 138.0, 148.0))
 
-    /** Complete list of all 76 registered data fields sorted in alphabetical order by parent and child. */
+    /** Complete list of all 68 registered data fields sorted in alphabetical order by parent and child. */
     val allFields: List<KustomFieldDefinition> = listOf(
         // 1. CADENCE
         AVG_CADENCE, AVG_TORQUE, CADENCE, MAX_CADENCE, MAX_TORQUE, TORQUE,
@@ -457,7 +449,7 @@ object KustomFieldCatalog {
         // 9. TIME
         CLOCK_TIME, ELAPSED_TIME, PAUSED_TIME, RIDE_TIME, SUNRISE, SUNSET,
         // 10. WORKOUT
-        WORKOUT_GRAPH, WORKOUT_INTERVAL_COUNT, WORKOUT_INTERVAL_TIME, WORKOUT_NEXT_TARGET, WORKOUT_POWER, WORKOUT_PRIMARY_TARGET, WORKOUT_TARGET_CADENCE, WORKOUT_TARGET_CORRIDOR, WORKOUT_TARGET_HR, WORKOUT_DURATION_REMAINING,
+        WORKOUT_GRAPH, WORKOUT_TARGET_CORRIDOR,
     )
 
     /** Configurable data fields with smoothing or zone capabilities. */

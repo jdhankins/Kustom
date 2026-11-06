@@ -199,24 +199,8 @@
     <string name="field_sunset_desc">Local sunset time</string>
 
     <!-- 10. WORKOUT -->
-    <string name="field_workout_interval_count_name">Workout - Int Count</string>
-    <string name="field_workout_interval_count_desc">Current interval step count</string>
-    <string name="field_workout_interval_time_remaining_name">Workout - Int Rem</string>
-    <string name="field_workout_interval_time_remaining_desc">Time remaining in current interval</string>
-    <string name="field_workout_next_target_name">Workout - Next Target</string>
-    <string name="field_workout_next_target_desc">Upcoming interval target</string>
-    <string name="field_workout_target_power_name">Workout - Target Power</string>
-    <string name="field_workout_target_power_desc">Target power label with current power value</string>
-    <string name="field_workout_primary_target_name">Workout - Target</string>
-    <string name="field_workout_primary_target_desc">Target power or heart rate</string>
-    <string name="field_workout_target_cadence_name">Workout - Target Cadence</string>
-    <string name="field_workout_target_cadence_desc">Target cadence label with current cadence value</string>
-    <string name="field_workout_target_hr_name">Workout - Target HR</string>
-    <string name="field_workout_target_hr_desc">Target HR label with current HR value</string>
-    <string name="field_workout_duration_remaining_name">Workout - Wrk Rem</string>
-    <string name="field_workout_duration_remaining_desc">Remaining workout time</string>
     <string name="field_workout_graph_name">Workout - Workout Graph</string>
-    <string name="field_workout_graph_desc">Interactive workout profile graph with live Power, HR, and Cadence trace lines</string>
+    <string name="field_workout_graph_desc">Experimental: Local FIT/ZWO interval graph &amp; live traces (may drift if steps are skipped due to karoo-ext SDK limits)</string>
     <string name="field_workout_target_corridor_name">Workout - Target Corridor</string>
-    <string name="field_workout_target_corridor_desc">Target power range corridor &amp; live power needle</string>
+    <string name="field_workout_target_corridor_desc">Experimental: Target power corridor &amp; live needle (may lag pre-ride or on skipped steps due to karoo-ext SDK limits)</string>
 </resources>
