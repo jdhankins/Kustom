@@ -1360,48 +1360,19 @@ fun UniversalFieldComboControls(
     viewModel: KustomSettingsViewModel,
 ) {
     val centerOptions = remember {
-        listOf(
-            "power" to "Power",
-            "workout-target-power" to "Workout Target",
-            "workout-primary-target" to "Primary Target",
-            "hr" to "Heart Rate",
-            "cadence" to "Cadence",
-            "speed" to "Speed",
-            "grade" to "Road Grade %",
-            "vam" to "VAM Ascent",
-            "np" to "Normalized Power",
-            "avg-power" to "Avg Power",
-            "avg-speed" to "Avg Speed",
-            "avg-hr" to "Avg HR",
-            "distance" to "Distance",
-            "ride-time" to "Ride Time",
-            "clock-time" to "Clock Time",
-        )
+        KustomFieldCatalog.allFields
+            .filter { it.category != FieldCategory.COMBO && !it.typeId.startsWith("debug-") }
+            .map { it.typeId to it.displayName }
     }
 
     val cornerOptions = remember {
-        listOf(
-            "np" to "NP",
-            "tss" to "TSS",
-            "max-power" to "Max Power",
-            "avg-power" to "Avg Power",
-            "power-to-weight" to "W/kg",
-            "power-kj" to "kJ",
-            "percent-ftp" to "% FTP",
-            "avg-hr" to "Avg HR",
-            "max-hr" to "Max HR",
-            "hr-zone" to "HR Zone",
-            "avg-cadence" to "Avg Cadence",
-            "max-cadence" to "Max Cadence",
-            "avg-torque" to "Avg Torque",
-            "max-torque" to "Max Torque",
-            "avg-speed" to "Avg Speed",
-            "max-speed" to "Max Speed",
-            "distance" to "Distance",
-            "ascent" to "Ascent",
-            "grade" to "Grade %",
-            "none" to "None",
+        val options = mutableListOf("none" to "None")
+        options.addAll(
+            KustomFieldCatalog.allFields
+                .filter { it.category != FieldCategory.COMBO && !it.typeId.startsWith("debug-") }
+                .map { it.typeId to it.displayName }
         )
+        options
     }
 
     val selectedCenterId = instance.centerMetric.ifEmpty { "power" }
@@ -1460,7 +1431,7 @@ fun UniversalFieldComboControls(
                     DropdownMenu(
                         expanded = centerExpanded,
                         onDismissRequest = { centerExpanded = false },
-                        modifier = Modifier.background(colors.cardBg),
+                        modifier = Modifier.background(colors.cardBg).heightIn(max = 360.dp),
                     ) {
                         centerOptions.forEach { (id, name) ->
                             DropdownMenuItem(
@@ -1597,7 +1568,7 @@ fun UniversalFieldComboControls(
                     DropdownMenu(
                         expanded = leftExpanded,
                         onDismissRequest = { leftExpanded = false },
-                        modifier = Modifier.background(colors.cardBg),
+                        modifier = Modifier.background(colors.cardBg).heightIn(max = 360.dp),
                     ) {
                         cornerOptions.forEach { (id, name) ->
                             DropdownMenuItem(
@@ -1729,7 +1700,7 @@ fun UniversalFieldComboControls(
                     DropdownMenu(
                         expanded = rightExpanded,
                         onDismissRequest = { rightExpanded = false },
-                        modifier = Modifier.background(colors.cardBg),
+                        modifier = Modifier.background(colors.cardBg).heightIn(max = 360.dp),
                     ) {
                         cornerOptions.forEach { (id, name) ->
                             DropdownMenuItem(
