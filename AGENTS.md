@@ -4,56 +4,43 @@
 - Package namespace: com.hank.kustom. Extension ID: "kustom".
 - Primary extension service: com.hank.kustom.extension.KustomExtension : KarooExtension("kustom", "1").
 - Key architecture layers:
-    - data/model/: KustomSettings, KustomFieldCatalog, KustomFieldConfig, CustomComboInstance (5 static 3-in-1 blocks), GlobalTypographyConfig, GlobalColorConfig, ZonePalette (including NEON_GLASS "Neon Glass"), SmoothingOption, ZoneFormat, KustomFont.
-    - data/repository/: KarooSystemRepository and KustomSettingsRepository (Preferences DataStore "kustom_settings").
-    - domain/: FullWidthLayoutEngine (centralized full-width slot layout engine), KustomFieldRenderer (single fields, 3-in-1 combo blocks, experimental target power corridor & workout graph HUD, and 2-column debug terminal), WorkoutFileParser (local .fit and .zwo parser), KustomColorAndSmoothing, KustomTypefaceResolver.
-    - extension/: KustomExtension and types/KustomDataType.
-    - ui/: MainActivity and KustomSettingsViewModel.
+  - data/model/: KustomSettings, KustomFieldCatalog, KustomFieldConfig, CustomComboInstance (5 static 3-in-1 blocks), GlobalTypographyConfig, GlobalColorConfig, ZonePalette (including NEON_GLASS "Neon Glass"), SmoothingOption, ZoneFormat, KustomFont.
+  - data/repository/: KarooSystemRepository and KustomSettingsRepository (Preferences DataStore "kustom_settings").
+  - domain/: FullWidthLayoutEngine (centralized full-width slot layout engine), KustomFieldRenderer (single fields, 3-in-1 combo blocks, experimental target power corridor & workout graph HUD, and 2-column debug terminal), WorkoutFileParser (local .fit and .zwo parser), KustomColorAndSmoothing, KustomTypefaceResolver.
+  - extension/: KustomExtension and types/KustomDataType.
+  - ui/: MainActivity and KustomSettingsViewModel.
 - CRITICAL app/build.gradle.kts SDK Levels:
-    - Karoo 2 runs Android 8.1 (API 27) and Karoo 3 runs Android 12 (API 31/32).
-    - Keep minSdk = 26 and targetSdk = 34 (with compileSdk = 35 or release(37)).
+  - Karoo 2 runs Android 8.1 (API 27) and Karoo 3 runs Android 12 (API 31/32).
+  - Keep minSdk = 26 and targetSdk = 34 (with compileSdk = 35 or release(37)).
 
-## 2. TELEMETRY UNIT CONVERSIONS & SUPERSCRIPT FORMATTING RULES
+## 2. TELEMETRY EXTRACTION, NEGATIVE VALUES, COASTING CADENCE & ZONE BOUNDARIES
+- Allow Negative Telemetry Values (Grade & Temperature in KustomDataType.kt):
+  - NEVER filter non-workout telemetry values with `dynamicValue >= 0.0`! Road grade ("grade") on descents and ambient temperature ("temperature") in winter are negative numbers. Any `dynamicValue != null && !dynamicValue.isNaN()` MUST be formatted via `definition.formatNumericValueOnly(dynamicValue, isImperial)` (never clamped to 0.0).
+  - In FullWidthLayoutEngine.kt and KustomFieldRenderer.kt, check `!renderText.drop(1).contains("-")` for superscript eligibility so negative decimals like `"-5.4"` render as `-5⁴`.
+- Coasting Cadence (0 RPM) Must Display "0", Not "No Sensor" (KustomDataType.kt):
+  - When a rider coasts downhill without pedaling, crank cadence sensors stop sending revolution events and Karoo OS transitions CADENCE to `StreamState.Idle` (or temporarily `NotAvailable` / `null` value).
+  - In KustomDataType.kt, `StreamState.Idle` MUST render `definition.formatNumericValueOnly(0.0, isImperial)` ("0"), NEVER "No Sensor"! Additionally, once a cadence/power/torque sensor has emitted at least one valid sample during the ride (`hasReceivedSample == true`), any temporary coasting dropout during an active ride (`isInRide == true`) must render `"0"` rather than flashing `"No Sensor"`.
+- Contiguous Integer Zone Matching (Zero Boundary Gaps in KustomColorAndSmoothing.kt):
+  - Karoo's `UserProfile.Zone(min: Int, max: Int)` has integer bounds (e.g., Z1 = 0..164, Z2 = 165..210). Never check raw unrounded floating-point `watts in minD..maxD` (where `164.6W` falls between `164.0` and `165.0`, returning `idx = -1` and flashing `lastIndex` RED!).
+  - Always round `watts` (`val w = kotlin.math.round(watts)`) and `bpm` (`val b = kotlin.math.round(bpm)`) first, and match using contiguous upper bounds: `powerZones.indexOfFirst { (_, max) -> if (max <= 5) pctFtp <= max.toDouble() else w <= max.toDouble() }`.
 - VAM Unit Conversion (m/s to m/h in KustomFieldCatalog.kt):
-    - Karoo OS streams DataType.Type.VERTICAL_SPEED, AVERAGE_VERTICAL_SPEED_30S ("vam"), and AVERAGE_VERTICAL_SPEED ("avg-vam") in meters per second (m/s).
-    - In KustomFieldCatalog.formatNumericValueOnly, "vam" and "avg-vam" MUST multiply rawValue (m/s) by 3600.0 to convert to vertical meters per hour (m/h): (rawValue * 3600.0).roundToInt().coerceAtLeast(0).toString().
-- Negative Number Superscript Eligibility (FullWidthLayoutEngine.kt & KustomFieldRenderer.kt):
-    - When checking if a decimal or time string is eligible for superscript formatting (e.g., "-3.4" -> "-3" with superscript "4"), check !renderText.drop(1).contains("-") instead of !renderText.contains("-"). A leading minus sign at index 0 MUST use superscript formatting, while range strings with an interior hyphen ("115-160") are excluded.
+  - Karoo OS streams `VERTICAL_SPEED`, `AVERAGE_VERTICAL_SPEED_30S` ("vam"), and `AVERAGE_VERTICAL_SPEED` ("avg-vam") in meters per second (m/s). Multiply `rawValue` by `3600.0` to convert to vertical meters per hour (m/h).
 
 ## 3. Centralized Full-Width Layout Engine (FullWidthLayoutEngine.kt)
 - Single Layout Engine: All full-width composite fields (renderComboBlock, renderTargetPowerCorridor, and future full-width HUDs) MUST use FullWidthLayoutEngine.
 - Horizontal & Vertical Column Allocation:
-    - Left Column: 3.0% to 30.5% (27.5% width), strictly left-aligned (Paint.Align.LEFT).
-    - Center Hero Column: 32.0% to 68.0% (36.0% width when side slots are present; 8.0% to 92.0% when both side slots are Empty).
-    - Right Column: 69.5% to 97.0% (27.5% width), right-aligned (Paint.Align.RIGHT) when plain text.
-    - Corner Value Vertical Box: valueBoxTop = height * 0.26f, and valueBoxBottom = if (centerHero.hasBottomBar) height * 0.72f else height * 0.82f.
+  - Left Column: 3.0% to 30.5% (27.5% width), strictly left-aligned (Paint.Align.LEFT).
+  - Center Hero Column: 32.0% to 68.0% (36.0% width when side slots are present; 8.0% to 92.0% when both side slots are Empty).
+  - Right Column: 69.5% to 97.0% (27.5% width), right-aligned (Paint.Align.RIGHT) when plain text.
+  - Corner Value Vertical Box: valueBoxTop = height * 0.26f, and valueBoxBottom = if (centerHero.hasBottomBar) height * 0.72f else height * 0.82f.
 - UNIFIED HEADER LABEL TYPOGRAPHY & OUTDOOR VISIBILITY (Left, Middle, and Right Labels):
-    - Left (leftSlot.label), Middle (centerHero.label), and Right (rightSlot.label) labels MUST all use the EXACT SAME font family (labelTypography.font), the EXACT SAME font weight (labelTypography.fontWeight), the EXACT SAME pixel font size (unifiedLabelPx, computed strictly from labelTypography.fontSizeSp), and the EXACT SAME high-contrast text color (defaultTextColor: pure black in Day Mode, pure white in Night Mode).
-    - All three labels must be drawn via drawFixedLabel (no auto-scaling while loop) anchored to the exact same top line (labelTopY = height * 0.06f): Left Paint.Align.LEFT, Middle Paint.Align.CENTER, Right Paint.Align.RIGHT.
+  - Left (leftSlot.label), Middle (centerHero.label), and Right (rightSlot.label) labels MUST all use the EXACT SAME font family (labelTypography.font), the EXACT SAME font weight (labelTypography.fontWeight), the EXACT SAME pixel font size (unifiedLabelPx), and the EXACT SAME high-contrast text color (defaultTextColor: pure black in Day Mode, pure white in Night Mode).
 
 ## 4. NEON GLASS ZONE PALETTE & 3-PASS GLOSS SHADER (ZonePalette.NEON_GLASS)
-- ZonePalette.NEON_GLASS ("Neon Glass") 7-Zone Color Definitions:
-    - Z1: top #94A3B8, core #38BDF8, rim #7DD3FC
-    - Z2: top #00F0FF, core #0284C7, rim #38BDF8
-    - Z3: top #00FF87, core #059669, rim #34D399
-    - Z4: top #FFE600, core #D97706, rim #FDE047
-    - Z5: top #FF6B00, core #EA580C, rim #FB923C
-    - Z6: top #FF0055, core #E11D48, rim #FB7185
-    - Z7: top #D946EF, core #9333EA, rim #E879F9
-- MUST Apply 3-Pass Glossy Glass Shader to ALL Zone Surfaces (Including Full-Card & Single-Field Backgrounds).
+- MUST Apply 3-Pass Glossy Glass Shader (`drawNeonGlassRoundRect`) to ALL Zone Surfaces (7-zone bar pills, workout graph bars, target corridor, corner pills, and full-card backgrounds).
 
-## 5. EXPERIMENTAL WORKOUT FIELDS SCOPE (workout-target-corridor & workout-graph ONLY)
-- Only Two Workout Fields Are Supported:
-    - Kustom ONLY exposes "workout-target-corridor" (Target Corridor) and "workout-graph" (Workout Graph) under FieldCategory.WORKOUT.
-    - Do NOT register standalone workout timer or target text fields ("workout-duration-remaining", "workout-interval-time-remaining", "workout-interval-count", "workout-target-power", "workout-primary-target", "workout-next-target"), and do NOT include workout target metrics in the 3-in-1 Combo Block dropdowns (3-in-1 blocks must use pure live sensor telemetry only).
-    - Document in UI descriptions and README.md that "workout-target-corridor" and "workout-graph" are Experimental and may get out of sync pre-ride or when skipping steps due to current karoo-ext SDK workout event limitations.
-
-## 6. True 1:1 Font Scaling, State Isolation & karoo-ext Lifecycle Rules
+## 5. True 1:1 Font Scaling, State Isolation & karoo-ext Lifecycle Rules
 - NEVER Stretch Fonts: Keep paint.textScaleX = 1.0f and use ContentScale.Fit with exact container pixel dimensions on all preview Image composables.
 - State Isolation: Always use rememberUpdatedState inside custom gesture controls (KarooSteppedSlider) and atomic DataStore updates in KustomSettingsRepository.
 - Strict karoo-ext Cleanup: Always emit UpdateGraphicConfig(showHeader = false) at the start of startView, and cancel all coroutines/consumers inside emitter.setCancellable { job.cancel() }.
 
-## 7. AUTOMATIC RELEASE APK BUILD ON COMMIT/PUSH
-- Mandatory Fresh APK Binary Copy (releases/app-debug.apk):
-    - Before EVERY git commit and git push, you MUST run ./gradlew app:assembleDebug and copy app/build/outputs/apk/debug/app-debug.apk to releases/app-debug.apk in the repository root.
-    - Stage releases/app-debug.apk along with your code changes so GitHub always hosts the exact latest compiled binary matching the main branch code.

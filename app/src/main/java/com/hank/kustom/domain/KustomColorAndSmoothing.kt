@@ -31,25 +31,27 @@ object KustomColorGradeMapper {
         if (colorMode == ColorMode.NONE) return null
 
         val ftp = (userProfile?.ftp ?: 250).toDouble().coerceAtLeast(50.0)
-        val pctFtp = watts / ftp
+        val roundedWatts = kotlin.math.round(watts)
+        val pctFtp = roundedWatts / ftp
 
         val powerZones = userProfile?.powerZones
         val zoneIndex = if (!powerZones.isNullOrEmpty()) {
-            val idx = powerZones.indexOfFirst { (min, max) ->
-                val minD = min.toDouble()
-                val maxD = max.toDouble()
-                if (maxD <= 5.0) {
-                    pctFtp in minD..maxD
+            val firstMin = powerZones.first().min.toDouble()
+            val isRatioZones = powerZones.first().max <= 5
+            if (isRatioZones) {
+                if (pctFtp <= firstMin) {
+                    0
                 } else {
-                    watts in minD..maxD
+                    val idx = powerZones.indexOfFirst { (_, max) -> pctFtp <= max.toDouble() }
+                    if (idx != -1) idx else powerZones.lastIndex
                 }
-            }
-            if (idx != -1) {
-                idx
-            } else if (pctFtp < (powerZones.firstOrNull()?.min?.toDouble() ?: 0.55)) {
-                0
             } else {
-                powerZones.lastIndex
+                if (roundedWatts <= firstMin) {
+                    0
+                } else {
+                    val idx = powerZones.indexOfFirst { (_, max) -> roundedWatts <= max.toDouble() }
+                    if (idx != -1) idx else powerZones.lastIndex
+                }
             }
         } else {
             when {
@@ -86,24 +88,24 @@ object KustomColorGradeMapper {
     ): Int? {
         if (colorMode == ColorMode.NONE) return null
 
+        val roundedBpm = kotlin.math.round(bpm)
         val hrZones = userProfile?.heartRateZones
         val zoneIndex = if (!hrZones.isNullOrEmpty()) {
-            val idx = hrZones.indexOfFirst { (min, max) -> bpm in min.toDouble()..max.toDouble() }
-            if (idx != -1) {
-                idx
-            } else if (bpm < (hrZones.firstOrNull()?.min ?: 0)) {
+            val firstMin = hrZones.first().min.toDouble()
+            if (roundedBpm <= firstMin) {
                 0
             } else {
-                hrZones.lastIndex
+                val idx = hrZones.indexOfFirst { (_, max) -> roundedBpm <= max.toDouble() }
+                if (idx != -1) idx else hrZones.lastIndex
             }
         } else {
-            val maxHr = userProfile?.maxHr ?: 185
+            val maxHr = (userProfile?.maxHr ?: 185).toDouble()
             when {
-                bpm < 0.60 * maxHr -> 0
-                bpm < 0.70 * maxHr -> 1
-                bpm < 0.80 * maxHr -> 2
-                bpm < 0.90 * maxHr -> 3
-                bpm < 0.95 * maxHr -> 4
+                roundedBpm < 0.60 * maxHr -> 0
+                roundedBpm < 0.70 * maxHr -> 1
+                roundedBpm < 0.80 * maxHr -> 2
+                roundedBpm < 0.90 * maxHr -> 3
+                roundedBpm < 0.95 * maxHr -> 4
                 else -> 5
             }
         }

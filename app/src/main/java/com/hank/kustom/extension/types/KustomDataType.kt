@@ -73,6 +73,9 @@ class KustomDataType(
             var leftGradeSmoother = RollingTimeSmoother(3)
             var rightGradeSmoother = RollingTimeSmoother(3)
             var lastSmoothingSec = -1
+            var hasEverStreamedCenter = false
+            var hasEverStreamedLeft = false
+            var hasEverStreamedRight = false
 
             val powerHistory = mutableListOf<Float>()
             val hrHistory = mutableListOf<Float>()
@@ -387,6 +390,21 @@ class KustomDataType(
                     definition.resolveDynamicLabel(fieldConfig.smoothingOption)
                 }
 
+                if (streamState is StreamState.Streaming && dynamicValue != null) {
+                    hasEverStreamedCenter = true
+                }
+                if (leftStreamState is StreamState.Streaming) {
+                    hasEverStreamedLeft = true
+                }
+                if (rightStreamState is StreamState.Streaming) {
+                    hasEverStreamedRight = true
+                }
+
+                val isCoastingMetric = when (definition.typeId) {
+                    "cadence", "avg-cadence", "max-cadence", "power", "speed", "torque" -> true
+                    else -> false
+                }
+
                 val isSensorField = when (definition.typeId) {
                     "power", "np", "avg-power", "max-power", "power-20m", "power-1hr", "power-balance",
                     "percent-ftp", "power-to-weight", "power-zone", "intensity-factor", "tss", "power-vi",
@@ -410,8 +428,11 @@ class KustomDataType(
                     isWorkoutField && !isWorkoutActiveOnKaroo -> {
                         "No Workout"
                     }
-                    dynamicValue != null && dynamicValue >= 0.0 -> {
+                    dynamicValue != null && !dynamicValue.isNaN() && (!isWorkoutField || dynamicValue >= 0.0) -> {
                         definition.formatNumericValueOnly(dynamicValue, isImperial)
+                    }
+                    isCoastingMetric && (hasEverStreamedCenter || isInRide) -> {
+                        definition.formatNumericValueOnly(0.0, isImperial)
                     }
                     streamState is StreamState.Streaming -> {
                         if (isWorkoutField) {
@@ -630,15 +651,23 @@ class KustomDataType(
                     }
 
                     val primaryValText = if (centerVal == null) {
-                        val isCenterSensor = when (centerDef.typeId) {
-                            "power", "workout-target-power", "workout-primary-target", "np", "avg-power", "max-power", "power-20m", "power-1hr", "power-balance",
-                            "percent-ftp", "power-to-weight", "power-zone", "intensity-factor", "tss", "power-vi",
-                            "power-kj", "power-cal", "power-cal-hr", "power-smoothness", "power-te", "avg-power-balance",
-                            "hr", "avg-hr", "max-hr", "hr-zone", "percent-max-hr", "percent-hrr", "avg-percent-hrr",
-                            "cadence", "torque", "avg-cadence", "max-cadence", "avg-torque", "max-torque" -> true
+                        val isCoastingCenter = when (centerDef.typeId) {
+                            "cadence", "avg-cadence", "max-cadence", "power", "speed", "torque" -> true
                             else -> false
                         }
-                        if (isCenterSensor) "No Sensor" else "--"
+                        if (isCoastingCenter && (hasEverStreamedCenter || isInRide)) {
+                            centerDef.formatNumericValueOnly(0.0, isImperial)
+                        } else {
+                            val isCenterSensor = when (centerDef.typeId) {
+                                "power", "workout-target-power", "workout-primary-target", "np", "avg-power", "max-power", "power-20m", "power-1hr", "power-balance",
+                                "percent-ftp", "power-to-weight", "power-zone", "intensity-factor", "tss", "power-vi",
+                                "power-kj", "power-cal", "power-cal-hr", "power-smoothness", "power-te", "avg-power-balance",
+                                "hr", "avg-hr", "max-hr", "hr-zone", "percent-max-hr", "percent-hrr", "avg-percent-hrr",
+                                "cadence", "torque", "avg-cadence", "max-cadence", "avg-torque", "max-torque" -> true
+                                else -> false
+                            }
+                            if (isCenterSensor) "No Sensor" else "--"
+                        }
                     } else if (centerDef.typeId.contains("hr") || centerDef.typeId.contains("cadence") || centerDef.typeId.contains("power") || centerDef.typeId.contains("workout")) {
                         "${centerVal.toInt()}"
                     } else {
@@ -648,6 +677,7 @@ class KustomDataType(
                     val leftValueFormattedText = when {
                         resolvedConfig.comboLeftMetric == "none" -> ""
                         leftVal != null -> leftDef.formatNumericValueOnly(leftVal, isImperial)
+                        (leftDef.typeId.contains("cadence") || leftDef.typeId.contains("power")) && (hasEverStreamedLeft || isInRide) -> leftDef.formatNumericValueOnly(0.0, isImperial)
                         isMock -> leftDef.formatNumericValueOnly(leftDef.mockValues.firstOrNull() ?: 203.0, isImperial)
                         else -> "--"
                     }
@@ -655,6 +685,7 @@ class KustomDataType(
                     val rightValueFormattedText = when {
                         resolvedConfig.comboRightMetric == "none" -> ""
                         rightVal != null -> rightDef.formatNumericValueOnly(rightVal, isImperial)
+                        (rightDef.typeId.contains("cadence") || rightDef.typeId.contains("power")) && (hasEverStreamedRight || isInRide) -> rightDef.formatNumericValueOnly(0.0, isImperial)
                         isMock -> rightDef.formatNumericValueOnly(rightDef.mockValues.firstOrNull() ?: 224.0, isImperial)
                         else -> "--"
                     }

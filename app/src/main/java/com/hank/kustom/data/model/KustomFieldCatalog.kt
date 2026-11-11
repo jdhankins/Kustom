@@ -221,7 +221,7 @@ data class KustomFieldDefinition(
             "max-power" -> DataType.Type.MAX_POWER
             "power-20m" -> DataType.Type.SMOOTHED_20M_AVERAGE_POWER
             "power-1hr" -> DataType.Type.SMOOTHED_1HR_AVERAGE_POWER
-            "power-balance" -> smoothing.toCadenceDataTypeId()
+            "power-balance" -> smoothing.toPowerBalanceDataTypeId()
             "percent-ftp" -> DataType.Type.PERCENT_MAX_FTP
             "power-to-weight" -> DataType.Type.POWER_TO_WEIGHT
             "power-zone" -> DataType.Type.POWER_ZONE
@@ -231,8 +231,8 @@ data class KustomFieldDefinition(
             "power-kj" -> DataType.Type.ENERGY_OUTPUT
             "power-cal" -> DataType.Type.CALORIES
             "power-cal-hr" -> DataType.Type.CALORIES_PER_HOUR
-            "power-smoothness" -> DataType.Type.PEDAL_POWER_BALANCE
-            "power-te" -> DataType.Type.POWER
+            "power-smoothness" -> DataType.Type.PEDAL_SMOOTHNESS
+            "power-te" -> DataType.Type.TORQUE_EFFECTIVENESS
             "avg-power-balance" -> DataType.Type.AVERAGE_PEDAL_POWER_BALANCE
 
             "hr" -> DataType.Type.HEART_RATE
@@ -252,8 +252,8 @@ data class KustomFieldDefinition(
             "torque" -> DataType.Type.TORQUE
             "avg-cadence" -> DataType.Type.AVERAGE_CADENCE
             "max-cadence" -> DataType.Type.MAX_CADENCE
-            "avg-torque" -> DataType.Type.TORQUE
-            "max-torque" -> DataType.Type.TORQUE
+            "avg-torque" -> DataType.Type.AVERAGE_TORQUE
+            "max-torque" -> DataType.Type.MAX_TORQUE
 
             "grade" -> DataType.Type.ELEVATION_GRADE
             "vam" -> DataType.Type.AVERAGE_VERTICAL_SPEED_30S

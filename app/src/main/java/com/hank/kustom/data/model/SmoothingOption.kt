@@ -87,3 +87,18 @@ fun SmoothingOption.toCadenceDataTypeId(): String {
         SmoothingOption.THIRTY_SEC -> DataType.Type.SMOOTHED_10S_AVERAGE_CADENCE
     }
 }
+
+/**
+ * Maps [SmoothingOption] directly to the built-in [DataType.Type] pedal power balance constants.
+ *
+ * @return The corresponding Karoo SDK pedal power balance [DataType.Type] string.
+ */
+fun SmoothingOption.toPowerBalanceDataTypeId(): String {
+    return when (this) {
+        SmoothingOption.NONE -> DataType.Type.PEDAL_POWER_BALANCE
+        SmoothingOption.THREE_SEC -> DataType.Type.SMOOTHED_3S_AVERAGE_PEDAL_POWER_BALANCE
+        SmoothingOption.FIVE_SEC -> DataType.Type.SMOOTHED_5S_AVERAGE_PEDAL_POWER_BALANCE
+        SmoothingOption.TEN_SEC -> DataType.Type.SMOOTHED_10S_AVERAGE_PEDAL_POWER_BALANCE
+        SmoothingOption.THIRTY_SEC -> DataType.Type.SMOOTHED_30S_AVERAGE_PEDAL_POWER_BALANCE
+    }
+}
