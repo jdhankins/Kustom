@@ -35,6 +35,12 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -64,6 +70,15 @@ dependencies {
     implementation("androidx.compose.material3:material3")
 
     testImplementation(libs.junit)
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.ow2.asm:asm:9.7")
+    testImplementation("org.ow2.asm:asm-commons:9.7")
+    testImplementation("org.ow2.asm:asm-tree:9.7")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.test:core:1.6.1")
+    testImplementation("com.github.nikosavola.karoo-ext-testing:karoo-ext-testing:6f13bcb")
+    testImplementation("com.github.nikosavola.karoo-ext-testing:karoo-ext-testing-robolectric:6f13bcb")
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }

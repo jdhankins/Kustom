@@ -17,11 +17,24 @@ data class GlobalColorConfig(
     val globalZonePalette: ZonePalette = ZonePalette.KAROO,
 ) {
     fun getLightColorInt(): Int {
-        return runCatching { android.graphics.Color.parseColor(lightBgColorHex) }.getOrDefault(0xFFFFFFFF.toInt())
+        val parsed = runCatching { android.graphics.Color.parseColor(lightBgColorHex) }.getOrDefault(0)
+        return if (parsed != 0) parsed else parseHexFallback(lightBgColorHex, 0xFFFFFFFF.toInt())
     }
 
     fun getDarkColorInt(): Int {
-        return runCatching { android.graphics.Color.parseColor(darkBgColorHex) }.getOrDefault(0xFF000000.toInt())
+        val parsed = runCatching { android.graphics.Color.parseColor(darkBgColorHex) }.getOrDefault(0)
+        return if (parsed != 0) parsed else parseHexFallback(darkBgColorHex, 0xFF000000.toInt())
+    }
+
+    private fun parseHexFallback(hex: String, defaultColor: Int): Int {
+        val clean = hex.removePrefix("#")
+        return runCatching {
+            when (clean.length) {
+                6 -> (0xFF000000 or clean.toLong(16)).toInt()
+                8 -> clean.toLong(16).toInt()
+                else -> defaultColor
+            }
+        }.getOrDefault(defaultColor)
     }
 
     companion object {

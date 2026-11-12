@@ -208,7 +208,7 @@ data class KustomFieldDefinition(
                 String.format(Locale.US, "%.1f", rawValue)
             }
             else -> {
-                rawValue.toInt().toString()
+                kotlin.math.round(rawValue).toInt().toString()
             }
         }
     }

@@ -95,7 +95,7 @@ object FullWidthLayoutEngine {
     /**
      * Splits value text into primary main digits and secondary superscript digits (for decimals or time colons).
      */
-    private fun parsePrimaryAndSecondary(valueText: String): Pair<String, String> {
+    fun parsePrimaryAndSecondary(valueText: String): Pair<String, String> {
         if (valueText.contains(":")) {
             val idx = valueText.lastIndexOf(":")
             val primary = valueText.substring(0, idx)
