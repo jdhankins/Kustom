@@ -27,6 +27,14 @@ data class ResolvedFieldDisplayState(
     val formattedZoneText: String? = null,
 )
 
+data class QuadColors(
+    val backgroundColor: Int,
+    val valueTextColor: Int,
+    val labelTextColor: Int,
+    val dividerColor: Int,
+    val isColorBackgroundActive: Boolean,
+)
+
 /**
  * Single deterministic source of truth for field display state resolution.
  */
@@ -76,6 +84,9 @@ object KustomFieldStateResolver {
             isCoastingMetric && (hasEverStreamed || isInRide) -> {
                 definition.formatNumericValueOnly(0.0, isImperial)
             }
+            streamState is StreamState.Idle -> {
+                if (isWorkoutField) "No Workout" else definition.formatNumericValueOnly(0.0, isImperial)
+            }
             streamState is StreamState.Streaming -> {
                 if (isWorkoutField) {
                     "No Workout"
@@ -88,7 +99,7 @@ object KustomFieldStateResolver {
             streamState is StreamState.Searching -> {
                 if (isWorkoutField) "No Workout" else if (isSensorField) "Searching..." else definition.formatNumericValueOnly(0.0, isImperial)
             }
-            streamState is StreamState.NotAvailable || streamState is StreamState.Idle -> {
+            streamState is StreamState.NotAvailable -> {
                 if (isWorkoutField) "No Workout" else if (isSensorField) "No Sensor" else definition.formatNumericValueOnly(0.0, isImperial)
             }
             else -> {
@@ -105,15 +116,24 @@ object KustomFieldStateResolver {
         colorMode: ColorMode,
         isDarkTheme: Boolean = false,
     ): Triple<Int?, Int?, String?> {
-        if (dynamicValue == null || colorMode == ColorMode.NONE) return Triple(null, null, null)
+        if (dynamicValue == null || dynamicValue.isNaN() || colorMode == ColorMode.NONE) {
+            return Triple(null, null, null)
+        }
 
         val zoneColor: Int?
         val activeIndex: Int?
 
         when {
             fieldId == "power" || fieldId == "np" || fieldId == "avg-power" || fieldId == "max-power" ||
-                fieldId == "power-20m" || fieldId == "power-1hr" || fieldId == "power-combo" || fieldId == "custom-combo" || fieldId == "percent-ftp" -> {
-                zoneColor = KustomColorGradeMapper.getPowerZoneColor(dynamicValue, userProfile, colorMode, isDarkTheme, zonePalette)
+                fieldId == "power-20m" || fieldId == "power-1hr" || fieldId == "power-combo" ||
+                fieldId == "custom-combo" || fieldId == "percent-ftp" -> {
+                zoneColor = KustomColorGradeMapper.getPowerZoneColor(
+                    watts = dynamicValue,
+                    userProfile = userProfile,
+                    colorMode = colorMode,
+                    isDarkTheme = isDarkTheme,
+                    palette = zonePalette,
+                )
                 val ftp = (userProfile?.ftp ?: 250).toDouble().coerceAtLeast(50.0)
                 val roundedWatts = kotlin.math.round(dynamicValue)
                 val pctFtp = roundedWatts / ftp
@@ -122,9 +142,11 @@ object KustomFieldStateResolver {
                     val firstMin = pZones.first().min.toDouble()
                     val isRatio = pZones.first().max <= 5
                     if (isRatio) {
-                        if (pctFtp <= firstMin) 0 else pZones.indexOfFirst { (_, max) -> pctFtp <= max.toDouble() }.let { if (it != -1) it else pZones.lastIndex }
+                        if (pctFtp <= firstMin) 0
+                        else pZones.indexOfFirst { (_, max) -> pctFtp <= max.toDouble() }.let { if (it != -1) it else pZones.lastIndex }
                     } else {
-                        if (roundedWatts <= firstMin) 0 else pZones.indexOfFirst { (_, max) -> roundedWatts <= max.toDouble() }.let { if (it != -1) it else pZones.lastIndex }
+                        if (roundedWatts <= firstMin) 0
+                        else pZones.indexOfFirst { (_, max) -> roundedWatts <= max.toDouble() }.let { if (it != -1) it else pZones.lastIndex }
                     }
                 } else {
                     when {
@@ -138,37 +160,47 @@ object KustomFieldStateResolver {
                     }
                 }
             }
-            fieldId == "hr" || fieldId == "avg-hr" || fieldId == "max-hr" || fieldId == "percent-max-hr" || fieldId == "percent-hrr" || fieldId == "avg-percent-hrr" -> {
-                zoneColor = KustomColorGradeMapper.getHeartRateZoneColor(dynamicValue, userProfile, colorMode, isDarkTheme, zonePalette)
+            fieldId == "hr" || fieldId == "avg-hr" || fieldId == "max-hr" ||
+                fieldId == "hr-combo" || fieldId == "percent-max-hr" || fieldId == "percent-hrr" -> {
+                zoneColor = KustomColorGradeMapper.getHeartRateZoneColor(
+                    bpm = dynamicValue,
+                    userProfile = userProfile,
+                    colorMode = colorMode,
+                    isDarkTheme = isDarkTheme,
+                    palette = zonePalette,
+                )
+                val maxHr = (userProfile?.maxHr ?: 190).toDouble().coerceAtLeast(100.0)
                 val roundedBpm = kotlin.math.round(dynamicValue)
+                val pctMaxHr = roundedBpm / maxHr
                 val hrZones = userProfile?.heartRateZones
                 activeIndex = if (!hrZones.isNullOrEmpty()) {
                     val firstMin = hrZones.first().min.toDouble()
-                    if (roundedBpm <= firstMin) 0 else hrZones.indexOfFirst { (_, max) -> roundedBpm <= max.toDouble() }.let { if (it != -1) it else hrZones.lastIndex }
+                    val isRatio = hrZones.first().max <= 5
+                    if (isRatio) {
+                        if (pctMaxHr <= firstMin) 0
+                        else hrZones.indexOfFirst { (_, max) -> pctMaxHr <= max.toDouble() }.let { if (it != -1) it else hrZones.lastIndex }
+                    } else {
+                        if (roundedBpm <= firstMin) 0
+                        else hrZones.indexOfFirst { (_, max) -> roundedBpm <= max.toDouble() }.let { if (it != -1) it else hrZones.lastIndex }
+                    }
                 } else {
-                    val maxHr = (userProfile?.maxHr ?: 185).toDouble()
                     when {
-                        roundedBpm < 0.60 * maxHr -> 0
-                        roundedBpm < 0.70 * maxHr -> 1
-                        roundedBpm < 0.80 * maxHr -> 2
-                        roundedBpm < 0.90 * maxHr -> 3
-                        roundedBpm < 0.95 * maxHr -> 4
-                        else -> 5
+                        pctMaxHr < 0.60 -> 0
+                        pctMaxHr < 0.70 -> 1
+                        pctMaxHr < 0.80 -> 2
+                        pctMaxHr < 0.90 -> 3
+                        else -> 4
                     }
                 }
             }
             fieldId == "grade" -> {
-                zoneColor = KustomColorGradeMapper.getGradeColor(dynamicValue, colorMode, isDarkTheme, zonePalette)
-                val colors = zonePalette.get7ZoneColors()
-                activeIndex = when {
-                    dynamicValue < -2.0 -> 0
-                    dynamicValue in -2.0..2.0 -> null
-                    dynamicValue in 2.0..4.0 -> 2
-                    dynamicValue in 4.0..7.0 -> 3
-                    dynamicValue in 7.0..10.0 -> 4
-                    dynamicValue in 10.0..14.0 -> 5
-                    else -> 6
-                }
+                zoneColor = KustomColorGradeMapper.getGradeColor(
+                    gradePercent = dynamicValue,
+                    colorMode = colorMode,
+                    isDarkTheme = isDarkTheme,
+                    palette = zonePalette,
+                )
+                activeIndex = null
             }
             else -> {
                 zoneColor = null
@@ -176,7 +208,7 @@ object KustomFieldStateResolver {
             }
         }
 
-        val formattedText = if (activeIndex != null) "Z${activeIndex + 1}" else null
+        val formattedText = if (activeIndex != null && activeIndex >= 0) "Z${activeIndex + 1}" else null
         return Triple(zoneColor, activeIndex, formattedText)
     }
 
@@ -208,7 +240,7 @@ object KustomFieldStateResolver {
         }
 
         val darkGreyBorder = if (isDarkTheme) 0xFF475569.toInt() else 0xFF64748B.toInt()
-        val dividerColor = if (isBgZoneFilled) KustomColorGradeMapper.getContrastingTextColor(backgroundColor) else darkGreyBorder
+        val dividerColor = if (isBgZoneFilled) contrastTextColor else darkGreyBorder
 
         return QuadColors(
             backgroundColor = backgroundColor,
@@ -219,13 +251,14 @@ object KustomFieldStateResolver {
         )
     }
 
-    data class QuadColors(
-        val backgroundColor: Int,
-        val valueTextColor: Int,
-        val labelTextColor: Int,
-        val dividerColor: Int,
-        val isColorBackgroundActive: Boolean,
-    )
+    fun splitPrimaryAndSuperscript(rawValueText: String): Pair<String, String?> {
+        if (rawValueText == "Searching..." || rawValueText == "No Sensor" || rawValueText == "No Workout" || rawValueText == "--") {
+            return Pair(rawValueText, null)
+        }
+        val (pri, sec) = FullWidthLayoutEngine.parsePrimaryAndSecondary(rawValueText)
+        val cleanedSec = sec.removePrefix(".").removePrefix(":").ifEmpty { null }
+        return Pair(pri, cleanedSec)
+    }
 
     fun resolveSingleFieldState(
         definition: KustomFieldDefinition,
@@ -237,14 +270,14 @@ object KustomFieldStateResolver {
         globalColors: GlobalColorConfig,
         smoothing: SmoothingOption = SmoothingOption.NONE,
         showHeader: Boolean = true,
-        isDarkTheme: Boolean = false,
         hasEverStreamed: Boolean = false,
         isInRide: Boolean = true,
+        isDarkTheme: Boolean = false,
         isMock: Boolean = false,
         isWorkoutActiveOnKaroo: Boolean = false,
     ): ResolvedFieldDisplayState {
         val labelText = if (showHeader) definition.resolveDynamicLabel(smoothing) else ""
-        val rawValueText = resolveValueString(
+        val rawText = resolveValueString(
             definition = definition,
             streamState = streamState,
             dynamicValue = dynamicValue,
@@ -255,9 +288,9 @@ object KustomFieldStateResolver {
             isWorkoutActiveOnKaroo = isWorkoutActiveOnKaroo,
         )
 
-        val (primaryVal, secVal) = FullWidthLayoutEngine.parsePrimaryAndSecondary(rawValueText)
+        val (priVal, secSup) = splitPrimaryAndSuperscript(rawText)
 
-        val (zoneColor, activeIdx, formattedZoneText) = resolveZoneInfo(
+        val (zoneColor, activeIndex, zoneText) = resolveZoneInfo(
             fieldId = definition.typeId,
             dynamicValue = dynamicValue,
             userProfile = userProfile,
@@ -266,7 +299,7 @@ object KustomFieldStateResolver {
             isDarkTheme = isDarkTheme,
         )
 
-        val (bg, valColor, lblColor, divColor, isBgActive) = resolveColors(
+        val colors = resolveColors(
             isDarkTheme = isDarkTheme,
             colorMode = colorMode,
             zoneColor = zoneColor,
@@ -276,17 +309,17 @@ object KustomFieldStateResolver {
         return ResolvedFieldDisplayState(
             fieldId = definition.typeId,
             label = labelText,
-            rawValueText = rawValueText,
-            primaryValue = primaryVal,
-            secondarySuperscript = secVal.ifEmpty { null },
-            backgroundColor = bg,
-            valueTextColor = valColor,
-            labelTextColor = lblColor,
-            dividerColor = divColor,
+            rawValueText = rawText,
+            primaryValue = priVal,
+            secondarySuperscript = secSup,
+            backgroundColor = colors.backgroundColor,
+            valueTextColor = colors.valueTextColor,
+            labelTextColor = colors.labelTextColor,
+            dividerColor = colors.dividerColor,
             zoneColor = zoneColor,
-            activeZoneIndex = activeIdx,
-            isColorBackgroundActive = isBgActive,
-            formattedZoneText = formattedZoneText,
+            activeZoneIndex = activeIndex,
+            isColorBackgroundActive = colors.isColorBackgroundActive,
+            formattedZoneText = zoneText,
         )
     }
 }
