@@ -163,7 +163,7 @@ class KustomFieldStateResolverTest {
             globalColors = GlobalColorConfig(),
             isDarkTheme = false,
         )
-        assertEquals(-1, dayBgOff.backgroundColor)
+        assertEquals(0xFFFFFFFF.toInt(), dayBgOff.backgroundColor)
 
         // Night Mode, Background Off
         val nightBgOff = KustomFieldStateResolver.resolveSingleFieldState(
