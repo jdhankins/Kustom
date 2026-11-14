@@ -95,7 +95,7 @@ object FullWidthLayoutEngine {
     /**
      * Splits value text into primary main digits and secondary superscript digits (for decimals or time colons).
      */
-    fun parsePrimaryAndSecondary(valueText: String): Pair<String, String> {
+    internal fun parsePrimaryAndSecondary(valueText: String): Pair<String, String> {
         if (valueText.contains(":")) {
             val idx = valueText.lastIndexOf(":")
             val primary = valueText.substring(0, idx)
@@ -114,7 +114,7 @@ object FullWidthLayoutEngine {
      * Fits and positions dynamic values strictly inside [boxLeft, boxTop, boxRight, boxBottom]
      * using true visible glyph ink bounds (Paint.getTextBounds), with support for superscript decimals and colons.
      */
-    private fun drawTextInBox(
+    internal fun drawTextInBox(
         canvas: Canvas,
         text: String,
         boxLeft: Float,
@@ -573,5 +573,175 @@ object FullWidthLayoutEngine {
                 minTextSizePx = 14f
             )
         }
+    }
+
+    private fun drawRotatedEdgeLabel(
+        canvas: Canvas,
+        text: String,
+        x: Float,
+        yCenter: Float,
+        maxHeight: Float,
+        paint: TextPaint,
+        rotationDegrees: Float,
+    ) {
+        val upperText = text.uppercase()
+        val minTextSize = 10f
+        while (paint.textSize > minTextSize && paint.measureText(upperText) > maxHeight) {
+            paint.textSize -= 1f
+        }
+
+        canvas.save()
+        canvas.translate(x, yCenter)
+        canvas.rotate(rotationDegrees)
+        
+        val bounds = Rect()
+        paint.getTextBounds(upperText, 0, upperText.length, bounds)
+        
+        paint.textAlign = Paint.Align.CENTER
+        canvas.drawText(upperText, 0f, bounds.height() / 2f, paint)
+        canvas.restore()
+    }
+
+    fun drawDualSplitCard(
+        canvas: Canvas,
+        leftLabel: String,
+        leftValueText: String,
+        leftZoneFormat: com.hank.kustom.data.model.ZoneFormat,
+        leftZoneColor: Int?,
+        rightLabel: String,
+        rightValueText: String,
+        rightZoneFormat: com.hank.kustom.data.model.ZoneFormat,
+        rightZoneColor: Int?,
+        width: Float,
+        height: Float,
+        defaultBgColor: Int,
+        defaultTextColor: Int,
+        labelTypography: TypographyConfig,
+        valueTypography: TypographyConfig,
+        isDarkTheme: Boolean = false,
+        globalZonePalette: com.hank.kustom.data.model.ZonePalette = com.hank.kustom.data.model.ZonePalette.KAROO,
+    ) {
+        val cornerRadius = height * 0.12f
+        val clipPath = android.graphics.Path().apply {
+            addRoundRect(RectF(1.5f, 1.5f, width - 1.5f, height - 1.5f), cornerRadius, cornerRadius, android.graphics.Path.Direction.CW)
+        }
+
+        canvas.save()
+        canvas.clipPath(clipPath)
+
+        val halfW = width / 2f
+
+        // Draw Backgrounds
+        val leftRect = RectF(0f, 0f, halfW, height)
+        val rightRect = RectF(halfW, 0f, width, height)
+
+        val isLeftBg = leftZoneFormat == com.hank.kustom.data.model.ZoneFormat.BACKGROUND && leftZoneColor != null
+        val isRightBg = rightZoneFormat == com.hank.kustom.data.model.ZoneFormat.BACKGROUND && rightZoneColor != null
+
+        if (isLeftBg) {
+            if (globalZonePalette == com.hank.kustom.data.model.ZonePalette.NEON_GLASS) {
+                KustomFieldRenderer.drawNeonGlassRoundRect(canvas, leftRect, 0f, leftZoneColor!!, isActiveHighlight = false, palette = globalZonePalette)
+            } else {
+                canvas.drawRect(leftRect, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = leftZoneColor!! })
+            }
+        } else {
+            canvas.drawRect(leftRect, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = defaultBgColor })
+        }
+
+        if (isRightBg) {
+            if (globalZonePalette == com.hank.kustom.data.model.ZonePalette.NEON_GLASS) {
+                KustomFieldRenderer.drawNeonGlassRoundRect(canvas, rightRect, 0f, rightZoneColor!!, isActiveHighlight = false, palette = globalZonePalette)
+            } else {
+                canvas.drawRect(rightRect, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = rightZoneColor!! })
+            }
+        } else {
+            canvas.drawRect(rightRect, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = defaultBgColor })
+        }
+
+        // Draw Center Divider
+        val dividerColor = when {
+            isLeftBg || isRightBg -> KustomColorGradeMapper.getContrastingTextColor(if (isLeftBg) leftZoneColor!! else rightZoneColor!!)
+            isDarkTheme -> 0xFF334155.toInt()
+            else -> 0xFFCBD5E1.toInt()
+        }
+        val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = dividerColor
+            style = Paint.Style.STROKE
+            strokeWidth = 2.0f
+        }
+        canvas.drawLine(halfW, 0f, halfW, height, dividerPaint)
+
+        // Text Colors
+        val leftTextColor = if (isLeftBg) KustomColorGradeMapper.getContrastingTextColor(leftZoneColor!!) else (if (leftZoneFormat == com.hank.kustom.data.model.ZoneFormat.TEXT) leftZoneColor ?: defaultTextColor else defaultTextColor)
+        val rightTextColor = if (isRightBg) KustomColorGradeMapper.getContrastingTextColor(rightZoneColor!!) else (if (rightZoneFormat == com.hank.kustom.data.model.ZoneFormat.TEXT) rightZoneColor ?: defaultTextColor else defaultTextColor)
+        
+        val leftLabelColor = if (isLeftBg) leftTextColor else defaultTextColor
+        val rightLabelColor = if (isRightBg) rightTextColor else defaultTextColor
+
+        // Typography
+        val unifiedLabelPx = height * (0.165f + ((labelTypography.fontSizeSp - 10f).coerceIn(0f, 10f) * 0.006f))
+        val startValuePx = (height * (valueTypography.fontSizeSp / 74f)).coerceAtLeast(20f)
+
+        val leftLabelPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = leftLabelColor }
+        KustomTypefaceResolver.applyTypography(leftLabelPaint, labelTypography.font, labelTypography.fontWeight, unifiedLabelPx)
+        
+        val rightLabelPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = rightLabelColor }
+        KustomTypefaceResolver.applyTypography(rightLabelPaint, labelTypography.font, labelTypography.fontWeight, unifiedLabelPx)
+
+        val leftValPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = leftTextColor }
+        KustomTypefaceResolver.applyTypography(leftValPaint, valueTypography.font, valueTypography.fontWeight, startValuePx)
+        
+        val rightValPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = rightTextColor }
+        KustomTypefaceResolver.applyTypography(rightValPaint, valueTypography.font, valueTypography.fontWeight, startValuePx)
+
+        // Draw Rotated Edge Labels
+        val railWidth = height * 0.16f
+        val railPadY = height * 0.06f
+        drawRotatedEdgeLabel(canvas, leftLabel, railWidth / 2f, height / 2f, height - (railPadY * 2), leftLabelPaint, -90f)
+        drawRotatedEdgeLabel(canvas, rightLabel, width - (railWidth / 2f), height / 2f, height - (railPadY * 2), rightLabelPaint, 90f)
+
+        // Bottom Bars
+        val isLeftBar = leftZoneFormat == com.hank.kustom.data.model.ZoneFormat.BAR && leftZoneColor != null
+        val isRightBar = rightZoneFormat == com.hank.kustom.data.model.ZoneFormat.BAR && rightZoneColor != null
+        
+        val barH = height * 0.08f
+        val barBottom = height * 0.95f
+        val barTop = barBottom - barH
+        val barPadX = width * 0.04f
+
+        if (isLeftBar) {
+            val barRect = RectF(barPadX, barTop, halfW - barPadX, barBottom)
+            if (globalZonePalette == com.hank.kustom.data.model.ZonePalette.NEON_GLASS) {
+                KustomFieldRenderer.drawNeonGlassRoundRect(canvas, barRect, barH / 2f, leftZoneColor!!, isActiveHighlight = true, palette = globalZonePalette)
+            } else {
+                canvas.drawRoundRect(barRect, barH / 2f, barH / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = leftZoneColor!!; style = Paint.Style.FILL })
+            }
+        }
+        
+        if (isRightBar) {
+            val barRect = RectF(halfW + barPadX, barTop, width - barPadX, barBottom)
+            if (globalZonePalette == com.hank.kustom.data.model.ZonePalette.NEON_GLASS) {
+                KustomFieldRenderer.drawNeonGlassRoundRect(canvas, barRect, barH / 2f, rightZoneColor!!, isActiveHighlight = true, palette = globalZonePalette)
+            } else {
+                canvas.drawRoundRect(barRect, barH / 2f, barH / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = rightZoneColor!!; style = Paint.Style.FILL })
+            }
+        }
+
+        // Draw Values
+        val vTop = height * 0.15f
+        val vBottomLeft = if (isLeftBar) barTop - (height * 0.04f) else height * 0.85f
+        val vBottomRight = if (isRightBar) barTop - (height * 0.04f) else height * 0.85f
+        
+        val centerPad = width * 0.02f
+        val lBoxL = railWidth + centerPad
+        val lBoxR = halfW - centerPad
+        
+        val rBoxL = halfW + centerPad
+        val rBoxR = width - railWidth - centerPad
+
+        drawTextInBox(canvas, leftValueText, lBoxL, vTop, lBoxR, vBottomLeft, leftValPaint, Paint.Align.CENTER, VerticalAlign.CENTER, startValuePx, 14f)
+        drawTextInBox(canvas, rightValueText, rBoxL, vTop, rBoxR, vBottomRight, rightValPaint, Paint.Align.CENTER, VerticalAlign.CENTER, startValuePx, 14f)
+
+        canvas.restore()
     }
 }

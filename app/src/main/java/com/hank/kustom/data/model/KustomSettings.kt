@@ -20,6 +20,9 @@ data class KustomSettings(
 
     /** List of user-created dynamic 3-in-1 combo blocks. */
     val customComboInstances: List<CustomComboInstance> = emptyList(),
+
+    /** List of user-created dynamic 2-in-1 dual split fields. */
+    val customDualInstances: List<CustomDualInstance> = emptyList(),
 ) {
     /**
      * Resolves the [KustomFieldConfig] for the specified [typeId], or returns a default configuration if missing.

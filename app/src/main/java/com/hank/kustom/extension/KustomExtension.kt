@@ -54,6 +54,19 @@ class KustomExtension : KarooExtension("kustom", "1") {
                 KustomDataType(dynamicDef, karooRepo, settingsRepo)
             } ?: emptyList()
 
-            return staticTypes + dynamicComboTypes
+            val dynamicDualTypes = savedSettings?.customDualInstances?.map { instance ->
+                val dynamicDef = KustomFieldDefinition(
+                    typeId = instance.id,
+                    childTitle = instance.name,
+                    category = FieldCategory.DUAL,
+                    description = "Dynamic 2-in-1 split block (${instance.name})",
+                    supportsSmoothing = true,
+                    supportsZones = true,
+                    mockValues = listOf(214.0, 235.0, 250.0, 220.0, 205.0),
+                )
+                KustomDataType(dynamicDef, karooRepo, settingsRepo)
+            } ?: emptyList()
+
+            return staticTypes + dynamicComboTypes + dynamicDualTypes
         }
 }

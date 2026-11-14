@@ -295,6 +295,81 @@ object KustomFieldRenderer {
         canvas.drawRoundRect(insetBorderRect, cornerRadius, cornerRadius, rimPaint)
     }
 
+    fun renderDualBlock(
+        context: Context,
+        config: ViewConfig,
+        leftLabel: String,
+        leftValueText: String,
+        leftZoneFormat: ZoneFormat,
+        leftZoneColor: Int?,
+        rightLabel: String,
+        rightValueText: String,
+        rightZoneFormat: ZoneFormat,
+        rightZoneColor: Int?,
+        labelTypography: TypographyConfig,
+        valueTypography: TypographyConfig,
+        isDarkTheme: Boolean = false,
+        globalColors: GlobalColorConfig = GlobalColorConfig(),
+    ): Bitmap {
+        return runCatching {
+            val width = config.viewSize.first.coerceAtLeast(10)
+            val height = config.viewSize.second.coerceAtLeast(10)
+
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+
+            val defaultBgColor = if (isDarkTheme) globalColors.getDarkColorInt() else globalColors.getLightColorInt()
+            val defaultTextColor = KustomColorGradeMapper.getContrastingTextColor(defaultBgColor)
+
+            if (config.boundariesEnabled) {
+                val insetRect = RectF(1.5f, 1.5f, width.toFloat() - 1.5f, height.toFloat() - 1.5f)
+                val cornerRadius = height * 0.12f
+                val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = defaultBgColor
+                    style = Paint.Style.FILL
+                }
+                canvas.drawRoundRect(insetRect, cornerRadius, cornerRadius, bgPaint)
+            } else {
+                canvas.drawColor(defaultBgColor)
+                val darkGreyBorder = if (isDarkTheme) 0xFF475569.toInt() else 0xFF64748B.toInt()
+                val bottomLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = darkGreyBorder
+                    style = Paint.Style.STROKE
+                    strokeWidth = 5.5f
+                }
+                val lineY = height.toFloat() - 2.75f
+                canvas.drawLine(0f, lineY, width.toFloat(), lineY, bottomLinePaint)
+            }
+
+            FullWidthLayoutEngine.drawDualSplitCard(
+                canvas = canvas,
+                leftLabel = leftLabel,
+                leftValueText = leftValueText,
+                leftZoneFormat = leftZoneFormat,
+                leftZoneColor = leftZoneColor,
+                rightLabel = rightLabel,
+                rightValueText = rightValueText,
+                rightZoneFormat = rightZoneFormat,
+                rightZoneColor = rightZoneColor,
+                width = width.toFloat(),
+                height = height.toFloat(),
+                defaultBgColor = defaultBgColor,
+                defaultTextColor = defaultTextColor,
+                labelTypography = labelTypography,
+                valueTypography = valueTypography,
+                isDarkTheme = isDarkTheme,
+                globalZonePalette = globalColors.globalZonePalette,
+            )
+
+            bitmap
+        }.getOrDefault(
+            createFallbackBitmap(
+                config.viewSize.first.coerceAtLeast(10),
+                config.viewSize.second.coerceAtLeast(10),
+            )
+        )
+    }
+
     fun renderComboBlock(
         context: Context,
         config: ViewConfig,

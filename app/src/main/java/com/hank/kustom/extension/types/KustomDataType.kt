@@ -15,6 +15,7 @@ import com.hank.kustom.data.repository.KarooSystemRepository
 import com.hank.kustom.data.repository.KustomSettingsRepository
 import com.hank.kustom.domain.KustomColorGradeMapper
 import com.hank.kustom.domain.KustomFieldRenderer
+import com.hank.kustom.domain.KustomFieldStateResolver
 import com.hank.kustom.domain.RollingTimeSmoother
 import com.hank.kustom.domain.WorkoutFileParser
 import com.hank.kustom.util.KustomLogger
@@ -196,6 +197,45 @@ class KustomDataType(
                     ) { centerState, leftState, rightState ->
                         RenderPayload(
                             streamState = centerState,
+                            leftStreamState = leftState,
+                            rightStreamState = rightState,
+                            userProfile = userProfile,
+                            settings = settings,
+                            fieldConfig = resolvedConfig,
+                            isMock = false,
+                            isInRide = isInRide,
+                        )
+                    }
+                } else if (definition.category == com.hank.kustom.data.model.FieldCategory.DUAL) {
+                    val customDualInst = settings.customDualInstances.firstOrNull { it.id == definition.typeId }
+                    val resolvedConfig = if (customDualInst != null) {
+                        KustomFieldConfig(
+                            comboLeftMetric = customDualInst.leftMetric,
+                            comboRightMetric = customDualInst.rightMetric,
+                            comboLeftZoneFormat = customDualInst.leftZoneFormat,
+                            comboRightZoneFormat = customDualInst.rightZoneFormat,
+                            comboLeftSmoothing = customDualInst.leftSmoothing,
+                            comboRightSmoothing = customDualInst.rightSmoothing,
+                        )
+                    } else {
+                        fieldConfig
+                    }
+
+                    val leftDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboLeftMetric) ?: KustomFieldCatalog.POWER
+                    val rightDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboRightMetric) ?: KustomFieldCatalog.GRADE
+
+                    val leftSdkId = leftDef.resolveSdkDataTypeId(resolvedConfig.comboLeftSmoothing)
+                    val rightSdkId = rightDef.resolveSdkDataTypeId(resolvedConfig.comboRightSmoothing)
+
+                    val leftFlow = if (resolvedConfig.comboLeftMetric == "none") flowOf(StreamState.NotAvailable) else karooSystemRepository.streamDataFlow(leftSdkId)
+                    val rightFlow = if (resolvedConfig.comboRightMetric == "none") flowOf(StreamState.NotAvailable) else karooSystemRepository.streamDataFlow(rightSdkId)
+
+                    combine(
+                        leftFlow,
+                        rightFlow,
+                    ) { leftState, rightState ->
+                        RenderPayload(
+                            streamState = null,
                             leftStreamState = leftState,
                             rightStreamState = rightState,
                             userProfile = userProfile,
@@ -586,6 +626,108 @@ class KustomDataType(
                         showPowerTrace = fieldConfig.showPowerTrace,
                         showHrTrace = fieldConfig.showHrTrace,
                         showCadenceTrace = fieldConfig.showCadenceTrace,
+                        isDarkTheme = isDarkTheme,
+                        globalColors = settings.globalColors,
+                    )
+                } else if (definition.category == com.hank.kustom.data.model.FieldCategory.DUAL) {
+                    val customDualInst = settings.customDualInstances.firstOrNull { it.id == definition.typeId }
+                    val resolvedConfig = if (customDualInst != null) {
+                        KustomFieldConfig(
+                            comboLeftMetric = customDualInst.leftMetric,
+                            comboRightMetric = customDualInst.rightMetric,
+                            comboLeftZoneFormat = customDualInst.leftZoneFormat,
+                            comboRightZoneFormat = customDualInst.rightZoneFormat,
+                            comboLeftSmoothing = customDualInst.leftSmoothing,
+                            comboRightSmoothing = customDualInst.rightSmoothing,
+                        )
+                    } else {
+                        fieldConfig
+                    }
+
+                    val leftDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboLeftMetric) ?: KustomFieldCatalog.POWER
+                    val rightDef = KustomFieldCatalog.findByTypeId(resolvedConfig.comboRightMetric) ?: KustomFieldCatalog.GRADE
+
+                    val leftVal: Double? = if (isMock) {
+                        leftDef.mockValues.getOrElse(mockIndex % leftDef.mockValues.size) { leftDef.mockValues.firstOrNull() ?: 203.0 }
+                    } else if (leftStreamState is StreamState.Streaming) {
+                        val rawVal = leftStreamState.dataPoint.singleValue
+                        if (rawVal != null && leftDef.typeId == "grade") {
+                            leftGradeSmoother.addSample(rawVal)
+                        } else {
+                            rawVal
+                        }
+                    } else {
+                        null
+                    }
+
+                    val rightVal: Double? = if (isMock) {
+                        rightDef.mockValues.getOrElse(mockIndex % rightDef.mockValues.size) { rightDef.mockValues.firstOrNull() ?: 224.0 }
+                    } else if (rightStreamState is StreamState.Streaming) {
+                        val rawVal = rightStreamState.dataPoint.singleValue
+                        if (rawVal != null && rightDef.typeId == "grade") {
+                            rightGradeSmoother.addSample(rawVal)
+                        } else {
+                            rawVal
+                        }
+                    } else {
+                        null
+                    }
+
+                    val leftState = KustomFieldStateResolver.resolveSingleFieldState(
+                        definition = leftDef,
+                        streamState = leftStreamState,
+                        dynamicValue = leftVal,
+                        isImperial = isImperial,
+                        colorMode = resolvedConfig.comboLeftZoneFormat.toColorMode(),
+                        userProfile = userProfile,
+                        globalColors = settings.globalColors,
+                        smoothing = resolvedConfig.comboLeftSmoothing,
+                        showHeader = true,
+                        hasEverStreamed = hasEverStreamedLeft,
+                        isInRide = isInRide,
+                        isDarkTheme = isDarkTheme,
+                        isMock = isMock,
+                        isWorkoutActiveOnKaroo = isWorkoutActiveOnKaroo,
+                    )
+
+                    val rightState = KustomFieldStateResolver.resolveSingleFieldState(
+                        definition = rightDef,
+                        streamState = rightStreamState,
+                        dynamicValue = rightVal,
+                        isImperial = isImperial,
+                        colorMode = resolvedConfig.comboRightZoneFormat.toColorMode(),
+                        userProfile = userProfile,
+                        globalColors = settings.globalColors,
+                        smoothing = resolvedConfig.comboRightSmoothing,
+                        showHeader = true,
+                        hasEverStreamed = hasEverStreamedRight,
+                        isInRide = isInRide,
+                        isDarkTheme = isDarkTheme,
+                        isMock = isMock,
+                        isWorkoutActiveOnKaroo = isWorkoutActiveOnKaroo,
+                    )
+
+                    KustomFieldRenderer.renderDualBlock(
+                        context = context,
+                        config = config,
+                        leftLabel = leftState.label,
+                        leftValueText = leftState.rawValueText,
+                        leftZoneFormat = resolvedConfig.comboLeftZoneFormat,
+                        leftZoneColor = leftState.zoneColor,
+                        rightLabel = rightState.label,
+                        rightValueText = rightState.rawValueText,
+                        rightZoneFormat = resolvedConfig.comboRightZoneFormat,
+                        rightZoneColor = rightState.zoneColor,
+                        labelTypography = TypographyConfig(
+                            font = settings.globalTypography.fontFamily,
+                            fontWeight = settings.globalTypography.labelWeight,
+                            fontSizeSp = settings.globalTypography.labelSizeSp.toFloat(),
+                        ),
+                        valueTypography = TypographyConfig(
+                            font = settings.globalTypography.fontFamily,
+                            fontWeight = settings.globalTypography.valueWeight,
+                            fontSizeSp = settings.globalTypography.valueSizeSp.toFloat(),
+                        ),
                         isDarkTheme = isDarkTheme,
                         globalColors = settings.globalColors,
                     )

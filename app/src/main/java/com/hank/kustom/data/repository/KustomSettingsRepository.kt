@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.hank.kustom.data.model.CustomComboInstance
+import com.hank.kustom.data.model.CustomDualInstance
 import com.hank.kustom.data.model.GlobalColorConfig
 import com.hank.kustom.data.model.GlobalTypographyConfig
 import com.hank.kustom.data.model.KustomFieldCatalog
@@ -106,12 +107,14 @@ class KustomSettingsRepository(context: Context) {
             }
 
             val customCombos = parseCustomComboInstances(prefs[Keys.CUSTOM_COMBO_INSTANCES_JSON])
+            val customDuals = parseCustomDualInstances(prefs[Keys.CUSTOM_DUAL_INSTANCES_JSON])
 
             KustomSettings(
                 globalTypography = globalTypo,
                 globalColors = globalColors,
                 fieldConfigs = configs,
                 customComboInstances = customCombos,
+                customDualInstances = customDuals,
             )
         }
 
@@ -255,6 +258,15 @@ class KustomSettingsRepository(context: Context) {
         }
     }
 
+    /**
+     * Atomically updates user-created dynamic 2-in-1 dual split field instances in DataStore.
+     */
+    suspend fun saveCustomDualInstances(instances: List<CustomDualInstance>) {
+        dataStore.edit { prefs ->
+            prefs[Keys.CUSTOM_DUAL_INSTANCES_JSON] = serializeCustomDualInstances(instances)
+        }
+    }
+
     private fun parseCustomComboInstances(jsonStr: String?): List<CustomComboInstance> {
         val defaultInstances = listOf(
             CustomComboInstance(
@@ -374,6 +386,65 @@ class KustomSettingsRepository(context: Context) {
         return jsonArray.toString()
     }
 
+    private fun parseCustomDualInstances(jsonStr: String?): List<CustomDualInstance> {
+        val defaultInstances = listOf(
+            CustomDualInstance(
+                id = "dual-block-1",
+                name = "2-in-1 Block 1",
+                leftMetric = "power",
+                rightMetric = "grade",
+                leftZoneFormat = ZoneFormat.BACKGROUND,
+                rightZoneFormat = ZoneFormat.TEXT,
+                leftSmoothing = SmoothingOption.THREE_SEC,
+                rightSmoothing = SmoothingOption.NONE,
+            )
+        )
+
+        if (jsonStr.isNullOrBlank()) return defaultInstances
+        return runCatching {
+            val jsonArray = JSONArray(jsonStr)
+            if (jsonArray.length() == 0) return defaultInstances
+            val list = mutableListOf<CustomDualInstance>()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                val rawId = obj.optString("id", "dual-block-${i + 1}")
+                val normalizedId = if (rawId.startsWith("dual_")) "dual-block-${i + 1}" else rawId
+
+                list.add(
+                    CustomDualInstance(
+                        id = normalizedId,
+                        name = obj.optString("name", "Dual Block ${i + 1}"),
+                        leftMetric = obj.optString("leftMetric", "power"),
+                        rightMetric = obj.optString("rightMetric", "grade"),
+                        leftZoneFormat = parseEnum(obj.optString("leftZoneFormat"), ZoneFormat.BACKGROUND),
+                        rightZoneFormat = parseEnum(obj.optString("rightZoneFormat"), ZoneFormat.TEXT),
+                        leftSmoothing = SmoothingOption.fromSeconds(obj.optInt("leftSmoothing", 3)),
+                        rightSmoothing = SmoothingOption.fromSeconds(obj.optInt("rightSmoothing", 0)),
+                    )
+                )
+            }
+            if (list.isEmpty()) defaultInstances else list
+        }.getOrDefault(defaultInstances)
+    }
+
+    private fun serializeCustomDualInstances(instances: List<CustomDualInstance>): String {
+        val jsonArray = JSONArray()
+        instances.forEach { inst ->
+            val obj = JSONObject().apply {
+                put("id", inst.id)
+                put("name", inst.name)
+                put("leftMetric", inst.leftMetric)
+                put("rightMetric", inst.rightMetric)
+                put("leftZoneFormat", inst.leftZoneFormat.name)
+                put("rightZoneFormat", inst.rightZoneFormat.name)
+                put("leftSmoothing", inst.leftSmoothing.seconds)
+                put("rightSmoothing", inst.rightSmoothing.seconds)
+            }
+            jsonArray.put(obj)
+        }
+        return jsonArray.toString()
+    }
+
     private inline fun <reified T : Enum<T>> parseEnum(savedString: String?, defaultValue: T): T {
         if (savedString.isNullOrBlank()) return defaultValue
         return runCatching { java.lang.Enum.valueOf(T::class.java, savedString) }.getOrDefault(defaultValue)
@@ -391,5 +462,6 @@ class KustomSettingsRepository(context: Context) {
         val GLOBAL_POWER_ZONE_COUNT = intPreferencesKey("global_power_zone_count")
         val GLOBAL_ZONE_PALETTE = stringPreferencesKey("global_zone_palette")
         val CUSTOM_COMBO_INSTANCES_JSON = stringPreferencesKey("custom_combo_instances_json")
+        val CUSTOM_DUAL_INSTANCES_JSON = stringPreferencesKey("custom_dual_instances_json")
     }
 }

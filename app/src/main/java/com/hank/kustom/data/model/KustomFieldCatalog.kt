@@ -12,6 +12,7 @@ enum class FieldCategory(val displayName: String, val iconResId: Int) {
     NAVIGATION("Navigation", com.hank.kustom.R.drawable.ic_category_nav),
     POWER("Power", com.hank.kustom.R.drawable.ic_category_power),
     COMBO("3-In-One Block", com.hank.kustom.R.drawable.ic_category_special),
+    DUAL("2-In-One Block", com.hank.kustom.R.drawable.ic_category_special),
     SPEED("Speed", com.hank.kustom.R.drawable.ic_category_speed),
     TIME("Time", com.hank.kustom.R.drawable.ic_category_time),
     WORKOUT("Workout", com.hank.kustom.R.drawable.ic_category_workout),
