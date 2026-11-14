@@ -292,6 +292,45 @@ class KustomSettingsViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    /** Adds a new user-created dynamic 2-in-1 dual block instance. */
+    fun addCustomDualInstance(name: String) {
+        val current = _settingsState.value
+        val nextNum = current.customDualInstances.size + 1
+        val defaultBlockName = "Block $nextNum"
+        val newInstance = com.hank.kustom.data.model.CustomDualInstance(
+            id = "dual-block-$nextNum",
+            name = name.ifBlank { defaultBlockName }
+        )
+        val updatedList = current.customDualInstances + newInstance
+        _settingsState.value = current.copy(customDualInstances = updatedList)
+        viewModelScope.launch {
+            repository.saveCustomDualInstances(updatedList)
+            restartExtensionService()
+        }
+    }
+
+    /** Updates properties of an existing 2-in-1 dual split block instance. */
+    fun updateCustomDualInstance(instance: com.hank.kustom.data.model.CustomDualInstance) {
+        val current = _settingsState.value
+        val updatedList = current.customDualInstances.map { if (it.id == instance.id) instance else it }
+        _settingsState.value = current.copy(customDualInstances = updatedList)
+        viewModelScope.launch {
+            repository.saveCustomDualInstances(updatedList)
+            restartExtensionService()
+        }
+    }
+
+    /** Deletes a 2-in-1 dual split block instance by id. */
+    fun deleteCustomDualInstance(instanceId: String) {
+        val current = _settingsState.value
+        val updatedList = current.customDualInstances.filter { it.id != instanceId }
+        _settingsState.value = current.copy(customDualInstances = updatedList)
+        viewModelScope.launch {
+            repository.saveCustomDualInstances(updatedList)
+            restartExtensionService()
+        }
+    }
+
     private fun restartExtensionService() {
         runCatching {
             val app = getApplication<Application>()

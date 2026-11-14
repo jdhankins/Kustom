@@ -1361,7 +1361,7 @@ fun UniversalFieldComboControls(
 ) {
     val centerOptions = remember {
         KustomFieldCatalog.allFields
-            .filter { it.category != FieldCategory.COMBO && !it.typeId.startsWith("debug-") }
+            .filter { it.category != FieldCategory.COMBO && it.category != FieldCategory.DUAL && !it.typeId.startsWith("debug-") }
             .map { it.typeId to it.displayName }
     }
 
@@ -1369,7 +1369,7 @@ fun UniversalFieldComboControls(
         val options = mutableListOf("none" to "None")
         options.addAll(
             KustomFieldCatalog.allFields
-                .filter { it.category != FieldCategory.COMBO && !it.typeId.startsWith("debug-") }
+                .filter { it.category != FieldCategory.COMBO && it.category != FieldCategory.DUAL && !it.typeId.startsWith("debug-") }
                 .map { it.typeId to it.displayName }
         )
         options
@@ -1779,6 +1779,291 @@ fun UniversalFieldComboControls(
 }
 
 /**
+ * Dynamic configuration controls for 2-in-1 Dual Split field instance.
+ */
+@Composable
+fun UniversalFieldDualControls(
+    instance: com.hank.kustom.data.model.CustomDualInstance,
+    colors: KustomColorScheme,
+    viewModel: KustomSettingsViewModel,
+) {
+    val metricOptions = remember {
+        val options = mutableListOf("none" to "None")
+        options.addAll(
+            KustomFieldCatalog.allFields
+                .filter { it.category != FieldCategory.COMBO && it.category != FieldCategory.DUAL && !it.typeId.startsWith("debug-") }
+                .map { it.typeId to it.displayName }
+        )
+        options
+    }
+
+    val selectedLeftId = instance.leftMetric.ifEmpty { "power" }
+    val leftDef = remember(selectedLeftId) { KustomFieldCatalog.findByTypeId(selectedLeftId) ?: KustomFieldCatalog.POWER }
+
+    val selectedRightId = instance.rightMetric.ifEmpty { "grade" }
+    val rightDef = remember(selectedRightId) { KustomFieldCatalog.findByTypeId(selectedRightId) ?: KustomFieldCatalog.GRADE }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        // --- SECTION 1: LEFT METRIC ---
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(colors.trackBg)
+                .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(10.dp))
+                .padding(12.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                var leftExpanded by remember { mutableStateOf(false) }
+                val currentLeftLabel = metricOptions.firstOrNull { it.first == selectedLeftId }?.second ?: leftDef.childTitle
+
+                Text(
+                    text = "LEFT METRIC",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.headerText,
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(50))
+                        .background(colors.cardBg)
+                        .clickable { leftExpanded = true }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = currentLeftLabel,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textPrimary,
+                        )
+                        Text(
+                            text = if (leftExpanded) "▲" else "▼",
+                            fontSize = 12.sp,
+                            color = colors.textSecondary,
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = leftExpanded,
+                        onDismissRequest = { leftExpanded = false },
+                        modifier = Modifier.background(colors.cardBg).heightIn(max = 360.dp),
+                    ) {
+                        metricOptions.forEach { (id, name) ->
+                            DropdownMenuItem(
+                                text = { Text(text = name, fontSize = 13.sp, color = colors.textPrimary) },
+                                onClick = {
+                                    viewModel.updateCustomDualInstance(instance.copy(leftMetric = id))
+                                    leftExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+
+                if (leftDef.supportsZones) {
+                    val supportedFormats = listOf(ZoneFormat.NONE, ZoneFormat.TEXT, ZoneFormat.BACKGROUND, ZoneFormat.BAR)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "LEFT ZONE FORMAT",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textSecondary,
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(colors.cardBg)
+                                .border(1.dp, colors.border, RoundedCornerShape(50))
+                                .padding(3.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                supportedFormats.forEach { format ->
+                                    val isSelected = instance.leftZoneFormat == format
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                            .clip(RoundedCornerShape(50))
+                                            .background(if (isSelected) Color(0xFF00C4B4) else Color.Transparent)
+                                            .clickable { viewModel.updateCustomDualInstance(instance.copy(leftZoneFormat = format)) },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = format.displayLabel,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) Color.White else colors.textSecondary,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (leftDef.supportsSmoothing) {
+                    val smoothingSteps = listOf("0s", "3s", "5s", "10s", "30s")
+                    val currentSmoothIdx = SmoothingOption.entries.indexOf(instance.leftSmoothing).coerceAtLeast(0)
+                    KarooSteppedSlider(
+                        label = "Smoothing",
+                        steps = smoothingSteps,
+                        selectedIndex = currentSmoothIdx,
+                        colors = colors,
+                        onStepSelected = { idx ->
+                            val option = SmoothingOption.entries.getOrElse(idx) { SmoothingOption.NONE }
+                            viewModel.updateCustomDualInstance(instance.copy(leftSmoothing = option))
+                        },
+                    )
+                }
+            }
+        }
+
+        // --- SECTION 2: RIGHT METRIC ---
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(colors.trackBg)
+                .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(10.dp))
+                .padding(12.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                var rightExpanded by remember { mutableStateOf(false) }
+                val currentRightLabel = metricOptions.firstOrNull { it.first == selectedRightId }?.second ?: rightDef.childTitle
+
+                Text(
+                    text = "RIGHT METRIC",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.headerText,
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(50))
+                        .background(colors.cardBg)
+                        .clickable { rightExpanded = true }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = currentRightLabel,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textPrimary,
+                        )
+                        Text(
+                            text = if (rightExpanded) "▲" else "▼",
+                            fontSize = 12.sp,
+                            color = colors.textSecondary,
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = rightExpanded,
+                        onDismissRequest = { rightExpanded = false },
+                        modifier = Modifier.background(colors.cardBg).heightIn(max = 360.dp),
+                    ) {
+                        metricOptions.forEach { (id, name) ->
+                            DropdownMenuItem(
+                                text = { Text(text = name, fontSize = 13.sp, color = colors.textPrimary) },
+                                onClick = {
+                                    viewModel.updateCustomDualInstance(instance.copy(rightMetric = id))
+                                    rightExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+
+                if (rightDef.supportsZones) {
+                    val supportedFormats = listOf(ZoneFormat.NONE, ZoneFormat.TEXT, ZoneFormat.BACKGROUND, ZoneFormat.BAR)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "RIGHT ZONE FORMAT",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textSecondary,
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(colors.cardBg)
+                                .border(1.dp, colors.border, RoundedCornerShape(50))
+                                .padding(3.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                supportedFormats.forEach { format ->
+                                    val isSelected = instance.rightZoneFormat == format
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                            .clip(RoundedCornerShape(50))
+                                            .background(if (isSelected) Color(0xFF00C4B4) else Color.Transparent)
+                                            .clickable { viewModel.updateCustomDualInstance(instance.copy(rightZoneFormat = format)) },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = format.displayLabel,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) Color.White else colors.textSecondary,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (rightDef.supportsSmoothing) {
+                    val smoothingSteps = listOf("0s", "3s", "5s", "10s", "30s")
+                    val currentSmoothIdx = SmoothingOption.entries.indexOf(instance.rightSmoothing).coerceAtLeast(0)
+                    KarooSteppedSlider(
+                        label = "Smoothing",
+                        steps = smoothingSteps,
+                        selectedIndex = currentSmoothIdx,
+                        colors = colors,
+                        onStepSelected = { idx ->
+                            val option = SmoothingOption.entries.getOrElse(idx) { SmoothingOption.NONE }
+                            viewModel.updateCustomDualInstance(instance.copy(rightSmoothing = option))
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
  * Modal dialog prompting for a custom block name when creating a new 3-in-1 combo field.
  */
 @Composable
@@ -1815,6 +2100,233 @@ fun CreateComboDialog(
                     value = blockName,
                     onValueChange = { blockName = it },
                     placeholder = { Text("e.g. Climbing Block", fontSize = 13.sp, color = colors.textSecondary) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colors.accent,
+                        unfocusedBorderColor = colors.border,
+                        focusedTextColor = colors.textPrimary,
+                        unfocusedTextColor = colors.textPrimary,
+                    ),
+                )
+            }
+        },
+        confirmButton = {
+            Box(
+                modifier = Modifier
+                    .clickable {
+                        onConfirm(blockName.trim())
+                        onDismiss()
+                    }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = "CREATE BLOCK",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.accent,
+                )
+            }
+        },
+        dismissButton = {
+            Box(
+                modifier = Modifier
+                    .clickable { onDismiss() }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = "CANCEL",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.textSecondary,
+                )
+            }
+        },
+    )
+}
+
+/**
+ * Dynamic configuration card for an individual user-created 2-in-1 dual split block instance.
+ */
+@Composable
+fun CustomDualCardItem(
+    instance: com.hank.kustom.data.model.CustomDualInstance,
+    settings: KustomSettings,
+    colors: KustomColorScheme,
+    viewModel: KustomSettingsViewModel,
+) {
+    val context = LocalContext.current
+
+    var mockStepIndex by remember(instance.id) { mutableIntStateOf(0) }
+    LaunchedEffect(instance.id) {
+        while (true) {
+            delay(1200L)
+            mockStepIndex = (mockStepIndex + 1) % 5
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = colors.cardBg),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, colors.border),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = instance.name,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.textPrimary,
+            )
+
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(84.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(BorderStroke(1.dp, colors.border), RoundedCornerShape(12.dp)),
+                ) {
+                    val widthPx = constraints.maxWidth.coerceAtLeast(1)
+                    val heightPx = constraints.maxHeight.coerceAtLeast(1)
+
+                    val previewViewConfig = remember(widthPx, heightPx) {
+                        ViewConfig(
+                            gridSize = Pair(60, 20),
+                            viewSize = Pair(widthPx, heightPx),
+                            textSize = 38,
+                            alignment = ViewConfig.Alignment.CENTER,
+                            boundariesEnabled = true,
+                            preview = true,
+                        )
+                    }
+
+                    val leftDef = KustomFieldCatalog.findByTypeId(instance.leftMetric) ?: KustomFieldCatalog.POWER
+                    val rightDef = KustomFieldCatalog.findByTypeId(instance.rightMetric) ?: KustomFieldCatalog.GRADE
+
+                    val leftVal = leftDef.mockValues.getOrElse(mockStepIndex) { leftDef.mockValues.firstOrNull() ?: 248.0 }
+                    val rightVal = rightDef.mockValues.getOrElse(mockStepIndex) { rightDef.mockValues.firstOrNull() ?: -5.4 }
+
+                    val leftLabel = leftDef.resolveDynamicLabel(instance.leftSmoothing)
+                    val rightLabel = rightDef.resolveDynamicLabel(instance.rightSmoothing)
+
+                    val leftValueText = leftDef.formatNumericValueOnly(leftVal)
+                    val rightValueText = rightDef.formatNumericValueOnly(rightVal)
+
+                    val activePalette = settings.globalColors.globalZonePalette
+
+                    val leftMappedColor = if (leftDef.supportsZones && instance.leftZoneFormat != ZoneFormat.NONE) {
+                        when (leftDef.typeId) {
+                            "power", "power-combo", "custom-combo", "np", "avg-power", "max-power", "percent-ftp", "power-20m", "power-1hr" ->
+                                KustomColorGradeMapper.getPowerZoneColor(leftVal, null, instance.leftZoneFormat.toColorMode(), colors.isDark, activePalette)
+                            "hr", "avg-hr", "max-hr", "percent-max-hr", "percent-hrr" ->
+                                KustomColorGradeMapper.getHeartRateZoneColor(leftVal, null, instance.leftZoneFormat.toColorMode(), colors.isDark, activePalette)
+                            "grade" ->
+                                KustomColorGradeMapper.getGradeColor(leftVal, instance.leftZoneFormat.toColorMode(), colors.isDark, activePalette)
+                            else -> null
+                        }
+                    } else null
+
+                    val rightMappedColor = if (rightDef.supportsZones && instance.rightZoneFormat != ZoneFormat.NONE) {
+                        when (rightDef.typeId) {
+                            "power", "power-combo", "custom-combo", "np", "avg-power", "max-power", "percent-ftp", "power-20m", "power-1hr" ->
+                                KustomColorGradeMapper.getPowerZoneColor(rightVal, null, instance.rightZoneFormat.toColorMode(), colors.isDark, activePalette)
+                            "hr", "avg-hr", "max-hr", "percent-max-hr", "percent-hrr" ->
+                                KustomColorGradeMapper.getHeartRateZoneColor(rightVal, null, instance.rightZoneFormat.toColorMode(), colors.isDark, activePalette)
+                            "grade" ->
+                                KustomColorGradeMapper.getGradeColor(rightVal, instance.rightZoneFormat.toColorMode(), colors.isDark, activePalette)
+                            else -> null
+                        }
+                    } else null
+
+                    val bitmap = KustomFieldRenderer.renderDualBlock(
+                        context = context,
+                        config = previewViewConfig,
+                        leftLabel = leftLabel,
+                        leftValueText = leftValueText,
+                        leftZoneFormat = if (leftDef.supportsZones) instance.leftZoneFormat else ZoneFormat.NONE,
+                        leftZoneColor = leftMappedColor,
+                        rightLabel = rightLabel,
+                        rightValueText = rightValueText,
+                        rightZoneFormat = if (rightDef.supportsZones) instance.rightZoneFormat else ZoneFormat.NONE,
+                        rightZoneColor = rightMappedColor,
+                        labelTypography = TypographyConfig(
+                            font = settings.globalTypography.fontFamily,
+                            fontWeight = settings.globalTypography.labelWeight,
+                            fontSizeSp = settings.globalTypography.labelSizeSp.toFloat(),
+                        ),
+                        valueTypography = TypographyConfig(
+                            font = settings.globalTypography.fontFamily,
+                            fontWeight = settings.globalTypography.valueWeight,
+                            fontSizeSp = settings.globalTypography.valueSizeSp.toFloat(),
+                        ),
+                        isDarkTheme = colors.isDark,
+                        globalColors = settings.globalColors,
+                    )
+
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "2-in-1 Dual Preview",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit,
+                    )
+                }
+            }
+
+            UniversalFieldDualControls(
+                instance = instance,
+                colors = colors,
+                viewModel = viewModel,
+            )
+        }
+    }
+}
+
+/**
+ * Modal dialog prompting for a custom block name when creating a new 2-in-1 dual split field.
+ */
+@Composable
+fun CreateDualDialog(
+    colors: KustomColorScheme,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var blockName by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = colors.cardBg,
+        title = {
+            Text(
+                text = "New 2-in-1 Dual Block",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.textPrimary,
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = "Enter a custom name for your new 2-in-1 dual block (e.g. Climbing Dual, Split Block):",
+                    fontSize = 12.sp,
+                    color = colors.textSecondary,
+                )
+
+                OutlinedTextField(
+                    value = blockName,
+                    onValueChange = { blockName = it },
+                    placeholder = { Text("e.g. Climbing Dual", fontSize = 13.sp, color = colors.textSecondary) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -2043,6 +2555,7 @@ fun FieldsTab(
     onCategoryToggled: (FieldCategory) -> Unit,
 ) {
     var showCreateComboDialog by remember { mutableStateOf(false) }
+    var showCreateDualDialog by remember { mutableStateOf(false) }
 
     if (showCreateComboDialog) {
         CreateComboDialog(
@@ -2054,9 +2567,20 @@ fun FieldsTab(
         )
     }
 
+    if (showCreateDualDialog) {
+        CreateDualDialog(
+            colors = colors,
+            onConfirm = { name ->
+                viewModel.addCustomDualInstance(name)
+            },
+            onDismiss = { showCreateDualDialog = false },
+        )
+    }
+
     val configurableGrouped = remember {
         val baseMap = KustomFieldCatalog.configurableFields.groupBy { it.category }.toMutableMap()
         baseMap[FieldCategory.COMBO] = emptyList()
+        baseMap[FieldCategory.DUAL] = emptyList()
         baseMap
     }
 
@@ -2098,7 +2622,7 @@ fun FieldsTab(
                                     modifier = Modifier.size(20.dp),
                                     tint = colors.textPrimary,
                                 )
-                                val categoryHeaderTitle = if (category == FieldCategory.COMBO) {
+                                val categoryHeaderTitle = if (category == FieldCategory.COMBO || category == FieldCategory.DUAL) {
                                     category.displayName.uppercase()
                                 } else {
                                     "${category.displayName.uppercase()} FIELDS"
@@ -2146,6 +2670,15 @@ fun FieldsTab(
                                 if (category == FieldCategory.COMBO) {
                                     settings.customComboInstances.forEach { instance ->
                                         CustomComboCardItem(
+                                            instance = instance,
+                                            settings = settings,
+                                            colors = colors,
+                                            viewModel = viewModel,
+                                        )
+                                    }
+                                } else if (category == FieldCategory.DUAL) {
+                                    settings.customDualInstances.forEach { instance ->
+                                        CustomDualCardItem(
                                             instance = instance,
                                             settings = settings,
                                             colors = colors,

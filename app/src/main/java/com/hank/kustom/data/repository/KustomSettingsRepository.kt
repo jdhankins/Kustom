@@ -390,40 +390,81 @@ class KustomSettingsRepository(context: Context) {
         val defaultInstances = listOf(
             CustomDualInstance(
                 id = "dual-block-1",
-                name = "2-in-1 Block 1",
+                name = "Block 1",
                 leftMetric = "power",
                 rightMetric = "grade",
                 leftZoneFormat = ZoneFormat.BACKGROUND,
                 rightZoneFormat = ZoneFormat.TEXT,
                 leftSmoothing = SmoothingOption.THREE_SEC,
                 rightSmoothing = SmoothingOption.NONE,
-            )
+            ),
+            CustomDualInstance(
+                id = "dual-block-2",
+                name = "Block 2",
+                leftMetric = "power",
+                rightMetric = "hr",
+                leftZoneFormat = ZoneFormat.BACKGROUND,
+                rightZoneFormat = ZoneFormat.BACKGROUND,
+                leftSmoothing = SmoothingOption.THREE_SEC,
+                rightSmoothing = SmoothingOption.NONE,
+            ),
+            CustomDualInstance(
+                id = "dual-block-3",
+                name = "Block 3",
+                leftMetric = "power",
+                rightMetric = "cadence",
+                leftZoneFormat = ZoneFormat.BAR,
+                rightZoneFormat = ZoneFormat.NONE,
+                leftSmoothing = SmoothingOption.THREE_SEC,
+                rightSmoothing = SmoothingOption.NONE,
+            ),
+            CustomDualInstance(
+                id = "dual-block-4",
+                name = "Block 4",
+                leftMetric = "speed",
+                rightMetric = "distance",
+                leftZoneFormat = ZoneFormat.NONE,
+                rightZoneFormat = ZoneFormat.NONE,
+                leftSmoothing = SmoothingOption.NONE,
+                rightSmoothing = SmoothingOption.NONE,
+            ),
+            CustomDualInstance(
+                id = "dual-block-5",
+                name = "Block 5",
+                leftMetric = "grade",
+                rightMetric = "vam",
+                leftZoneFormat = ZoneFormat.BACKGROUND,
+                rightZoneFormat = ZoneFormat.NONE,
+                leftSmoothing = SmoothingOption.NONE,
+                rightSmoothing = SmoothingOption.NONE,
+            ),
         )
 
         if (jsonStr.isNullOrBlank()) return defaultInstances
         return runCatching {
             val jsonArray = JSONArray(jsonStr)
             if (jsonArray.length() == 0) return defaultInstances
-            val list = mutableListOf<CustomDualInstance>()
+            val parsedById = mutableMapOf<String, CustomDualInstance>()
             for (i in 0 until jsonArray.length()) {
                 val obj = jsonArray.getJSONObject(i)
                 val rawId = obj.optString("id", "dual-block-${i + 1}")
                 val normalizedId = if (rawId.startsWith("dual_")) "dual-block-${i + 1}" else rawId
-
-                list.add(
-                    CustomDualInstance(
-                        id = normalizedId,
-                        name = obj.optString("name", "Dual Block ${i + 1}"),
-                        leftMetric = obj.optString("leftMetric", "power"),
-                        rightMetric = obj.optString("rightMetric", "grade"),
-                        leftZoneFormat = parseEnum(obj.optString("leftZoneFormat"), ZoneFormat.BACKGROUND),
-                        rightZoneFormat = parseEnum(obj.optString("rightZoneFormat"), ZoneFormat.TEXT),
-                        leftSmoothing = SmoothingOption.fromSeconds(obj.optInt("leftSmoothing", 3)),
-                        rightSmoothing = SmoothingOption.fromSeconds(obj.optInt("rightSmoothing", 0)),
-                    )
+                val instance = CustomDualInstance(
+                    id = normalizedId,
+                    name = obj.optString("name", "Block ${i + 1}").replace("2-in-1 Block ", "Block ").replace("Dual Block ", "Block "),
+                    leftMetric = obj.optString("leftMetric", "power"),
+                    rightMetric = obj.optString("rightMetric", "grade"),
+                    leftZoneFormat = parseEnum(obj.optString("leftZoneFormat"), ZoneFormat.BACKGROUND),
+                    rightZoneFormat = parseEnum(obj.optString("rightZoneFormat"), ZoneFormat.TEXT),
+                    leftSmoothing = SmoothingOption.fromSeconds(obj.optInt("leftSmoothing", 3)),
+                    rightSmoothing = SmoothingOption.fromSeconds(obj.optInt("rightSmoothing", 0)),
                 )
+                parsedById[normalizedId] = instance
             }
-            if (list.isEmpty()) defaultInstances else list
+            // Ensure all 5 default blocks exist while preserving any custom saved settings or extra blocks
+            val merged = defaultInstances.map { def -> parsedById[def.id] ?: def }.toMutableList()
+            parsedById.values.filter { it.id !in defaultInstances.map { d -> d.id } }.forEach { merged.add(it) }
+            merged
         }.getOrDefault(defaultInstances)
     }
 
